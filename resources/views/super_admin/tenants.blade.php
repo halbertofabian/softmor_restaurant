@@ -3,7 +3,7 @@
 @section('title', 'Gestionar Tenants')
 
 @section('content')
-<div class="container-fluid flex-grow-1 container-p-y">
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="py-3 mb-0">
             <span class="text-muted fw-light">Super Admin /</span> Tenants
@@ -14,7 +14,7 @@
     </div>
 
     <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3">
+        <div class="card-header py-3">
             <h5 class="mb-0 fw-bold"><i class="ti tabler-list me-2"></i>Listado de Restaurantes</h5>
         </div>
         <div class="table-responsive">
@@ -22,7 +22,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>Restaurante / Sucursal</th>
-                        <th>Admin Principal</th> // Show impersonate button here
+                        <th>Admin Principal</th>
                         <th>Métricas</th>
                         <th>Fecha Registro</th>
                         <th class="text-center">Acciones</th>
@@ -90,5 +90,4 @@
             </table>
         </div>
     </div>
-</div>
 @endsection

@@ -40,6 +40,11 @@ Route::middleware(['auth', \App\Http\Middleware\SuperAdminMiddleware::class])->p
     // Subscription Routes
     Route::get('/subscriptions/create', [\App\Http\Controllers\SuperAdminController::class, 'createSubscription'])->name('super-admin.subscriptions.create');
     Route::post('/subscriptions', [\App\Http\Controllers\SuperAdminController::class, 'storeSubscription'])->name('super-admin.subscriptions.store');
+    
+    // AI Queries
+    Route::name('super_admin.')->group(function () {
+        Route::resource('ai_queries', AiQueryController::class);
+    });
 });
 
 // Route to stop impersonating (must be accessible by the impersonated user)
@@ -72,6 +77,8 @@ Route::middleware('auth')->group(function () {
                 Route::get('pos/{order}/checkout', [\App\Http\Controllers\PosController::class, 'show'])->name('pos.checkout');
                 Route::post('pos/{order}/pay', [\App\Http\Controllers\PosController::class, 'pay'])->name('pos.pay');
                 Route::get('pos/{order}/ticket', [\App\Http\Controllers\PosController::class, 'ticket'])->name('pos.ticket');
+                Route::get('pos/{order}/ticket/pdf', [\App\Http\Controllers\PosController::class, 'ticketPdf'])->name('pos.ticket.pdf');
+                Route::get('pos/{order}/print', [\App\Http\Controllers\PosController::class, 'printDirect'])->name('pos.print');
             });
 
 
@@ -127,6 +134,8 @@ Route::middleware('auth')->group(function () {
         Route::middleware(['role:cocinero,administrador'])->group(function () {
             Route::get('kitchen', [\App\Http\Controllers\KitchenController::class, 'index'])->name('kitchen.index');
             Route::get('kitchen/{area}', [\App\Http\Controllers\KitchenController::class, 'monitor'])->name('kitchen.monitor');
+            Route::get('kitchen/{area}/check-new', [\App\Http\Controllers\KitchenController::class, 'checkNewItems'])->name('kitchen.check-new');
+            Route::post('kitchen/mark-printed', [\App\Http\Controllers\KitchenController::class, 'markAsPrinted'])->name('kitchen.mark-printed');
         });
     });
 

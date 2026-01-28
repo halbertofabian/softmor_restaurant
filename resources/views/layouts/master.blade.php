@@ -177,8 +177,8 @@
                     </a>
                 </li>
 
-                <li class="menu-item {{ request()->routeIs('ai_queries.index') ? 'active' : '' }}">
-                    <a href="{{ route('ai_queries.index') }}" class="menu-link">
+                <li class="menu-item {{ request()->routeIs('super_admin.ai_queries.*') ? 'active' : '' }}">
+                    <a href="{{ route('super_admin.ai_queries.index') }}" class="menu-link">
                         <i class="menu-icon icon-base ti tabler-robot"></i>
                         <div data-i18n="Consultas IA">Consultas IA</div>
                     </a>

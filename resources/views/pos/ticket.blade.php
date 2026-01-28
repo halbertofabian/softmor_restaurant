@@ -131,10 +131,14 @@
         @endif
     </div>
 
+    @if(!isset($isPdf))
     <div class="no-print" style="margin-top: 20px;">
         <button onclick="window.print()" class="btn">Imprimir Ticket</button>
+        <a href="{{ route('pos.ticket.pdf', $order) }}" class="btn" style="background:#6c757d; margin-top: 5px; text-decoration: none; display: inline-block; text-align: center;">Descargar PDF</a>
+        <a href="{{ route('pos.print', $order) }}" class="btn" style="background:#28a745; margin-top: 5px; text-decoration: none; display: inline-block; text-align: center;">Impresión Directa (Térmica)</a>
         <a href="{{ route('tables.index') }}" style="display: block; text-align: center; margin-top: 10px; color: #000;">Volver a Mesas</a>
     </div>
+    @endif
 
     <script>
         window.onload = function() {

@@ -17,6 +17,11 @@
                 <label class="form-label" for="description">Descripción</label>
                 <textarea class="form-control" id="description" name="description" rows="3">{{ $preparationArea->description }}</textarea>
             </div>
+            <div class="mb-3">
+                <label class="form-label" for="printer_name">Nombre de Impresora (Windows)</label>
+                <input type="text" class="form-control" id="printer_name" name="printer_name" value="{{ $preparationArea->printer_name }}" placeholder="Ej: EPSON-KITCHEN (Dejar vacío para usar default)">
+                <div class="form-text">Si está vacío, se usará la impresora global configurada en Ajustes.</div>
+            </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label" for="sort_order">Orden (Prioridad)</label>
