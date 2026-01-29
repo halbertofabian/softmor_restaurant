@@ -20,4 +20,9 @@ class Table extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function activeOrder()
+    {
+        return $this->hasOne(Order::class)->where('status', 'open')->latest();
+    }
 }

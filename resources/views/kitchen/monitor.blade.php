@@ -20,7 +20,7 @@
     <div class="col-md-4 col-lg-3 mb-4">
         <div class="card h-100 border-top border-primary border-3 shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center bg-light py-2">
-                <h6 class="mb-0 fw-bold">Mesa {{ $order->table->name }}</h6>
+                <h6 class="mb-0 fw-bold">Mesa {{ $order->table ? $order->table->name : 'N/A' }}</h6>
                 <span class="badge bg-label-primary">#{{ $order->id }}</span>
             </div>
             <div class="card-body p-0">

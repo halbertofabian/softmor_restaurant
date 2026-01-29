@@ -10,7 +10,7 @@ class Order extends Model
     use HasFactory, \App\Models\Traits\BelongsToBranch;
 
     protected $fillable = [
-        'table_id', 'user_id', 'status', 'total', 'closed_at', 'notes', 'tenant_id'
+        'table_id', 'user_id', 'status', 'total', 'closed_at', 'notes', 'tenant_id', 'branch_id'
     ];
 
     protected $casts = [
