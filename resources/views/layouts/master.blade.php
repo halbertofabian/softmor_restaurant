@@ -5,7 +5,7 @@
   class=" layout-navbar-fixed layout-menu-fixed layout-compact "
   dir="ltr"
   data-skin="default"
-  data-bs-theme="light"
+  data-bs-theme="dark"
   data-assets-path="{{ asset('assets') }}/"
   data-template="vertical-menu-template-starter">
   <head>

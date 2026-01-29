@@ -9,33 +9,67 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        :root {
+            --primary: #FFAB1D;
+            --primary-dark: #E59A1A;
+            --dark-bg: #09090b;
+            --card-bg: #18181b;
+            --sidebar-bg: #0f0f10;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1a1;
+        }
+
         body {
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
         }
+
         .main-content {
             flex: 1;
             overflow-y: auto;
+            padding: 1.5rem;
         }
+
         .checkout-sidebar {
-            border-left: 1px solid rgba(0,0,0,0.1);
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--border-subtle);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
             height: 100%;
             display: flex;
             flex-direction: column;
         }
+
         .product-card {
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--card-bg);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
         }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px rgba(255, 171, 29, 0.2);
+        }
+
         .product-card:active {
-            transform: scale(0.98);
+            transform: translateY(-2px);
         }
+
         .order-list {
             flex: 1;
             overflow-y: auto;
+            padding: 1rem;
+            min-height: 200px;
+            max-height: 60vh;
         }
+
         .category-box {
             aspect-ratio: 1 / 1;
             display: flex;
@@ -44,38 +78,205 @@
             align-items: center;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            min-width: 110px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 1rem;
         }
+
         .category-box:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            border-color: rgba(255, 171, 29, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
+
+        .category-active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+            color: #000 !important;
+            border-color: var(--primary) !important;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(255, 171, 29, 0.4);
+        }
+
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
+
         .hide-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .category-active {
-            background-color: #0d6efd !important;
-            color: white !important;
-            border-color: #0d6efd !important;
+
+        .header-section {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .order-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .order-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 171, 29, 0.2);
+        }
+
+        .payment-method-btn {
+            border: 2px solid var(--border-subtle);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            padding: 1rem;
+            border-radius: 0.75rem;
+        }
+
+        .payment-method-btn:hover {
+            border-color: var(--primary);
+            background: rgba(255, 171, 29, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-check:checked + .payment-method-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-color: var(--primary);
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            color: #000;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 24px rgba(255, 171, 29, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(255, 171, 29, 0.4);
+        }
+
+        .btn-outline-custom {
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            font-weight: 600;
+            border-radius: 0.75rem;
+            padding: 0.875rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-custom:hover {
+            background: rgba(255, 171, 29, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .form-control, .input-group-text {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(255, 171, 29, 0.15);
+        }
+
+        .input-group-text {
+            color: var(--text-secondary);
+        }
+
+        .badge-custom {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #000;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+        }
+
+        .text-primary-custom {
+            color: var(--primary) !important;
+        }
+
+        .border-bottom-custom {
+            border-bottom: 1px solid var(--border-subtle) !important;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .alert {
+            border-radius: 0.75rem;
+            border: 1px solid;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .product-image {
+            height: 140px;
+            object-fit: cover;
+            border-radius: 0.75rem 0.75rem 0 0;
+        }
+
+        .product-placeholder {
+            height: 140px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0.75rem 0.75rem 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .totals-section {
+            background: rgba(255, 171, 29, 0.05);
+            border: 1px solid rgba(255, 171, 29, 0.2);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
         }
     </style>
 </head>
-<body class="bg-body-tertiary">
+<body>
 
     <!-- Header Principal -->
-    <header class="p-3 bg-body border-bottom">
+    <header class="header-section">
         <div class="container-fluid">
             <div class="d-flex flex-wrap align-items-center justify-content-between">
                 <div>
-                    <h4 class="mb-0 fw-bold">{{ $order->table->name ?? 'Mesa' }}</h4>
-                    <span class="text-muted small">Orden #{{ $order->id }} - {{ $order->user->name ?? 'Usuario' }}</span>
+                    <h4 class="mb-1 fw-bold text-white">{{ $order->table->name ?? 'Mesa' }}</h4>
+                    <span class="text-secondary" style="font-size: 0.9rem;">Orden #{{ $order->id }} • {{ $order->user->name ?? 'Usuario' }}</span>
                 </div>
                 
-                <div class="d-flex gap-2">
-                    <a href="{{ route('tables.index') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <div class="d-flex gap-3">
+                    <a href="{{ route('tables.index') }}" class="btn btn-outline-custom d-flex align-items-center gap-2">
                         <i data-lucide="arrow-left" size="18"></i>
                         <span>Volver</span>
                     </a>
@@ -86,47 +287,64 @@
 
     <!-- Contenido Principal -->
     <main class="container-fluid flex-grow-1 overflow-hidden">
-        <div class="row h-100">
+        <div class="row h-100 g-0">
             
             <!-- Lado Izquierdo: Categorías y Productos -->
-            <div class="col-lg-8 main-content p-4">
+            <div class="col-lg-8 main-content">
+                
+                <!-- Buscador de Productos -->
+                <div class="mb-4">
+                    <div class="input-group" style="box-shadow: 0 4px 12px rgba(255, 171, 29, 0.15);">
+                        <span class="input-group-text" style="background: var(--card-bg); border: 1px solid rgba(255, 171, 29, 0.3); border-right: none; color: var(--primary);">
+                            <i data-lucide="search" size="20"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            class="form-control fw-bold" 
+                            style="background: var(--card-bg); border: 1px solid rgba(255, 171, 29, 0.3); border-left: none; color: var(--text-primary); font-size: 1rem;"
+                            id="product-search" 
+                            placeholder="Buscar productos..."
+                            oninput="searchProducts()"
+                        >
+                    </div>
+                </div>
                 
                 <!-- Categorías Rápidas -->
                 <div class="d-flex gap-3 mb-4 overflow-auto pb-2 hide-scrollbar">
-                    <div onclick="filterProducts('all')" class="card category-box bg-dark text-white border-0 shadow-sm category-btn" id="cat-btn-all" style="min-width: 100px;">
-                        <i data-lucide="layout-grid" class="mb-2"></i>
+                    <div onclick="filterProducts('all')" class="card category-box category-active category-btn" id="cat-btn-all">
+                        <i data-lucide="layout-grid" class="mb-2" size="24"></i>
                         <span class="fw-bold small">Todo</span>
                     </div>
                     @foreach($categories as $category)
-                    <div onclick="filterProducts('{{ $category->id }}')" class="card category-box bg-white text-dark border shadow-sm category-btn" id="cat-btn-{{ $category->id }}" style="min-width: 100px;">
-                        <i data-lucide="tag" class="mb-2"></i>
+                    <div onclick="filterProducts('{{ $category->id }}')" class="card category-box category-btn" id="cat-btn-{{ $category->id }}">
+                        <i data-lucide="tag" class="mb-2" size="24"></i>
                         <span class="fw-bold small text-truncate w-100 px-1">{{ $category->name }}</span>
                     </div>
                     @endforeach
                 </div>
 
                 <!-- Rejilla de Productos -->
-                <h5 class="mb-3 fw-bold">Menú</h5>
-                <div class="row g-3" id="products-grid">
+                <h5 class="mb-4 fw-bold text-white">Menú</h5>
+                <div class="row g-4" id="products-grid">
                     @foreach($products as $product)
-                    <div class="col-6 col-md-4 col-xl-3 product-item" data-category-id="{{ $product->category_id }}">
+                    <div class="col-6 col-md-4 col-xl-3 product-item" data-category-id="{{ $product->category_id }}" data-product-name="{{ strtolower($product->name) }}">
                         <form action="{{ route('orders.add-item', $order) }}" method="POST" class="h-100">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <input type="hidden" name="quantity" value="1">
                             <input type="hidden" name="from_checkout" value="1">
                             
-                            <button type="submit" class="card h-100 border-0 shadow-sm product-card w-100 text-start p-0 bg-white">
+                            <button type="submit" class="card h-100 product-card w-100 text-start p-0 border-0">
                                 @if($product->image)
-                                <img src="{{ $product->image }}" class="card-img-top" alt="{{ $product->name }}" style="height: 120px; object-fit: cover;">
+                                <img src="{{ $product->image }}" class="product-image" alt="{{ $product->name }}">
                                 @else
-                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
+                                <div class="product-placeholder">
                                     <i data-lucide="image" class="opacity-25" size="40"></i>
                                 </div>
                                 @endif
-                                <div class="card-body p-2">
-                                    <h6 class="card-title mb-1 text-truncate">{{ $product->name }}</h6>
-                                    <p class="card-text fw-bold text-primary mb-0">${{ number_format($product->price, 2) }}</p>
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-2 text-truncate text-white">{{ $product->name }}</h6>
+                                    <p class="card-text fw-bold text-primary-custom mb-0" style="font-size: 1.1rem;">${{ number_format($product->price, 2) }}</p>
                                 </div>
                             </button>
                         </form>
@@ -136,136 +354,173 @@
             </div>
 
             <!-- Lado Derecho: Checkout -->
-            <div class="col-lg-4 bg-body checkout-sidebar p-0">
+            <div class="col-lg-4 checkout-sidebar p-0">
                 <!-- Header de la Orden -->
-                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">Cuenta</h5>
-                    <span class="badge bg-primary rounded-pill">{{ $order->details->count() }} ítems</span>
+                <div class="p-4 border-bottom-custom d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-white">Cuenta</h5>
+                    <span class="badge-custom">{{ $order->details->count() }} ítems</span>
                 </div>
 
                 <!-- Lista de Ítems en la Orden -->
-                <div class="order-list p-3">
-                    <div class="list-group list-group-flush">
-                        @foreach($order->details as $detail)
-                        <div class="list-group-item px-0 border-bottom">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-0 fw-bold">{{ $detail->product->name ?? 'Producto' }}</h6>
-                                    @if($detail->notes)
-                                    <small class="text-muted">{{ $detail->notes }}</small>
-                                    @endif
-                                    <div class="text-muted small mt-1">x{{ $detail->quantity }}</div>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold d-block">${{ number_format($detail->price * $detail->quantity, 2) }}</span>
-                                    <form action="{{ route('orders.remove-item', [$order, $detail]) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <input type="hidden" name="from_checkout" value="1">
-                                        <button type="submit" class="btn btn-link p-0 text-danger small text-decoration-none" style="font-size: 0.75rem;">Eliminar</button>
-                                    </form>
-                                </div>
+                <div class="order-list">
+                    @foreach($order->details as $detail)
+                    <div class="order-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold text-white">{{ $detail->product->name ?? 'Producto' }}</h6>
+                                @if($detail->notes)
+                                <small class="text-secondary d-block mb-2">{{ $detail->notes }}</small>
+                                @endif
+                                <div class="text-secondary small">Cantidad: {{ $detail->quantity }}</div>
+                            </div>
+                            <div class="text-end ms-3">
+                                <span class="fw-bold d-block text-white mb-2" style="font-size: 1.1rem;">${{ number_format($detail->price * $detail->quantity, 2) }}</span>
+                                <form action="{{ route('orders.remove-item', [$order, $detail]) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <input type="hidden" name="from_checkout" value="1">
+                                    <button type="submit" class="btn btn-link p-0 text-danger small text-decoration-none" style="font-size: 0.85rem;">Eliminar</button>
+                                </form>
                             </div>
                         </div>
-                        @endforeach
-                        
-                        @if($order->details->isEmpty())
-                        <div class="text-center py-5 text-muted">
-                            <i data-lucide="shopping-cart" size="40" class="mb-3 opacity-25"></i>
-                            <p>La orden está vacía</p>
-                        </div>
-                        @endif
                     </div>
+                    @endforeach
+                    
+                    @if($order->details->isEmpty())
+                    <div class="empty-state">
+                        <i data-lucide="shopping-cart" size="48" class="mb-3 opacity-25"></i>
+                        <p class="mb-0">La orden está vacía</p>
+                        <small>Agrega productos del menú</small>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Resumen de Totales y Botón de Pago -->
-                <div class="p-3 border-top bg-body-tertiary">
+                <div class="p-4 border-top" style="border-top: 1px solid var(--border-subtle) !important; background: var(--sidebar-bg);">
                      <!-- Success/Error Messages -->
                      @if(session('success'))
-                     <div class="alert alert-success py-1 px-2 small mb-2">{{ session('success') }}</div>
+                     <div class="alert alert-success py-2 px-3 mb-3">{{ session('success') }}</div>
                      @endif
                      @if(session('error'))
-                     <div class="alert alert-danger py-1 px-2 small mb-2">{{ session('error') }}</div>
+                     <div class="alert alert-danger py-2 px-3 mb-3">{{ session('error') }}</div>
                      @endif
                     
-                    <a href="{{ route('orders.pre-check', $order) }}" target="_blank" class="btn btn-outline-dark w-100 mb-3 fw-bold d-flex justify-content-center align-items-center gap-2">
-                        <i data-lucide="printer" size="18"></i>
-                        IMPRIMIR CUENTA
-                    </a>
+                    <div class="totals-section">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-secondary">Subtotal</span>
+                            <span class="fw-bold text-white">${{ number_format($order->total, 2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid rgba(255, 171, 29, 0.2);">
+                            <span class="fw-bold text-white">Total</span>
+                            <span class="fw-bold text-primary-custom" style="font-size: 1.75rem;">${{ number_format($order->total, 2) }}</span>
+                        </div>
+                    </div>
 
-                    <form action="{{ route('pos.pay', $order) }}" method="POST" id="payment-form">
+                    <div class="row g-3 mt-2">
+                        <div class="col-6">
+                            <a href="{{ route('orders.pre-check', $order) }}" target="_blank" class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2">
+                                <i data-lucide="printer" size="20"></i>
+                                <span style="font-size: 0.9rem;">Imprimir</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-primary-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                <i data-lucide="check-circle" size="20"></i>
+                                <span style="font-size: 0.9rem;">Cobrar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-subtle);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle);">
+                    <h5 class="modal-title text-white fw-bold" id="paymentModalLabel">
+                        <i data-lucide="credit-card" size="20" class="me-2"></i>
+                        Procesar Pago
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form action="{{ route('pos.pay', $order) }}" method="POST" id="modal-payment-form">
                         @csrf
                         
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Subtotal</span>
-                            <span class="fw-bold">${{ number_format($order->total, 2) }}</span>
+                        <!-- Total Display -->
+                        <div class="text-center mb-4 p-4" style="background: rgba(255, 171, 29, 0.1); border-radius: 1rem; border: 1px solid rgba(255, 171, 29, 0.3);">
+                            <div class="text-secondary small mb-1">Total a Pagar</div>
+                            <div class="text-primary-custom fw-bold" style="font-size: 2.5rem;">${{ number_format($order->total, 2) }}</div>
                         </div>
-                        <div class="d-flex justify-content-between mb-3">
-                            <span class="text-muted">Total</span>
-                            <span class="fw-bold fs-4 text-primary">${{ number_format($order->total, 2) }}</span>
+
+                        <!-- Payment Methods -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-white mb-3">Método de Pago</label>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="method" id="modal-method-cash" value="cash" checked onchange="toggleModalReference(false)">
+                                    <label class="payment-method-btn w-100 d-flex flex-column align-items-center justify-content-center py-3" for="modal-method-cash">
+                                        <i data-lucide="banknote" size="28" class="mb-2"></i>
+                                        <span class="fw-bold">Efectivo</span>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="method" id="modal-method-card" value="card" onchange="toggleModalReference(true)">
+                                    <label class="payment-method-btn w-100 d-flex flex-column align-items-center justify-content-center py-3" for="modal-method-card">
+                                        <i data-lucide="credit-card" size="28" class="mb-2"></i>
+                                        <span class="fw-bold">Tarjeta</span>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="method" id="modal-method-transfer" value="transfer" onchange="toggleModalReference(true)">
+                                    <label class="payment-method-btn w-100 d-flex flex-column align-items-center justify-content-center py-3" for="modal-method-transfer">
+                                        <i data-lucide="landmark" size="28" class="mb-2"></i>
+                                        <span class="fw-bold">Transfer.</span>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="method" id="modal-method-other" value="other" onchange="toggleModalReference(true)">
+                                    <label class="payment-method-btn w-100 d-flex flex-column align-items-center justify-content-center py-3" for="modal-method-other">
+                                        <i data-lucide="more-horizontal" size="28" class="mb-2"></i>
+                                        <span class="fw-bold">Otro</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cash Payment Section -->
+                        <div class="mb-4" id="modal-cash-input-group">
+                            <label class="form-label fw-bold text-white">Monto Recibido</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" class="form-control fw-bold" name="amount" id="modal-amount-input" value="{{ $order->total }}" oninput="calculateModalChange()">
+                            </div>
+                            <div class="d-flex justify-content-between mt-3 p-3" style="background: rgba(34, 197, 94, 0.1); border-radius: 0.75rem; border: 1px solid rgba(34, 197, 94, 0.2);">
+                                <span class="text-secondary">Cambio:</span>
+                                <span class="fw-bold" style="color: #4ade80; font-size: 1.5rem;" id="modal-change-display">$0.00</span>
+                            </div>
                         </div>
                         
-                        <!-- Payment Methods -->
-                        <div class="mb-3">
-                             <label class="form-label small fw-bold text-muted text-uppercase">Método de Pago</label>
-                             <div class="row g-2">
-                                 <div class="col-3">
-                                     <input type="radio" class="btn-check" name="method" id="method-cash" value="cash" checked onchange="toggleReference(false)">
-                                     <label class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-2" for="method-cash">
-                                         <i data-lucide="banknote" size="18" class="mb-1"></i>
-                                         <span style="font-size: 0.7rem;">Efectivo</span>
-                                     </label>
-                                 </div>
-                                 <div class="col-3">
-                                     <input type="radio" class="btn-check" name="method" id="method-card" value="card" onchange="toggleReference(true)">
-                                     <label class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-2" for="method-card">
-                                         <i data-lucide="credit-card" size="18" class="mb-1"></i>
-                                         <span style="font-size: 0.7rem;">Tarjeta</span>
-                                     </label>
-                                 </div>
-                                 <div class="col-3">
-                                     <input type="radio" class="btn-check" name="method" id="method-transfer" value="transfer" onchange="toggleReference(true)">
-                                     <label class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-2" for="method-transfer">
-                                         <i data-lucide="landmark" size="18" class="mb-1"></i>
-                                         <span style="font-size: 0.7rem;">Transf.</span>
-                                     </label>
-                                 </div>
-                                 <div class="col-3">
-                                     <input type="radio" class="btn-check" name="method" id="method-other" value="other" onchange="toggleReference(true)">
-                                     <label class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-2" for="method-other">
-                                         <i data-lucide="more-horizontal" size="18" class="mb-1"></i>
-                                         <span style="font-size: 0.7rem;">Otro</span>
-                                     </label>
-                                 </div>
-                             </div>
+                        <!-- Reference Input (hidden by default) -->
+                        <div class="mb-4 d-none" id="modal-reference-group">
+                            <label class="form-label fw-bold text-white">Referencia</label>
+                            <input type="text" class="form-control" name="reference" placeholder="Número de referencia (opcional)">
                         </div>
 
-                         <div class="mb-3" id="cash-input-group">
-                            <label class="form-label small fw-bold text-muted">Monto Recibido</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control fw-bold" name="amount" id="amount-input" value="{{ $order->total }}" oninput="calculateChange()">
-                            </div>
-                            <div class="d-flex justify-content-between mt-2">
-                                <span class="small text-muted">Cambio:</span>
-                                <span class="fw-bold text-success" id="change-display">$0.00</span>
-                            </div>
-                         </div>
-                         
-                         <div class="mb-3 d-none" id="reference-group">
-                             <label class="form-label small fw-bold text-muted">Referencia</label>
-                             <input type="text" class="form-control" name="reference" placeholder="Opcional">
-                         </div>
-
-                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm d-flex justify-content-center align-items-center gap-2">
-                            <i data-lucide="check-circle" size="20"></i>
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary-custom w-100 py-3 d-flex justify-content-center align-items-center gap-2" style="font-size: 1.1rem;">
+                            <i data-lucide="check-circle" size="24"></i>
                             COBRAR Y CERRAR
                         </button>
                     </form>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -274,21 +529,25 @@
         lucide.createIcons();
         
         const total = {{ $order->total }};
-        const amountInput = document.getElementById('amount-input');
-        const changeDisplay = document.getElementById('change-display');
+        const modalAmountInput = document.getElementById('modal-amount-input');
+        const modalChangeDisplay = document.getElementById('modal-change-display');
+        
+        function calculateModalChange() {
+            const amountReceived = parseFloat(modalAmountInput.value) || 0;
+            const change = amountReceived - total;
+            modalChangeDisplay.textContent = '$' + change.toFixed(2);
+        }
         
         function filterProducts(categoryId) {
             // Reset active styles
             document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.add('bg-white', 'text-dark');
-                btn.classList.remove('bg-dark', 'text-white', 'bg-primary');
+                btn.classList.remove('category-active');
             });
 
             // Set active style
             const activeBtn = document.getElementById('cat-btn-' + categoryId);
             if(activeBtn) {
-                activeBtn.classList.remove('bg-white', 'text-dark');
-                activeBtn.classList.add('bg-dark', 'text-white');
+                activeBtn.classList.add('category-active');
             }
 
             // Filter Grid
@@ -302,26 +561,54 @@
             });
         }
 
-        function toggleReference(show) {
-            const refGroup = document.getElementById('reference-group');
-            const cashGroup = document.getElementById('cash-input-group');
+        function searchProducts() {
+            const searchTerm = document.getElementById('product-search').value.toLowerCase();
+            const items = document.querySelectorAll('.product-item');
+            
+            items.forEach(item => {
+                const productName = item.dataset.productName;
+                if (productName.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // If searching, reset category filter visual state
+            if (searchTerm !== '') {
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('category-active');
+                });
+            }
+        }
+        
+        function toggleModalReference(show) {
+            const refGroup = document.getElementById('modal-reference-group');
+            const cashGroup = document.getElementById('modal-cash-input-group');
             
             if (show) {
                 refGroup.classList.remove('d-none');
-                // Auto-set exact amount for card
-                amountPaidInput.value = total.toFixed(2);
-                amountPaidInput.readOnly = true;
+                cashGroup.classList.add('d-none');
+                // Auto-set exact amount for non-cash
+                modalAmountInput.value = total.toFixed(2);
             } else {
                 refGroup.classList.add('d-none');
-                amountPaidInput.readOnly = false;
+                cashGroup.classList.remove('d-none');
             }
-            calculateChange();
+            calculateModalChange();
         }
         
-        // Init
-        calculateChange();
-        // Set All active by default
-        // filterProducts('all'); // Already set by initial class state but good to enforce if needed.
+        // Init modal change calculation
+        calculateModalChange();
+
+        // Refresh icons when modal is shown
+        const paymentModal = document.getElementById('paymentModal');
+        if (paymentModal) {
+            paymentModal.addEventListener('shown.bs.modal', function () {
+                lucide.createIcons();
+                calculateModalChange();
+            });
+        }
     </script>
 </body>
 </html>
