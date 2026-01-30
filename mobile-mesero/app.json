@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile-mesero",
-    "slug": "mobile-mesero",
+    "name": "Gestion Food",
+    "slug": "gestion-food",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": false,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.halbertofabian.mobilemesero"
     },
     "androidStatusBar": {
       "hidden": true,
@@ -47,6 +48,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b5153a96-24c3-4221-aa22-423dae0f7312"
+      }
     }
   }
 }

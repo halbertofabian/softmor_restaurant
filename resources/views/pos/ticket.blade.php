@@ -52,7 +52,7 @@
 </head>
 <body>
     <div class="text-center mb-2">
-        <div class="font-bold uppercase" style="font-size: 1.2em;">Softmor Restaurant</div>
+        <div class="font-bold uppercase" style="font-size: 1.2em;">Gestional Food</div>
         <div>Surcursal: {{ $order->branch->name ?? 'Principal' }}</div>
         <div>{{ now()->format('d/m/Y H:i A') }}</div>
         <div>Ticket #: {{ $order->id }}</div>

@@ -1,6 +1,6 @@
 {
     "name": "softmor/printer-server",
-    "description": "Standalone Printer Server for Softmor Restaurant",
+    "description": "Standalone Printer Server for Gestional Food",
     "require": {
         "mike42/escpos-php": "^2.2"
     }

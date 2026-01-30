@@ -14,12 +14,12 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>@yield('title', 'Restaurant Softmor')</title>
+    <title>@yield('title', 'Gestional Food')</title>
 
     <meta name="description" content="" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/icon_gestionalfood.png') }}" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -82,34 +82,9 @@
           <div class="app-brand demo ">
             <a href="{{ url('/') }}" class="app-brand-link">
               <span class="app-brand-logo demo">
-                <span class="text-primary">
-                  <svg width="32" height="22" viewBox="0 0 32 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M0.00172773 0V6.85398C0.00172773 6.85398 -0.133178 9.01207 1.98092 10.8388L13.6912 21.9964L19.7809 21.9181L18.8042 9.88248L16.4951 7.17289L9.23799 0H0.00172773Z"
-                      fill="currentColor" />
-                    <path
-                      opacity="0.06"
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M7.69824 16.4364L12.5199 3.23696L16.5541 7.25596L7.69824 16.4364Z"
-                      fill="#161616" />
-                    <path
-                      opacity="0.06"
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M8.07751 15.9175L13.9419 4.63989L16.5849 7.28475L8.07751 15.9175Z"
-                      fill="#161616" />
-                    <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M7.77295 16.3566L23.6563 0H32V6.88383C32 6.88383 31.8262 9.17836 30.6591 10.4057L19.7824 22H13.6938L7.77295 16.3566Z"
-                      fill="currentColor" />
-                  </svg>
-                </span>
+                <img src="{{ asset('assets/img/icon_gestionalfood.png') }}" alt="Logo" width="32" height="32">
               </span>
-              <span class="app-brand-text demo menu-text fw-bold ms-3" style="font-size: 1.2rem;">Restaurant Softmor</span>
+              <span class="app-brand-text demo menu-text fw-bold ms-3" style="font-size: 1.2rem;">Gestional Food</span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -329,7 +304,7 @@
                  <div class="menu-link user-profile-link justify-content-between align-items-center p-2 rounded mx-2 mb-2 bg-label-secondary">
                      <div class="d-flex align-items-center overflow-hidden">
                          <div class="avatar avatar-sm me-2 flex-shrink-0">
-                             <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="rounded-circle" />
+                             <span class="avatar-initial rounded-circle bg-label-primary">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
                          </div>
                          <div class="d-flex flex-column text-truncate">
                              <span class="fw-bold text-truncate" style="max-width: 90px; font-size: 0.85rem;">{{ auth()->user()->name }}</span>
@@ -403,8 +378,8 @@
                     class="nav-link dropdown-toggle hide-arrow p-0"
                     href="javascript:void(0);"
                     data-bs-toggle="dropdown">
-                    <div class="avatar avatar-online">
-                      <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="rounded-circle" />
+                    <div class="avatar avatar-online bg-label-primary">
+                      <span class="avatar-initial rounded-circle">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
                     </div>
                   </a>
                   <ul class="dropdown-menu dropdown-menu-end">
@@ -412,8 +387,8 @@
                       <a class="dropdown-item" href="#">
                         <div class="d-flex">
                           <div class="flex-shrink-0 me-3">
-                            <div class="avatar avatar-online">
-                              <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle" />
+                            <div class="avatar avatar-online bg-label-primary">
+                              <span class="avatar-initial rounded-circle">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
                             </div>
                           </div>
                           <div class="flex-grow-1">
@@ -426,17 +401,10 @@
                     <li>
                       <div class="dropdown-divider my-1 mx-n2"></div>
                     </li>
-                    <li>
-                      <a class="dropdown-item" href="#">
-                        <i class="icon-base ti tabler-user icon-md me-3"></i><span>My Profile</span>
-                      </a>
-                    </li>
-                    <li>
-                      <div class="dropdown-divider my-1 mx-n2"></div>
-                    </li>
+
                     <li>
                       <a class="dropdown-item" href="javascript:void(0);" onclick="document.getElementById('logout-form').submit();">
-                        <i class="icon-base ti tabler-power icon-md me-3"></i><span>Log Out</span>
+                        <i class="icon-base ti tabler-power icon-md me-3"></i><span>Cerrar Sesión</span>
                       </a>
                       <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                           @csrf
@@ -469,7 +437,7 @@
                     <script>
                       document.write(new Date().getFullYear());
                     </script>
-                    , made with ❤️ by <a href="https://pixinvent.com" target="_blank" class="footer-link">Restaurant Softmor</a>
+                    , made with ❤️ by <a href="https://pixinvent.com" target="_blank" class="footer-link">Gestional Food</a>
                   </div>
                 </div>
               </div>

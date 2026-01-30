@@ -1,12 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/env';
 
-// Reemplaza con tu IP local para desarrollo
-// Si usas emulador Android: 10.0.2.2
-// Si usas dispositivo físico: Tu IP local (ej. 192.168.1.128)
-// const API_URL = 'http://192.168.1.128:8000/api'; 
-// Detectamos automáticamente si estamos en desarrollo
-const API_URL = 'http://192.168.1.128:8000/api';
+// La URL se configura automáticamente según el entorno en src/config/env.js
+console.log('API URL:', API_URL);
 
 const api = axios.create({
     baseURL: API_URL,

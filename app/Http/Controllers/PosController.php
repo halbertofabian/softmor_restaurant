@@ -92,7 +92,7 @@ class PosController extends Controller
             // Option 2: Redirect to intermediate view for JS-based local printing bridge
             // We prepare the data to send to the local agent
             $printData = [
-                'header' => 'Softmor Restaurant',
+                'header' => 'Gestional Food',
                 'branch_name' => $order->branch->name ?? 'Principal',
                 'ticket_id' => $order->id,
                 'date' => now()->format('d/m/Y H:i A'),
@@ -183,7 +183,7 @@ class PosController extends Controller
 
             // Basic Header
             $printer->setJustification(Printer::JUSTIFY_CENTER);
-            $printer->text("Softmor Restaurant\n");
+            $printer->text("Gestional Food\n");
             $printer->text("Sucursal: " . ($order->branch->name ?? 'Principal') . "\n");
             $printer->text(now()->format('d/m/Y H:i A') . "\n");
             $printer->text("Ticket #: " . $order->id . "\n");
@@ -241,7 +241,7 @@ class PosController extends Controller
             if(isset($data['header'])) {
                  $printer->text($data['header'] . "\n");
             } else {
-                 $printer->text("Softmor Restaurant\n");
+                 $printer->text("Gestional Food\n");
             }
             
             $printer->text("Sucursal: " . ($data['branch_name'] ?? 'Principal') . "\n");

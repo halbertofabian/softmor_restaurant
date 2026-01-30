@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Restaurant Softmor')</title>
+    <title>@yield('title', config('app.name'))</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/icon_gestionalfood.png') }}" />
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -87,11 +88,11 @@
         <!-- Logo -->
         <div class="flex justify-center mb-8">
             <a href="/" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 bg-[#FFAB1D] rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12">
-                    <i class="ti ti-chef-hat text-black text-xl"></i>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12">
+                    <img src="{{ asset('assets/img/icon_gestionalfood.png') }}" alt="{{ config('app.name') }}" class="w-10 h-10 rounded-xl">
                 </div>
                 <span class="text-2xl font-extrabold tracking-tight text-white">
-                    Softmor<span class="text-[#FFAB1D]">.</span>
+                    {{ config('app.name') }}<span class="text-[#FFAB1D]">.</span>
                 </span>
             </a>
         </div>

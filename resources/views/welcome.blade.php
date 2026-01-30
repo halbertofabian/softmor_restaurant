@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Softmor Restaurant - El Cerebro de tu Negocio</title>
+    <title>Gestional Food - El Cerebro de tu Negocio</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/icon_gestionalfood.png') }}" />
 
     <!-- Tailwind CSS para diseño moderno y rápido -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -98,11 +99,11 @@
     <nav class="fixed top-0 w-full z-50 glass-nav">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <a href="#" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 bg-[#FFAB1D] rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12">
-                    <i class="ti ti-chef-hat text-black text-xl"></i>
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12">
+                    <img src="{{ asset('assets/img/icon_gestionalfood.png') }}" alt="Gestional Food" class="w-10 h-10 rounded-xl">
                 </div>
                 <span class="text-xl font-extrabold tracking-tight text-white">
-                    Softmor Restaurant<span class="text-[#FFAB1D]">.</span>
+                    Gestional Food<span class="text-[#FFAB1D]">.</span>
                 </span>
             </a>
 
@@ -293,10 +294,10 @@
         <div class="container mx-auto px-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-8">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-[#FFAB1D] rounded-lg flex items-center justify-center">
-                        <i class="ti ti-chef-hat text-black text-sm"></i>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center">
+                        <img src="{{ asset('assets/img/icon_gestionalfood.png') }}" alt="Gestional Food" class="w-8 h-8 rounded-lg">
                     </div>
-                    <span class="text-lg font-bold text-white">Softmor Restaurant.</span>
+                    <span class="text-lg font-bold text-white">Gestional Food.</span>
                 </div>
                 
                 <div class="flex gap-8 text-gray-500 text-sm">
@@ -306,7 +307,7 @@
                 </div>
 
                 <p class="text-gray-600 text-sm">
-                    &copy; {{ date('Y') }} Softmor Restaurant. <br class="md:hidden"> Todos los derechos reservados.
+                    &copy; {{ date('Y') }} Gestional Food. <br class="md:hidden"> Todos los derechos reservados.
                 </p>
             </div>
         </div>
