@@ -39,6 +39,7 @@
                                 <i class="ti tabler-dots-vertical"></i>
                             </button>
                             <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ route('branches.qr', $branch) }}"><i class="ti tabler-qrcode me-1"></i> Código QR</a>
                                 <a class="dropdown-item" href="{{ route('branches.edit', $branch) }}"><i class="ti tabler-pencil me-1"></i> Editar</a>
                                 <form action="{{ route('branches.destroy', $branch) }}" method="POST" onsubmit="return confirm('¿Eliminar sucursal?');">
                                     @csrf

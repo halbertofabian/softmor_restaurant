@@ -4,12 +4,17 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\SuperAdmin\AiQueryController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\QrMenuController;
 
 use App\Http\Controllers\Auth\AuthController;
 
 // Guest Routes
 Route::middleware('guest')->group(function () {
-    Route::get('/', function () {
+    
+// Public QR Menu Route
+Route::get('/menu/{tenantId}/{branchId}', [QrMenuController::class, 'index'])->name('menu.public');
+
+Route::get('/', function () {
         return view('welcome');
     })->name('welcome');
 
@@ -129,6 +134,10 @@ Route::middleware('auth')->group(function () {
 
         Route::middleware(['role:administrador'])->group(function () {
              Route::resource('branches', \App\Http\Controllers\BranchController::class);
+             
+             // QR Codes
+             Route::get('branches/{branch}/qr', [\App\Http\Controllers\QrMenuController::class, 'generate'])->name('branches.qr');
+             Route::get('branches/{branch}/qr/download', [\App\Http\Controllers\QrMenuController::class, 'download'])->name('branches.qr.download');
         });
 
         // --- Kitchen Routes (Cocinero, Admin) ---

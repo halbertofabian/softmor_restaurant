@@ -22,6 +22,11 @@
                     </select>
                 </div>
             </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="description">Descripción</label>
+                <textarea class="form-control" id="description" name="description" rows="3">{{ $product->description }}</textarea>
+            </div>
             
             <div class="row">
                 <div class="col-md-6 mb-3">
