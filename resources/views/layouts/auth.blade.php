@@ -79,7 +79,7 @@
         }
     </style>
 </head>
-<body class="bg-grid min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="bg-grid min-h-screen flex items-center justify-center p-4 relative overflow-x-hidden">
     
     <div class="hero-mesh"></div>
 
