@@ -74,23 +74,19 @@ $badgeClass = !$isActive ? 'bg-label-secondary' : ($status == 'free' ? 'bg-label
                                     </div>
                                 </div>
 
-                                <a href="{{ route('orders.mobile', $activeOrder) }}" class="btn btn-primary w-100 fw-bold mb-2">
-                                    <i class="ti tabler-clipboard-list me-1"></i> Ver Comanda
-                                </a>
-                                
-                                @if(!auth()->user()->hasRole('mesero'))
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <a href="{{ route('orders.pre-check', $activeOrder) }}" target="_blank" class="btn btn-outline-secondary w-100 btn-sm">
-                                            <i class="ti tabler-printer"></i> Ticket
-                                        </a>
-                                    </div>
-                                    <div class="col-6">
-                                        <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn btn-dark w-100 btn-sm">
-                                            <i class="ti tabler-cash"></i> Cobrar
-                                        </a>
-                                    </div>
-                                </div>
+                                @if(auth()->user()->hasRole('mesero'))
+                                    {{-- Mesero: Solo Ve Comanda --}}
+                                    <a href="{{ route('orders.mobile', $activeOrder) }}" class="btn btn-primary w-100 fw-bold mb-2">
+                                        <i class="ti tabler-clipboard-list me-1"></i> Ver Comanda
+                                    </a>
+                                @else
+                                    {{-- Cajero/Admin: Cobrar como botón principal --}}
+                                    <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn btn-primary w-100 fw-bold mb-2">
+                                        <i class="ti tabler-cash me-1"></i> Cobrar
+                                    </a>
+                                    <a href="{{ route('orders.pre-check', $activeOrder) }}" target="_blank" class="btn btn-outline-secondary w-100 btn-sm">
+                                        <i class="ti tabler-printer me-1"></i> Ver Pre-Cuenta
+                                    </a>
                                 @endif
                                 
                             @else

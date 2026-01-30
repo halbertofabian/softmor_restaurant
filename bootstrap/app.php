@@ -12,6 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Add SetTimezone to web middleware group
+        $middleware->web(append: [
+            \App\Http\Middleware\SetTimezone::class,
+        ]);
+        
+        // Register middleware aliases
         $middleware->alias([
             'branch' => \App\Http\Middleware\EnsureBranchSelected::class,
             'role' => \App\Http\Middleware\CheckRole::class,

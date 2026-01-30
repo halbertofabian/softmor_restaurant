@@ -37,6 +37,12 @@
                             </button>
                         </li>
                         <li class="nav-item">
+                            <button class="nav-link d-flex align-items-center py-2 px-3 text-start" data-bs-toggle="tab" data-bs-target="#tab-system" type="button">
+                                <i class="ti tabler-world me-2 fs-5"></i> 
+                                <span>Sistema</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
                             <button class="nav-link d-flex align-items-center py-2 px-3 text-start" data-bs-toggle="tab" data-bs-target="#tab-ai" type="button">
                                 <i class="ti tabler-sparkles me-2 fs-5"></i> 
                                 <span>Inteligencia Artificial</span>
@@ -216,6 +222,72 @@
                                         </div>
                                     </div>
                                     @endfor
+                                </div>
+                            </div>
+
+                            <!-- Tab: Sistema -->
+                            <div class="tab-pane fade" id="tab-system">
+                                <div class="d-flex align-items-center mb-4">
+                                    <div class="avatar avatar-sm me-3 bg-label-primary rounded p-2">
+                                        <i class="ti tabler-world fs-4"></i>
+                                    </div>
+                                    <h5 class="mb-0 fw-bold">Configuración del Sistema</h5>
+                                </div>
+
+                                <div class="alert alert-info border-0 d-flex align-items-start mb-4" role="alert">
+                                    <i class="ti tabler-info-circle me-3 fs-3 mt-1"></i>
+                                    <div>
+                                        <h6 class="alert-heading fw-bold mb-1">Zona Horaria</h6>
+                                        <p class="mb-0 small">La zona horaria afecta cómo se muestran las fechas y horas en reportes, tickets y registros del sistema.</p>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold" for="app_timezone">Zona Horaria del Restaurante</label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text"><i class="ti tabler-clock"></i></span>
+                                        <select id="app_timezone" class="form-select" name="app_timezone">
+                                            <optgroup label="México">
+                                                <option value="America/Mexico_City" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Mexico_City' ? 'selected' : '' }}>Ciudad de México (GMT-6)</option>
+                                                <option value="America/Cancun" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Cancun' ? 'selected' : '' }}>Cancún / Quintana Roo (GMT-5)</option>
+                                                <option value="America/Tijuana" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Tijuana' ? 'selected' : '' }}>Tijuana / Baja California (GMT-8)</option>
+                                                <option value="America/Mazatlan" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Mazatlan' ? 'selected' : '' }}>Mazatlán / Chihuahua (GMT-7)</option>
+                                                <option value="America/Monterrey" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Monterrey' ? 'selected' : '' }}>Monterrey (GMT-6)</option>
+                                            </optgroup>
+                                            <optgroup label="Estados Unidos">
+                                                <option value="America/New_York" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/New_York' ? 'selected' : '' }}>Nueva York / Miami (GMT-5)</option>
+                                                <option value="America/Chicago" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Chicago' ? 'selected' : '' }}>Chicago / Houston (GMT-6)</option>
+                                                <option value="America/Denver" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Denver' ? 'selected' : '' }}>Denver / Phoenix (GMT-7)</option>
+                                                <option value="America/Los_Angeles" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Los_Angeles' ? 'selected' : '' }}>Los Ángeles / San Francisco (GMT-8)</option>
+                                            </optgroup>
+                                            <optgroup label="América del Sur">
+                                                <option value="America/Bogota" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Bogota' ? 'selected' : '' }}>Bogotá (GMT-5)</option>
+                                                <option value="America/Lima" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Lima' ? 'selected' : '' }}>Lima (GMT-5)</option>
+                                                <option value="America/Santiago" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Santiago' ? 'selected' : '' }}>Santiago (GMT-3)</option>
+                                                <option value="America/Buenos_Aires" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Buenos_Aires' ? 'selected' : '' }}>Buenos Aires (GMT-3)</option>
+                                                <option value="America/Sao_Paulo" {{ ($settings['app_timezone'] ?? 'UTC') == 'America/Sao_Paulo' ? 'selected' : '' }}>São Paulo (GMT-3)</option>
+                                            </optgroup>
+                                            <optgroup label="Europa">
+                                                <option value="Europe/Madrid" {{ ($settings['app_timezone'] ?? 'UTC') == 'Europe/Madrid' ? 'selected' : '' }}>Madrid / Barcelona (GMT+1)</option>
+                                                <option value="Europe/London" {{ ($settings['app_timezone'] ?? 'UTC') == 'Europe/London' ? 'selected' : '' }}>Londres (GMT+0)</option>
+                                                <option value="Europe/Paris" {{ ($settings['app_timezone'] ?? 'UTC') == 'Europe/Paris' ? 'selected' : '' }}>París (GMT+1)</option>
+                                            </optgroup>
+                                            <optgroup label="Otros">
+                                                <option value="UTC" {{ ($settings['app_timezone'] ?? 'UTC') == 'UTC' ? 'selected' : '' }}>UTC (Sin ajuste)</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div class="form-text">Selecciona la zona horaria donde se encuentra tu restaurante.</div>
+                                </div>
+
+                                <div class="card bg-label-warning border-0">
+                                    <div class="card-body d-flex align-items-start">
+                                        <i class="ti tabler-alert-triangle fs-2 me-3 text-warning"></i>
+                                        <div>
+                                            <h6 class="mb-1 fw-bold text-warning-dark">Importante</h6>
+                                            <p class="mb-0 small text-warning-dark">Al cambiar la zona horaria, todas las fechas y horas del sistema se ajustarán automáticamente. Los datos históricos se mostrarán con el nuevo horario.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

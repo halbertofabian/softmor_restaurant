@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
             Route::middleware(['cash.register'])->group(function () {
                 Route::get('pos/{order}/checkout', [\App\Http\Controllers\PosController::class, 'show'])->name('pos.checkout');
                 Route::post('pos/{order}/pay', [\App\Http\Controllers\PosController::class, 'pay'])->name('pos.pay');
+                Route::post('pos/{order}/send-to-kitchen', [\App\Http\Controllers\PosController::class, 'sendToKitchen'])->name('pos.send-to-kitchen');
                 Route::get('pos/{order}/ticket', [\App\Http\Controllers\PosController::class, 'ticket'])->name('pos.ticket');
                 Route::get('pos/{order}/ticket/pdf', [\App\Http\Controllers\PosController::class, 'ticketPdf'])->name('pos.ticket.pdf');
                 Route::get('pos/{order}/print', [\App\Http\Controllers\PosController::class, 'printDirect'])->name('pos.print');

@@ -33,6 +33,8 @@
             flex: 1;
             overflow-y: auto;
             padding: 1.5rem;
+            height: 100%;
+            max-height: 100vh;
         }
 
         .checkout-sidebar {
@@ -42,6 +44,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
         }
 
         .product-card {
@@ -328,26 +331,21 @@
                 <div class="row g-4" id="products-grid">
                     @foreach($products as $product)
                     <div class="col-6 col-md-4 col-xl-3 product-item" data-category-id="{{ $product->category_id }}" data-product-name="{{ strtolower($product->name) }}">
-                        <form action="{{ route('orders.add-item', $order) }}" method="POST" class="h-100">
-                            @csrf
-                            <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <input type="hidden" name="quantity" value="1">
-                            <input type="hidden" name="from_checkout" value="1">
-                            
-                            <button type="submit" class="card h-100 product-card w-100 text-start p-0 border-0">
-                                @if($product->image)
-                                <img src="{{ $product->image }}" class="product-image" alt="{{ $product->name }}">
-                                @else
-                                <div class="product-placeholder">
-                                    <i data-lucide="image" class="opacity-25" size="40"></i>
-                                </div>
-                                @endif
-                                <div class="card-body p-3">
-                                    <h6 class="card-title mb-2 text-truncate text-white">{{ $product->name }}</h6>
-                                    <p class="card-text fw-bold text-primary-custom mb-0" style="font-size: 1.1rem;">${{ number_format($product->price, 2) }}</p>
-                                </div>
-                            </button>
-                        </form>
+                        <button type="button" 
+                                onclick="openProductModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->price }})" 
+                                class="card h-100 product-card w-100 text-start p-0 border-0">
+                            @if($product->image)
+                            <img src="{{ $product->image }}" class="product-image" alt="{{ $product->name }}">
+                            @else
+                            <div class="product-placeholder">
+                                <i data-lucide="image" class="opacity-25" size="40"></i>
+                            </div>
+                            @endif
+                            <div class="card-body p-3">
+                                <h6 class="card-title mb-2 text-truncate text-white">{{ $product->name }}</h6>
+                                <p class="card-text fw-bold text-primary-custom mb-0" style="font-size: 1.1rem;">${{ number_format($product->price, 2) }}</p>
+                            </div>
+                        </button>
                     </div>
                     @endforeach
                 </div>
@@ -363,13 +361,24 @@
 
                 <!-- Lista de Ítems en la Orden -->
                 <div class="order-list">
-                    @foreach($order->details as $detail)
+                    @foreach($order->details->reverse() as $detail)
                     <div class="order-item">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
                                 <h6 class="mb-1 fw-bold text-white">{{ $detail->product->name ?? 'Producto' }}</h6>
+                                
+                                @if(in_array($detail->status, ['sent', 'preparing', 'ready']))
+                                    <span class="badge mb-1" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.65rem; padding: 0.15rem 0.5rem; border: 1px solid rgba(16, 185, 129, 0.3);">
+                                        ✓ Cocina
+                                    </span>
+                                @else
+                                    <span class="badge mb-1" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.65rem; padding: 0.15rem 0.5rem; border: 1px solid rgba(245, 158, 11, 0.3);">
+                                        ⏳ Pendiente
+                                    </span>
+                                @endif
+                                
                                 @if($detail->notes)
-                                <small class="text-secondary d-block mb-2">{{ $detail->notes }}</small>
+                                <small class="text-secondary d-block mb-2"><i data-lucide="message-circle" size="12" class="me-1"></i>{{ $detail->notes }}</small>
                                 @endif
                                 <div class="text-secondary small">Cantidad: {{ $detail->quantity }}</div>
                             </div>
@@ -416,7 +425,24 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mt-2">
+                    </div>
+
+                    @php
+                        $pendingCount = $order->details->where('status', 'pending')->count();
+                    @endphp
+
+                    <div class="row g-3 mt-3">
+                        @if($pendingCount > 0)
+                        <div class="col-12">
+                            <form action="{{ route('pos.send-to-kitchen', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2">
+                                    <i data-lucide="send" size="20"></i>
+                                    <span style="font-size: 0.9rem;">Enviar a Cocina ({{ $pendingCount }})</span>
+                                </button>
+                            </form>
+                        </div>
+                        @endif
                         <div class="col-6">
                             <a href="{{ route('orders.pre-check', $order) }}" target="_blank" class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2">
                                 <i data-lucide="printer" size="20"></i>
@@ -434,6 +460,72 @@
             </div>
         </div>
     </main>
+
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-subtle);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle);">
+                    <h5 class="modal-title text-white fw-bold" id="productModalLabel">
+                        <i data-lucide="shopping-bag" size="20" class="me-2"></i>
+                        <span id="modal-product-name">Producto</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Product Price -->
+                    <div class="text-center mb-4">
+                        <span class="text-secondary small">Precio unitario</span>
+                        <h3 class="text-primary-custom fw-bold mb-0" id="modal-product-price">$0.00</h3>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-white mb-3">Cantidad</label>
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <button type="button" onclick="adjustModalQty(-1)" 
+                                    class="btn btn-outline-custom rounded-circle d-flex align-items-center justify-content-center" 
+                                    style="width: 50px; height: 50px; font-size: 2rem; line-height: 1;">
+                                −
+                            </button>
+                            <input type="number" id="modal-quantity" value="1" min="1" 
+                                   class="form-control text-center fw-bold" 
+                                   style="width: 100px; font-size: 2rem; background: var(--sidebar-bg); border: 1px solid var(--border-subtle); color: var(--text-primary);" 
+                                   readonly>
+                            <button type="button" onclick="adjustModalQty(1)" 
+                                    class="btn btn-outline-custom rounded-circle d-flex align-items-center justify-content-center" 
+                                    style="width: 50px; height: 50px; font-size: 2rem; line-height: 1;">
+                                +
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-white">Observaciones <span class="text-secondary fw-normal">(opcional)</span></label>
+                        <textarea id="modal-notes" class="form-control" rows="3" 
+                                  placeholder="Ej: Sin cebolla, término medio..."
+                                  style="background: var(--sidebar-bg); border: 1px solid var(--border-subtle); color: var(--text-primary);"></textarea>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="p-3 rounded" style="background: var(--sidebar-bg); border: 1px solid var(--border-subtle);">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-white fw-bold">Total:</span>
+                            <span class="text-primary-custom fw-bold" style="font-size: 1.5rem;" id="modal-total-price">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border-subtle);">
+                    <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" onclick="submitProduct()" class="btn btn-primary-custom d-flex align-items-center gap-2">
+                        <i data-lucide="plus-circle" size="20"></i>
+                        Agregar al Pedido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Payment Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
@@ -600,6 +692,95 @@
         
         // Init modal change calculation
         calculateModalChange();
+
+        // === Product Modal Functions ===
+        let selectedProduct = null;
+        
+        function openProductModal(productId, productName, productPrice) {
+            selectedProduct = {
+                id: productId,
+                name: productName,
+                price: productPrice
+            };
+            
+            document.getElementById('modal-product-name').textContent = productName;
+            document.getElementById('modal-product-price').textContent = '$' + productPrice.toFixed(2);
+            document.getElementById('modal-quantity').value = 1;
+            document.getElementById('modal-notes').value = '';
+            updateModalTotal();
+            
+            const modalEl = document.getElementById('productModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+            
+            // Refresh icons when modal is shown
+            modalEl.addEventListener('shown.bs.modal', function () {
+                lucide.createIcons();
+            }, { once: true });
+        }
+        
+        function adjustModalQty(delta) {
+            const input = document.getElementById('modal-quantity');
+            const newVal = Math.max(1, parseInt(input.value) + delta);
+            input.value = newVal;
+            updateModalTotal();
+            lucide.createIcons(); // Refresh icons after button click
+        }
+        
+        function updateModalTotal() {
+            if (!selectedProduct) return;
+            const qty = parseInt(document.getElementById('modal-quantity').value);
+            const total = selectedProduct.price * qty;
+            document.getElementById('modal-total-price').textContent = '$' + total.toFixed(2);
+        }
+        
+        function submitProduct() {
+            if (!selectedProduct) return;
+            
+            // Create and submit form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("orders.add-item", $order) }}';
+            
+            // CSRF Token
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = '{{ csrf_token() }}';
+            form.appendChild(csrf);
+            
+            // Product ID
+            const productId = document.createElement('input');
+            productId.type = 'hidden';
+            productId.name = 'product_id';
+            productId.value = selectedProduct.id;
+            form.appendChild(productId);
+            
+            // Quantity
+            const quantity = document.createElement('input');
+            quantity.type = 'hidden';
+            quantity.name = 'quantity';
+            quantity.value = document.getElementById('modal-quantity').value;
+            form.appendChild(quantity);
+            
+            // Notes
+            const notes = document.createElement('input');
+            notes.type = 'hidden';
+            notes.name = 'notes';
+            notes.value = document.getElementById('modal-notes').value;
+            form.appendChild(notes);
+            
+            // From Checkout
+            const fromCheckout = document.createElement('input');
+            fromCheckout.type = 'hidden';
+            fromCheckout.name = 'from_checkout';
+            fromCheckout.value = '1';
+            form.appendChild(fromCheckout);
+            
+            // Append to body and submit
+            document.body.appendChild(form);
+            form.submit();
+        }
 
         // Refresh icons when modal is shown
         const paymentModal = document.getElementById('paymentModal');
