@@ -90,6 +90,7 @@ class OrderController extends Controller
             'quantity' => $request->quantity,
             'preparation_area_id' => $product->preparation_area_id,
             'notes' => $request->notes,
+            'status' => 'pending', // New items start as pending
         ]);
 
         $order->calculateTotal();

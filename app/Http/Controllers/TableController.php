@@ -86,7 +86,12 @@ class TableController extends Controller
             'status' => 'open',
         ]);
 
-        return redirect()->route('orders.mobile', $order);
+        // Redirect based on role: mesero -> mobile, cashier/admin -> checkout
+        if (auth()->user()->hasRole('mesero')) {
+            return redirect()->route('orders.mobile', $order);
+        }
+        
+        return redirect()->route('pos.checkout', $order);
     }
 
     public function release(Table $table)

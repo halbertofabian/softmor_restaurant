@@ -121,6 +121,23 @@ class PosController extends Controller
         }
     }
 
+    public function sendToKitchen(Order $order)
+    {
+        // Get pending items
+        $pendingDetails = $order->details()->where('status', 'pending')->get();
+        
+        if ($pendingDetails->isEmpty()) {
+            return back()->with('warning', 'No hay items pendientes para enviar.');
+        }
+        
+        // Update status to 'sent'
+        foreach ($pendingDetails as $detail) {
+            $detail->update(['status' => 'sent']);
+        }
+        
+        return back()->with('success', count($pendingDetails) . ' items enviados a cocina.');
+    }
+
     public function ticket(Order $order)
     {
         $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
