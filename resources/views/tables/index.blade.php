@@ -200,9 +200,9 @@
     <!-- Tables Grid -->
     <div class="tab-content pt-0">
         <div class="tab-pane fade show active" id="zone-all">
-            <div class="row g-3" id="all-tables-container">
+            <div class="row g-2" id="all-tables-container">
                 @foreach($tables as $table)
-                    <div class="col-12 col-md-4 col-xl-3 table-item" data-name="{{ strtolower($table->name) }}">
+                    <div class="col-6 col-md-4 col-xl-3 table-item" data-name="{{ strtolower($table->name) }}">
                         @include('tables.partials.card', ['table' => $table])
                     </div>
                 @endforeach
@@ -211,9 +211,9 @@
 
         @foreach($zones as $zone)
         <div class="tab-pane fade" id="zone-{{ Str::slug($zone) }}">
-            <div class="row g-3">
+            <div class="row g-2">
                  @foreach($tables->where('zone', $zone) as $table)
-                     <div class="col-12 col-md-4 col-xl-3">
+                     <div class="col-6 col-md-4 col-xl-3">
                         @include('tables.partials.card', ['table' => $table])
                     </div>
                 @endforeach
