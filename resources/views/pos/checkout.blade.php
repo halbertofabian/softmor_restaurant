@@ -505,7 +505,7 @@
                 </div>
 
                 <!-- Resumen de Totales y Botón de Pago -->
-                <div class="p-4 border-top" style="border-top: 1px solid var(--border-subtle) !important; background: var(--sidebar-bg);">
+                <div class="py-4 px-5 px-lg-4 border-top" style="border-top: 1px solid var(--border-subtle) !important; background: var(--sidebar-bg);">
                      <!-- Success/Error Messages -->
                      @if(session('success'))
                      <div class="alert alert-success py-2 px-3 mb-3">{{ session('success') }}</div>
@@ -521,10 +521,8 @@
                         </div>
                         <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid rgba(255, 171, 29, 0.2);">
                             <span class="fw-bold text-white">Total</span>
-                            <span class="fw-bold text-primary-custom" style="font-size: 1.75rem;">${{ number_format($order->total, 2) }}</span>
+                            <span class="fw-bold text-primary-custom" style="font-size: 1.75rem">${{ number_format($order->total, 2) }}</span>
                         </div>
-                    </div>
-
                     </div>
 
                     @php
