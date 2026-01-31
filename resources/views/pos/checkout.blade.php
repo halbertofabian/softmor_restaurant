@@ -141,7 +141,7 @@
         .header-section {
             background: var(--card-bg);
             border-bottom: 1px solid var(--border-subtle);
-            padding: 1.25rem 1.5rem;
+            padding: 0;
         }
 
         .order-item {
@@ -365,22 +365,21 @@
 <body>
 
     <!-- Header Principal -->
-    <header class="header-section">
-        <div class="container-fluid">
-            <div class="d-flex flex-wrap align-items-center justify-content-between">
-                <div>
-                    <h4 class="mb-1 fw-bold text-white">{{ $order->table->name ?? 'Mesa' }}</h4>
-                    <span class="text-secondary" style="font-size: 0.9rem;">Orden #{{ $order->id }} • {{ $order->user->name ?? 'Usuario' }}</span>
-                </div>
-                
-                <div class="d-flex gap-3">
-                    <a href="{{ route('tables.index') }}" class="btn btn-outline-custom d-flex align-items-center gap-2">
-                        <i data-lucide="arrow-left" size="18"></i>
-                        <span>Volver</span>
-                    </a>
-                </div>
-            </div>
+    <!-- Header Principal -->
+    <header class="header-section p-4 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ route('tables.index') }}" class="btn btn-outline-light p-2 rounded-circle border-0 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                <i data-lucide="arrow-left" size="24"></i>
+            </a>
+            <h5 class="mb-0 fw-bold text-white">{{ $order->table->name ?? 'Mesa' }}</h5>
         </div>
+        
+        <span class="badge-custom d-flex align-items-center gap-2">
+            <span class="opacity-75">#{{ $order->id }}</span>
+            <span class="mx-1 opacity-50">|</span>
+            <i data-lucide="user" size="14"></i>
+            {{ Str::limit($order->user->name ?? 'Usuario', 12) }}
+        </span>
     </header>
 
     <!-- Contenido Principal -->
