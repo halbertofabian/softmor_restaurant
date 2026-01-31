@@ -3,10 +3,9 @@
 
 export const ENV_CONFIG = {
     DEV: false, // ← Configurado para PRODUCCIÓN
-    
     // URLs
-    API_URL_DEV: 'http://192.168.1.128:8000/api',
-    API_URL_PROD: 'https://restaurant.softmor.cloud/api', // ← Coloca aquí tu URL de producción
+    API_URL_DEV: 'https://gestionalfood.com/api',
+    API_URL_PROD: 'https://gestionalfood.com/api', // ← Coloca aquí tu URL de producción
 };
 
 // Exporta la URL activa según el entorno

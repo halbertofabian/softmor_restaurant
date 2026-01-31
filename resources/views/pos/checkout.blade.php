@@ -112,6 +112,31 @@
             scrollbar-width: none;
         }
 
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 171, 29, 0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Firefox Support */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 171, 29, 0.3) transparent;
+        }
+
         .header-section {
             background: var(--card-bg);
             border-bottom: 1px solid var(--border-subtle);
@@ -265,6 +290,72 @@
             padding: 1.25rem;
             margin-bottom: 1.5rem;
         }
+
+        .fly-item {
+            position: fixed;
+            z-index: 1060;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: 0 0 10px rgba(255, 171, 29, 0.5);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 991.98px) {
+            .checkout-sidebar {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                transform: translateX(100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 1050;
+                background-color: var(--sidebar-bg);
+            }
+
+            .checkout-sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                height: 100dvh;
+                padding-bottom: 300px;
+            }
+        }
+
+        .mobile-cart-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            z-index: 1040;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 1rem;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 8px 32px rgba(255, 171, 29, 0.4);
+            color: #000;
+            border: none;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideUp 0.3s ease-out;
+            cursor: pointer;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 991.98px) {
+            .mobile-cart-toggle {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
@@ -355,7 +446,12 @@
             <div class="col-lg-4 checkout-sidebar p-0">
                 <!-- Header de la Orden -->
                 <div class="p-4 border-bottom-custom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-white">Cuenta</h5>
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-outline-light d-lg-none p-2 rounded-circle border-0" onclick="toggleCart(false)">
+                            <i data-lucide="arrow-left" size="24"></i>
+                        </button>
+                        <h5 class="mb-0 fw-bold text-white">Cuenta</h5>
+                    </div>
                     <span class="badge-custom">{{ $order->details->count() }} ítems</span>
                 </div>
 
@@ -460,6 +556,21 @@
             </div>
         </div>
     </main>
+
+    <!-- Botón Flotante Móvil -->
+    <button onclick="toggleCart(true)" class="mobile-cart-toggle">
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-black bg-opacity-25 p-2 rounded-circle">
+                <i data-lucide="shopping-cart" size="20" color="#000"></i>
+            </div>
+            <span class="fw-bold" style="font-size: 1.1rem">{{ $order->details->count() }} ítems</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="small opacity-75">Total:</span>
+            <span class="fw-black" style="font-size: 1.25rem">${{ number_format($order->total, 2) }}</span>
+            <i data-lucide="chevron-right" size="20" class="ms-1"></i>
+        </div>
+    </button>
 
     <!-- Product Modal -->
     <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
@@ -619,6 +730,15 @@
     <script>
         // Inicializar iconos de Lucide
         lucide.createIcons();
+
+        function toggleCart(show) {
+            const sidebar = document.querySelector('.checkout-sidebar');
+            if(show) {
+                sidebar.classList.add('active');
+            } else {
+                sidebar.classList.remove('active');
+            }
+        }
         
         const total = {{ $order->total }};
         const modalAmountInput = document.getElementById('modal-amount-input');
@@ -736,50 +856,102 @@
         
         function submitProduct() {
             if (!selectedProduct) return;
+
+            // --- Animation Logic ---
+            const btn = document.querySelector('#productModal .btn-primary-custom');
+            // Disable button to prevent double clicks
+            if(btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Agregando...';
+            }
+
+            const mobileCart = document.querySelector('.mobile-cart-toggle');
+            const desktopCart = document.querySelector('.checkout-sidebar .badge-custom');
             
-            // Create and submit form
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ route("orders.add-item", $order) }}';
+            // Determine target (mobile toggle if visible, else desktop badge)
+            let target = null;
+            if (mobileCart && window.getComputedStyle(mobileCart).display !== 'none') {
+                target = mobileCart;
+            } else {
+                target = desktopCart;
+            }
+
+            if (btn && target) {
+                const startRect = btn.getBoundingClientRect();
+                const endRect = target.getBoundingClientRect();
+                
+                const flyer = document.createElement('div');
+                flyer.classList.add('fly-item');
+                
+                // Start center of button
+                flyer.style.left = (startRect.left + startRect.width/2 - 10) + 'px';
+                flyer.style.top = (startRect.top + startRect.height/2 - 10) + 'px';
+                
+                document.body.appendChild(flyer);
+
+                // Force reflow
+                void flyer.offsetWidth;
+
+                // Animate to center of target
+                flyer.style.left = (endRect.left + endRect.width/2 - 10) + 'px';
+                flyer.style.top = (endRect.top + endRect.height/2 - 10) + 'px';
+                flyer.style.opacity = '0.5';
+                flyer.style.transform = 'scale(0.5)';
+
+                // Visual feedback on target
+                setTimeout(() => {
+                    target.style.transform = 'scale(1.2)';
+                    setTimeout(() => target.style.transform = '', 200);
+                    flyer.remove();
+                }, 500);
+            }
+            // -----------------------
             
-            // CSRF Token
-            const csrf = document.createElement('input');
-            csrf.type = 'hidden';
-            csrf.name = '_token';
-            csrf.value = '{{ csrf_token() }}';
-            form.appendChild(csrf);
-            
-            // Product ID
-            const productId = document.createElement('input');
-            productId.type = 'hidden';
-            productId.name = 'product_id';
-            productId.value = selectedProduct.id;
-            form.appendChild(productId);
-            
-            // Quantity
-            const quantity = document.createElement('input');
-            quantity.type = 'hidden';
-            quantity.name = 'quantity';
-            quantity.value = document.getElementById('modal-quantity').value;
-            form.appendChild(quantity);
-            
-            // Notes
-            const notes = document.createElement('input');
-            notes.type = 'hidden';
-            notes.name = 'notes';
-            notes.value = document.getElementById('modal-notes').value;
-            form.appendChild(notes);
-            
-            // From Checkout
-            const fromCheckout = document.createElement('input');
-            fromCheckout.type = 'hidden';
-            fromCheckout.name = 'from_checkout';
-            fromCheckout.value = '1';
-            form.appendChild(fromCheckout);
-            
-            // Append to body and submit
-            document.body.appendChild(form);
-            form.submit();
+            setTimeout(() => {
+                // Create and submit form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("orders.add-item", $order) }}';
+                
+                // CSRF Token
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = '_token';
+                csrf.value = '{{ csrf_token() }}';
+                form.appendChild(csrf);
+                
+                // Product ID
+                const productId = document.createElement('input');
+                productId.type = 'hidden';
+                productId.name = 'product_id';
+                productId.value = selectedProduct.id;
+                form.appendChild(productId);
+                
+                // Quantity
+                const quantity = document.createElement('input');
+                quantity.type = 'hidden';
+                quantity.name = 'quantity';
+                quantity.value = document.getElementById('modal-quantity').value;
+                form.appendChild(quantity);
+                
+                // Notes
+                const notes = document.createElement('input');
+                notes.type = 'hidden';
+                notes.name = 'notes';
+                notes.value = document.getElementById('modal-notes').value;
+                form.appendChild(notes);
+                
+                // From Checkout
+                const fromCheckout = document.createElement('input');
+                fromCheckout.type = 'hidden';
+                fromCheckout.name = 'from_checkout';
+                fromCheckout.value = '1';
+                form.appendChild(fromCheckout);
+                
+                // Append to body and submit
+                document.body.appendChild(form);
+                form.submit();
+            }, 450); // Slight delay to let animation start
         }
 
         // Refresh icons when modal is shown
