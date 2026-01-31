@@ -45,6 +45,7 @@
             display: flex;
             flex-direction: column;
             overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .product-card {
@@ -270,12 +271,15 @@
 
         .product-image {
             height: 140px;
+            width: 100%;
             object-fit: cover;
+            object-position: center;
             border-radius: 0.75rem 0.75rem 0 0;
         }
 
         .product-placeholder {
             height: 140px;
+            width: 100%;
             background: rgba(255, 255, 255, 0.03);
             border-radius: 0.75rem 0.75rem 0 0;
             display: flex;
