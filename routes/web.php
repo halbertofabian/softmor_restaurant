@@ -129,6 +129,7 @@ Route::middleware('auth')->group(function () {
             Route::middleware(['cash.register'])->group(function () {
                 Route::resource('orders', \App\Http\Controllers\OrderController::class)->except(['create', 'edit']);
                 Route::get('orders/{order}/pre-check', [\App\Http\Controllers\PosController::class, 'preCheck'])->name('orders.pre-check');
+                Route::get('orders/{order}/pre-check/print-direct', [\App\Http\Controllers\PosController::class, 'preCheckPrintDirect'])->name('orders.pre-check.print-direct');
                 Route::put('orders/{order}/close', [\App\Http\Controllers\OrderController::class, 'close'])->name('orders.close');
             });
         });

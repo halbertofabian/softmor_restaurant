@@ -1,0 +1,11 @@
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\publish\win-x64\publish\win-x64\publish\win-x64\web.config
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\publish\win-x64\publish\win-x64\web.config
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\publish\win-x64\web.config
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\web.config
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\launchSettings.json
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\launchSettings.json
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\publish\win-x64\launchSettings.json
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\publish\win-x64\publish\win-x64\launchSettings.json
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\publish\win-x64\publish\win-x64\publish\win-x64\publish\win-x64\launchSettings.json
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\SoftmorPrintAgent.pdb
+C:\xampp\htdocs\softmor_restaurant\print_agent_windows\publish\win-x64\SoftmorPrintAgent.exe

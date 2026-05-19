@@ -36,7 +36,7 @@
         }
 
         // Always redirect
-        window.location.href = "{{ route('orders.index') }}";
+        window.location.href = @json($redirectUrl ?? route('orders.index'));
     });
 </script>
 @endsection

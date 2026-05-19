@@ -103,7 +103,7 @@ if ($isActive) {
                                         <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn fw-bold" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000; border: none;">
                                             <i class="ti tabler-cash me-1"></i> Cobrar
                                         </a>
-                                        <a href="{{ route('orders.pre-check', $activeOrder) }}" target="_blank" class="btn btn-sm" style="border: 1px solid var(--border-subtle); color: var(--text-secondary);">
+                                        <a href="{{ route('orders.pre-check.print-direct', $activeOrder) }}" class="btn btn-sm" style="border: 1px solid var(--border-subtle); color: var(--text-secondary);">
                                             <i class="ti tabler-printer me-1"></i> Pre-Cuenta
                                         </a>
                                     </div>

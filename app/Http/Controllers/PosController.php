@@ -192,6 +192,47 @@ class PosController extends Controller
 
         return view('pos.ticket', ['order' => $order, 'isPreCheck' => true, 'settings' => $settings]);
     }
+
+    public function preCheckPrintDirect(Order $order)
+    {
+        $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
+            ->pluck('value', 'key')->toArray();
+
+        $tip1 = (float) ($settings['ticket_tip_1_percent'] ?? 10);
+        $tip2 = (float) ($settings['ticket_tip_2_percent'] ?? 12);
+        $tip3 = (float) ($settings['ticket_tip_3_percent'] ?? 15);
+        $tip4 = (float) ($settings['ticket_tip_4_percent'] ?? 18);
+        $tipsEnabled = !empty($settings['ticket_tips_enabled']);
+
+        $printData = [
+            'type' => 'pre_check',
+            'header' => $settings['ticket_pre_check_header'] ?? '*** CUENTA DE CONSUMO ***',
+            'pre_check_disclaimer' => $settings['ticket_pre_check_disclaimer'] ?? 'No válido como comprobante fiscal',
+            'branch_name' => $order->branch->name ?? 'Principal',
+            'ticket_id' => $order->id,
+            'date' => now()->format('d/m/Y H:i A'),
+            'total' => $order->total,
+            'items' => $order->details->where('is_combo_component', false)->values()->map(function ($detail) {
+                return [
+                    'quantity' => $detail->quantity,
+                    'name' => $detail->product->name ?? 'Producto',
+                    'price' => $detail->price,
+                ];
+            })->all(),
+            'tips_enabled' => $tipsEnabled,
+            'tip_suggestions' => [
+                ['percent' => $tip1, 'amount' => round($order->total * ($tip1 / 100), 2)],
+                ['percent' => $tip2, 'amount' => round($order->total * ($tip2 / 100), 2)],
+                ['percent' => $tip3, 'amount' => round($order->total * ($tip3 / 100), 2)],
+                ['percent' => $tip4, 'amount' => round($order->total * ($tip4 / 100), 2)],
+            ],
+            'printer_name' => $settings['ticket_printer_name'] ?? 'POS-80',
+        ];
+
+        $redirectUrl = route('pos.checkout', $order);
+
+        return view('pos.print-bridge', compact('order', 'printData', 'settings', 'redirectUrl'));
+    }
     public function ticketPdf(Order $order)
     {
         $settings = \App\Models\Setting::where('branch_id', session('branch_id'))

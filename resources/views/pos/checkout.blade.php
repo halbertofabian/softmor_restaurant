@@ -544,7 +544,7 @@
                         </div>
                         @endif
                         <div class="col-6">
-                            <a href="{{ route('orders.pre-check', $order) }}" target="_blank" class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2">
+                            <a href="{{ route('orders.pre-check.print-direct', $order) }}" class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2">
                                 <i data-lucide="printer" size="20"></i>
                                 <span style="font-size: 0.9rem;">Imprimir</span>
                             </a>
