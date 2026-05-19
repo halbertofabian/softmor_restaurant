@@ -19,6 +19,7 @@
                         <option value="drink" {{ $product->type == 'drink' ? 'selected' : '' }}>Bebida</option>
                         <option value="finished" {{ $product->type == 'finished' ? 'selected' : '' }}>Producto Terminado</option>
                         <option value="extra" {{ $product->type == 'extra' ? 'selected' : '' }}>Extra</option>
+                        <option value="combo" {{ $product->type == 'combo' ? 'selected' : '' }}>Combo</option>
                     </select>
                 </div>
             </div>
@@ -28,12 +29,12 @@
                 <textarea class="form-control" id="description" name="description" rows="3">{{ $product->description }}</textarea>
             </div>
             
-            <div class="row">
+            <div class="row" id="classification-wrapper">
                 <div class="col-md-6 mb-3">
                     <label class="form-label" for="category_id">Categoría</label>
                     <select class="form-select" id="category_id" name="category_id" required>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" data-preparation-area-id="{{ $category->preparation_area_id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -55,7 +56,23 @@
                 </div>
             </div>
 
-            <div class="mb-3">
+            <div class="mb-3 {{ $product->type === 'combo' ? 'd-none' : '' }}" id="flavors-wrapper">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Sabores (opcional)</label>
+                    <button type="button" class="btn btn-sm btn-label-primary" onclick="addFlavorRow()">Agregar sabor</button>
+                </div>
+                <div id="flavors-container"></div>
+            </div>
+
+            <div class="mb-3 {{ $product->type === 'combo' ? '' : 'd-none' }}" id="combo-components-wrapper">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Componentes del combo (sin duplicar variantes)</label>
+                    <button type="button" class="btn btn-sm btn-label-primary" onclick="addComboComponentRow()">Agregar componente</button>
+                </div>
+                <div id="combo-components-container"></div>
+            </div>
+
+            <div class="mb-3 {{ $product->type === 'combo' ? 'd-none' : '' }}" id="inventory-wrapper">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="controls_inventory" name="controls_inventory" {{ $product->controls_inventory ? 'checked' : '' }} onchange="toggleStockFields()">
                     <label class="form-check-label" for="controls_inventory">Controlar Inventario</label>
@@ -87,8 +104,31 @@
     </div>
 </div>
 
-@section('scripts')
+@endsection
+
+@push('scripts')
 <script>
+function addFlavorRow(name = '', price = 0) {
+    const container = document.getElementById('flavors-container');
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 flavor-row';
+    row.innerHTML = `
+        <div class="col-md-6">
+            <input type="text" class="form-control" name="flavor_name[]" placeholder="Nombre del sabor" value="${name}">
+        </div>
+        <div class="col-md-3">
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" step="0.01" min="0" class="form-control" name="flavor_price[]" value="${price}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-label-danger w-100" onclick="this.closest('.flavor-row').remove()">X</button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
 function toggleInventory() {
     const type = document.getElementById('type').value;
     const inventoryCheck = document.getElementById('controls_inventory');
@@ -106,6 +146,7 @@ function toggleInventory() {
     // Let's stick to the same logic for consistency.
     
     toggleStockFields();
+    toggleComboFields();
 }
 
 function toggleStockFields() {
@@ -118,6 +159,81 @@ function toggleStockFields() {
         stockFields.classList.add('d-none');
     }
 }
+
+const existingFlavors = @json($existingFlavorsData ?? []);
+
+if (existingFlavors.length) {
+    existingFlavors.forEach(flavor => addFlavorRow(flavor.name, flavor.additional_price));
+} else {
+    addFlavorRow();
+}
+
+const comboProductsData = @json($comboProductsData ?? []);
+
+const existingComboItems = @json($existingComboItemsData ?? []);
+
+function toggleComboFields() {
+    const type = document.getElementById('type').value;
+    document.getElementById('combo-components-wrapper').classList.toggle('d-none', type !== 'combo');
+    document.getElementById('flavors-wrapper').classList.toggle('d-none', type === 'combo');
+    document.getElementById('inventory-wrapper').classList.toggle('d-none', type === 'combo');
+    document.getElementById('classification-wrapper').classList.toggle('d-none', type === 'combo');
+    if (type === 'combo') {
+        document.getElementById('controls_inventory').checked = false;
+        toggleStockFields();
+    }
+}
+
+function productOptions(selected = '') {
+    return comboProductsData.map(p => `<option value="${p.id}" ${String(selected) === String(p.id) ? 'selected' : ''}>${p.name}</option>`).join('');
+}
+
+function addComboComponentRow(productId = '', qty = 1) {
+    const container = document.getElementById('combo-components-container');
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 combo-row';
+    row.innerHTML = `
+        <div class="col-md-7">
+            <select class="form-select" name="combo_component_product_id[]" onchange="refreshRowFlavors(this)">
+                <option value="">Producto</option>
+                ${productOptions(productId)}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="number" min="1" class="form-control" name="combo_component_quantity[]" value="${qty}" placeholder="Cant.">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-label-danger w-100" onclick="this.closest('.combo-row').remove()">X</button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+function refreshRowFlavors(selectEl) {
+    return;
+}
+
+if (existingComboItems.length) {
+    existingComboItems.forEach(item => addComboComponentRow(item.component_product_id, item.quantity));
+}
+
+function autoSelectAreaFromCategory() {
+    const categorySelect = document.getElementById('category_id');
+    const areaSelect = document.getElementById('preparation_area_id');
+    if (!categorySelect || !areaSelect) return;
+
+    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+    const defaultAreaId = selectedOption?.dataset?.preparationAreaId;
+    if (!defaultAreaId) return;
+
+    const hasAreaOption = Array.from(areaSelect.options).some(o => String(o.value) === String(defaultAreaId));
+    if (hasAreaOption) {
+        areaSelect.value = defaultAreaId;
+    }
+}
+
+document.getElementById('category_id')?.addEventListener('change', autoSelectAreaFromCategory);
+
+toggleComboFields();
 </script>
-@endsection
-@endsection
+@endpush

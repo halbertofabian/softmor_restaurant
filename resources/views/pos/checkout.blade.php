@@ -460,11 +460,14 @@
 
                 <!-- Lista de Ítems en la Orden -->
                 <div class="order-list">
-                    @foreach($order->details->reverse() as $detail)
+                    @foreach($order->details->where('is_combo_component', false)->reverse() as $detail)
                     <div class="order-item">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
                                 <h6 class="mb-1 fw-bold text-white">{{ $detail->product->name ?? 'Producto' }}</h6>
+                                @if($detail->flavor_name)
+                                <small class="d-block mb-1" style="color: #67e8f9;">Sabor: {{ $detail->flavor_name }}</small>
+                                @endif
                                 
                                 @if(in_array($detail->status, ['sent', 'preparing', 'ready']))
                                     <span class="badge mb-1" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.65rem; padding: 0.15rem 0.5rem; border: 1px solid rgba(16, 185, 129, 0.3);">
@@ -589,6 +592,20 @@
                     <div class="text-center mb-4">
                         <span class="text-secondary small">Precio unitario</span>
                         <h3 class="text-primary-custom fw-bold mb-0" id="modal-product-price">$0.00</h3>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-white mb-3">Sabor</label>
+                        <select id="modal-flavor" class="form-select"
+                                style="background: var(--sidebar-bg); border: 1px solid var(--border-subtle); color: var(--text-primary);">
+                            <option value="">Sin sabor</option>
+                        </select>
+                    </div>
+                    <div class="mb-4 d-none" id="modal-combo-components-wrapper">
+                        <label class="form-label fw-bold text-white mb-3">Componentes del combo</label>
+                        <small class="d-block mb-2" style="color: var(--text-secondary);">Selecciona sabor para cada producto del combo.</small>
+                        <div id="modal-combo-components-list"></div>
                     </div>
 
                     <!-- Quantity Selector -->
@@ -815,12 +832,15 @@
         calculateModalChange();
 
         // === Product Modal Functions ===
+        const productFlavorsMap = @json($productFlavorsMap ?? []);
+        const productCombosMap = @json($productCombosMap ?? []);
         let selectedProduct = null;
         
         function openProductModal(productId, productName, productPrice) {
             selectedProduct = {
                 id: productId,
                 name: productName,
+                basePrice: productPrice,
                 price: productPrice
             };
             
@@ -828,6 +848,8 @@
             document.getElementById('modal-product-price').textContent = '$' + productPrice.toFixed(2);
             document.getElementById('modal-quantity').value = 1;
             document.getElementById('modal-notes').value = '';
+            loadModalFlavors(productId);
+            loadModalComboComponents(productId);
             updateModalTotal();
             
             const modalEl = document.getElementById('productModal');
@@ -853,6 +875,43 @@
             const qty = parseInt(document.getElementById('modal-quantity').value);
             const total = selectedProduct.price * qty;
             document.getElementById('modal-total-price').textContent = '$' + total.toFixed(2);
+        }
+
+        function loadModalFlavors(productId) {
+            const select = document.getElementById('modal-flavor');
+            const flavors = productFlavorsMap[productId] || [];
+            select.innerHTML = '<option value=\"\">Sin sabor</option>';
+            flavors.forEach(flavor => {
+                const extra = Number(flavor.additional_price || 0);
+                const label = extra > 0 ? `${flavor.name} (+$${extra.toFixed(2)})` : flavor.name;
+                select.insertAdjacentHTML('beforeend', `<option value=\"${flavor.id}\" data-extra=\"${extra}\">${label}</option>`);
+            });
+            select.parentElement.style.display = flavors.length ? 'block' : 'none';
+            selectedProduct.price = selectedProduct.basePrice;
+        }
+
+        function loadModalComboComponents(productId) {
+            const wrapper = document.getElementById('modal-combo-components-wrapper');
+            const list = document.getElementById('modal-combo-components-list');
+            const components = productCombosMap[productId] || [];
+            if (!components.length) {
+                wrapper.classList.add('d-none');
+                list.innerHTML = '';
+                return;
+            }
+
+            wrapper.classList.remove('d-none');
+            list.innerHTML = components.map(c => {
+                const options = ['<option value="">Sin sabor</option>'].concat((c.flavors || []).map(f => `<option value="${f.id}" ${String(c.default_flavor_id)===String(f.id)?'selected':''}>${f.name}</option>`)).join('');
+                const qty = Math.max(1, Number(c.quantity || 1));
+                const selectors = Array.from({ length: qty }, (_, idx) => `
+                    <div class="row g-2 mb-1 modal-combo-component-row" data-component-id="${c.component_product_id}" data-combo-item-id="${c.combo_item_id}" data-unit-index="${idx}">
+                        <div class="col-6"><input class="form-control" readonly value="${c.component_name} #${idx + 1}" style="background: var(--sidebar-bg); border: 1px solid var(--border-subtle); color: var(--text-primary);"></div>
+                        <div class="col-6"><select class="form-select modal-combo-flavor" style="background: var(--sidebar-bg); border: 1px solid var(--border-subtle); color: var(--text-primary);">${options}</select></div>
+                    </div>
+                `).join('');
+                return `<div class="mb-2">${selectors}</div>`;
+            }).join('');
         }
         
         function submitProduct() {
@@ -941,6 +1000,30 @@
                 notes.name = 'notes';
                 notes.value = document.getElementById('modal-notes').value;
                 form.appendChild(notes);
+
+                const flavor = document.getElementById('modal-flavor').value;
+                if (flavor) {
+                    const flavorInput = document.createElement('input');
+                    flavorInput.type = 'hidden';
+                    flavorInput.name = 'product_flavor_id';
+                    flavorInput.value = flavor;
+                    form.appendChild(flavorInput);
+                }
+
+                const comboRows = document.querySelectorAll('#modal-combo-components-list .modal-combo-component-row');
+                if (comboRows.length) {
+                    const payload = Array.from(comboRows).map(row => ({
+                        combo_item_id: Number(row.dataset.comboItemId),
+                        component_product_id: Number(row.dataset.componentId),
+                        unit_index: Number(row.dataset.unitIndex || 0),
+                        product_flavor_id: row.querySelector('.modal-combo-flavor').value || null
+                    }));
+                    const comboInput = document.createElement('input');
+                    comboInput.type = 'hidden';
+                    comboInput.name = 'combo_components';
+                    comboInput.value = JSON.stringify(payload);
+                    form.appendChild(comboInput);
+                }
                 
                 // From Checkout
                 const fromCheckout = document.createElement('input');
@@ -957,6 +1040,18 @@
 
         // Refresh icons when modal is shown
         const paymentModal = document.getElementById('paymentModal');
+        const flavorSelect = document.getElementById('modal-flavor');
+        if (flavorSelect) {
+            flavorSelect.addEventListener('change', function () {
+                if (!selectedProduct) return;
+                const selectedOption = this.options[this.selectedIndex];
+                const extra = Number(selectedOption?.dataset?.extra || 0);
+                selectedProduct.price = selectedProduct.basePrice + extra;
+                document.getElementById('modal-product-price').textContent = '$' + selectedProduct.price.toFixed(2);
+                updateModalTotal();
+            });
+        }
+
         if (paymentModal) {
             paymentModal.addEventListener('shown.bs.modal', function () {
                 lucide.createIcons();

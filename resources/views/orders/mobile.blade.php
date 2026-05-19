@@ -192,7 +192,7 @@
         </div>
         @else
         <div class="list-group list-group-flush">
-            @foreach($order->details as $detail)
+            @foreach($order->details->where('is_combo_component', false) as $detail)
             <div class="list-group-item py-3" style="background: var(--card-bg); border-color: var(--border-subtle) !important;">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="me-3">
@@ -201,6 +201,11 @@
                                   style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000;">{{ $detail->quantity }}</span>
                             <span class="fw-bold" style="color: var(--text-primary);">{{ $detail->product_name }}</span>
                         </div>
+                        @if($detail->flavor_name)
+                        <div class="small ms-4 mb-1" style="color: #67e8f9;">
+                            Sabor: {{ $detail->flavor_name }}
+                        </div>
+                        @endif
                         @if($detail->notes)
                         <div class="small fst-italic ms-4 mb-1" style="color: var(--text-secondary);">
                             <i class="ti tabler-note me-1"></i>{{ $detail->notes }}
@@ -242,6 +247,8 @@
               style="background: var(--card-bg); border: 1px solid var(--border-subtle) !important;">
             @csrf
             <input type="hidden" name="product_id" id="input_product_id">
+            <input type="hidden" name="product_flavor_id" id="input_product_flavor_id">
+            <input type="hidden" name="combo_components" id="input_combo_components">
             <input type="hidden" name="is_mobile" value="1">
             
             <div class="modal-header border-0 pb-0" style="border-bottom: 1px solid var(--border-subtle) !important;">
@@ -252,6 +259,18 @@
             <div class="modal-body pt-2">
                 <p class="small mb-4" style="color: var(--text-secondary);">Personaliza este producto antes de agregarlo.</p>
                 
+                <div class="mb-4 text-center">
+                    <label class="form-label fw-bold small text-uppercase" style="color: var(--text-secondary);">Sabor</label>
+                    <select class="form-select text-center" id="input_flavor_select" onchange="syncFlavorValue()"
+                            style="background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-subtle);">
+                        <option value="">Sin sabor</option>
+                    </select>
+                </div>
+                <div class="mb-4 d-none" id="combo-components-picker">
+                    <label class="form-label fw-bold small text-uppercase" style="color: var(--text-secondary);">Componentes</label>
+                    <div id="combo-components-list"></div>
+                </div>
+
                 <div class="mb-4 text-center">
                     <label class="form-label fw-bold small text-uppercase" style="color: var(--text-secondary);">Cantidad</label>
                     <div class="d-flex justify-content-center align-items-center gap-3">
@@ -295,14 +314,69 @@
 
 @section('scripts')
 <script>
+const productFlavorsMap = @json($productFlavorsMap ?? []);
+const productCombosMap = @json($productCombosMap ?? []);
+
 function addProduct(id, name) {
     document.getElementById('input_product_id').value = id;
     document.getElementById('modalProductTitle').innerText = name;
     document.getElementById('input_quantity').value = 1;
     document.querySelector('textarea[name="notes"]').value = '';
+    loadFlavorOptions(id);
+    loadComboComponents(id);
     
     var myModal = new bootstrap.Modal(document.getElementById('addProductModal'));
     myModal.show();
+}
+
+function loadFlavorOptions(productId) {
+    const select = document.getElementById('input_flavor_select');
+    const hidden = document.getElementById('input_product_flavor_id');
+    const flavors = productFlavorsMap[productId] || [];
+    select.innerHTML = '<option value=\"\">Sin sabor</option>';
+    flavors.forEach(flavor => {
+        const extra = Number(flavor.additional_price || 0);
+        const label = extra > 0 ? `${flavor.name} (+$${extra.toFixed(2)})` : flavor.name;
+        select.insertAdjacentHTML('beforeend', `<option value=\"${flavor.id}\">${label}</option>`);
+    });
+    select.parentElement.style.display = flavors.length ? 'block' : 'none';
+    hidden.value = '';
+}
+
+function syncFlavorValue() {
+    document.getElementById('input_product_flavor_id').value = document.getElementById('input_flavor_select').value;
+}
+
+function loadComboComponents(productId) {
+    const wrapper = document.getElementById('combo-components-picker');
+    const list = document.getElementById('combo-components-list');
+    const components = productCombosMap[productId] || [];
+    if (!components.length) {
+        wrapper.classList.add('d-none');
+        list.innerHTML = '';
+        document.getElementById('input_combo_components').value = '';
+        return;
+    }
+
+    wrapper.classList.remove('d-none');
+    list.innerHTML = components.map((c) => {
+        const options = ['<option value="">Sin sabor</option>'].concat((c.flavors || []).map(f => `<option value="${f.id}" ${String(c.default_flavor_id)===String(f.id)?'selected':''}>${f.name}</option>`)).join('');
+        return `<div class="mb-2 combo-component-row" data-component-id="${c.component_product_id}">
+            <input class="form-control mb-1" readonly value="${c.component_name} x${c.quantity}" style="background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border-subtle);">
+            <select class="form-select combo-component-flavor" style="background: rgba(255,255,255,0.05); color: var(--text-primary); border: 1px solid var(--border-subtle);">${options}</select>
+        </div>`;
+    }).join('');
+    syncComboComponentsValue();
+    list.querySelectorAll('.combo-component-flavor').forEach(sel => sel.addEventListener('change', syncComboComponentsValue));
+}
+
+function syncComboComponentsValue() {
+    const rows = document.querySelectorAll('#combo-components-list .combo-component-row');
+    const payload = Array.from(rows).map(row => ({
+        component_product_id: Number(row.dataset.componentId),
+        product_flavor_id: row.querySelector('.combo-component-flavor').value || null
+    }));
+    document.getElementById('input_combo_components').value = JSON.stringify(payload);
 }
 
 function adjustQty(amount) {

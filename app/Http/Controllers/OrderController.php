@@ -7,6 +7,7 @@ use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
+use App\Models\ProductFlavor;
 use App\Models\Table;
 use Illuminate\Http\Request;
 
@@ -35,7 +36,6 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'La mesa debe estar ocupada para abrir comanda.');
         }
 
-        // Check if table already has active order
         $activeOrder = Order::where('table_id', $table->id)
             ->where('status', '!=', 'closed')
             ->where('status', '!=', 'canceled')
@@ -47,7 +47,7 @@ class OrderController extends Controller
 
         $order = Order::create([
             'table_id' => $table->id,
-            'user_id' => auth()->id(), // Assuming auth
+            'user_id' => auth()->id(),
             'status' => 'open',
         ]);
 
@@ -62,9 +62,44 @@ class OrderController extends Controller
 
         $order->load(['details', 'table']);
         $categories = Category::where('status', true)->get();
-        $products = Product::where('status', true)->get();
+        $products = Product::where('status', true)->with(['flavors' => function ($query) {
+            $query->where('is_active', true);
+        }, 'comboItems.componentProduct.flavors'])->get();
 
-        return view('orders.pos', compact('order', 'categories', 'products'));
+        $productFlavorsMap = $products->mapWithKeys(function ($product) {
+            return [
+                $product->id => $product->flavors->map(function ($flavor) {
+                    return [
+                        'id' => $flavor->id,
+                        'name' => $flavor->name,
+                        'additional_price' => (float) $flavor->additional_price,
+                    ];
+                })->values(),
+            ];
+        });
+
+        $productCombosMap = $products->mapWithKeys(function ($product) {
+            return [
+                $product->id => $product->comboItems->map(function ($item) {
+                    return [
+                        'combo_item_id' => $item->id,
+                        'component_product_id' => $item->component_product_id,
+                        'component_name' => $item->componentProduct?->name,
+                        'quantity' => (int) $item->quantity,
+                        'default_flavor_id' => $item->default_flavor_id,
+                        'flavors' => ($item->componentProduct?->flavors ?? collect())->where('is_active', true)->map(function ($flavor) {
+                            return [
+                                'id' => $flavor->id,
+                                'name' => $flavor->name,
+                                'additional_price' => (float) $flavor->additional_price,
+                            ];
+                        })->values(),
+                    ];
+                })->values(),
+            ];
+        });
+
+        return view('orders.pos', compact('order', 'categories', 'products', 'productFlavorsMap', 'productCombosMap'));
     }
 
     public function addItem(Request $request, Order $order)
@@ -75,22 +110,155 @@ class OrderController extends Controller
 
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'product_flavor_id' => 'nullable|exists:product_flavors,id',
+            'combo_components' => 'nullable|string',
             'quantity' => 'required|integer|min:1',
             'notes' => 'nullable|string|max:255',
         ]);
 
         $product = Product::find($request->product_id);
+        $flavor = null;
 
-        // Add Detail
+        if ($product->type === 'combo') {
+            $comboItems = $product->comboItems()->with(['componentProduct', 'componentProduct.flavors'])->get();
+            if ($comboItems->isEmpty()) {
+                return redirect()->back()->with('error', 'El combo no tiene componentes configurados.');
+            }
+
+            $selected = [];
+            if ($request->filled('combo_components')) {
+                $selected = json_decode($request->combo_components, true) ?: [];
+            }
+
+            $comboDescriptionParts = [];
+            $componentLines = [];
+
+            foreach ($comboItems as $comboItem) {
+                $component = $comboItem->componentProduct;
+                if (!$component) {
+                    continue;
+                }
+
+                $unitSelections = [];
+                foreach ($selected as $itemSel) {
+                    $sameComboItem = (int) ($itemSel['combo_item_id'] ?? 0) === (int) $comboItem->id;
+                    $fallbackByProduct = (int) ($itemSel['component_product_id'] ?? 0) === (int) $comboItem->component_product_id;
+                    if ($sameComboItem || $fallbackByProduct) {
+                        $unitSelections[] = $itemSel;
+                    }
+                }
+
+                $unitCount = max(1, (int) $comboItem->quantity);
+                for ($unitIndex = 0; $unitIndex < $unitCount; $unitIndex++) {
+                    $selectedFlavorId = null;
+                    if (!empty($unitSelections)) {
+                        $match = collect($unitSelections)->first(function ($sel) use ($unitIndex) {
+                            return (int) ($sel['unit_index'] ?? 0) === $unitIndex;
+                        }) ?? $unitSelections[0];
+                        $selectedFlavorId = !empty($match['product_flavor_id']) ? (int) $match['product_flavor_id'] : null;
+                    }
+
+                    $componentFlavor = null;
+                    if ($selectedFlavorId) {
+                        $componentFlavor = ProductFlavor::where('id', $selectedFlavorId)
+                            ->where('product_id', $component->id)
+                            ->where('is_active', true)
+                            ->first();
+                    } elseif ($comboItem->default_flavor_id) {
+                        $componentFlavor = ProductFlavor::where('id', $comboItem->default_flavor_id)
+                            ->where('product_id', $component->id)
+                            ->where('is_active', true)
+                            ->first();
+                    }
+
+                    $flavorDelta = $componentFlavor ? (float) $componentFlavor->additional_price : 0;
+                    $unitPrice = (float) $component->price + $flavorDelta;
+                    $lineQty = (int) $request->quantity;
+
+                    $comboDescriptionParts[] = $component->name . ($componentFlavor ? ' (' . $componentFlavor->name . ')' : '');
+
+                    $componentLines[] = [
+                        'order_id' => $order->id,
+                        'product_id' => $component->id,
+                        'product_flavor_id' => $componentFlavor?->id,
+                        'product_name' => $component->name,
+                        'flavor_name' => $componentFlavor?->name,
+                        'price' => 0,
+                        'flavor_price_delta' => $flavorDelta,
+                        'quantity' => $lineQty,
+                        'preparation_area_id' => $component->preparation_area_id,
+                        'status' => 'pending',
+                        'is_combo_component' => true,
+                    ];
+                }
+            }
+
+            $notesParts = [];
+            if ($request->notes) {
+                $notesParts[] = $request->notes;
+            }
+            $notesParts[] = 'Combo: ' . $product->name;
+            if (!empty($comboDescriptionParts)) {
+                $notesParts[] = 'Incluye: ' . implode(', ', $comboDescriptionParts);
+            }
+            $comboNotes = implode(' | ', $notesParts);
+
+            OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'price' => (float) $product->price,
+                'quantity' => (int) $request->quantity,
+                'preparation_area_id' => $product->preparation_area_id,
+                'notes' => $comboNotes,
+                'status' => 'pending',
+                'is_combo_component' => false,
+            ]);
+
+            foreach ($componentLines as $line) {
+                $line['notes'] = $comboNotes;
+                OrderDetail::create($line);
+            }
+
+            $order->calculateTotal();
+
+            if ($request->has('from_checkout')) {
+                return redirect()->route('pos.checkout', $order);
+            }
+
+            if ($request->has('is_mobile')) {
+                return redirect()->route('orders.mobile', $order);
+            }
+
+            return redirect()->route('orders.show', $order);
+        }
+
+        if ($request->filled('product_flavor_id')) {
+            $flavor = ProductFlavor::where('id', $request->product_flavor_id)
+                ->where('product_id', $product->id)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$flavor) {
+                return redirect()->back()->with('error', 'El sabor seleccionado no es válido para este producto.');
+            }
+        }
+
+        $flavorDelta = $flavor ? (float) $flavor->additional_price : 0;
+        $unitPrice = (float) $product->price + $flavorDelta;
+
         OrderDetail::create([
             'order_id' => $order->id,
             'product_id' => $product->id,
+            'product_flavor_id' => $flavor?->id,
             'product_name' => $product->name,
-            'price' => $product->price,
+            'flavor_name' => $flavor?->name,
+            'price' => $unitPrice,
+            'flavor_price_delta' => $flavorDelta,
             'quantity' => $request->quantity,
             'preparation_area_id' => $product->preparation_area_id,
             'notes' => $request->notes,
-            'status' => 'pending', // New items start as pending
+            'status' => 'pending',
         ]);
 
         $order->calculateTotal();
@@ -115,7 +283,7 @@ class OrderController extends Controller
         $detail->delete();
         $order->calculateTotal();
 
-         if ($request->has('from_checkout')) {
+        if ($request->has('from_checkout')) {
             return redirect()->route('pos.checkout', $order);
         }
 
@@ -132,14 +300,11 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Ya está cerrada.');
         }
 
-        // 1. Deduct Inventory
         foreach ($order->details as $detail) {
             $product = $detail->product;
             if ($product->controls_inventory) {
-                // Check stock? For now assume negative allowed or check
                 $newStock = $product->stock - $detail->quantity;
-                
-                // Record movement
+
                 InventoryMovement::create([
                     'product_id' => $product->id,
                     'type' => 'sale',
@@ -154,13 +319,11 @@ class OrderController extends Controller
             }
         }
 
-        // 2. Close Order
         $order->update([
             'status' => 'closed',
             'closed_at' => now(),
         ]);
 
-        // 3. Free Table
         $order->table->update(['status' => 'free']);
 
         return redirect()->route('tables.index')->with('success', 'Comanda cerrada y mesa liberada.');
@@ -179,9 +342,43 @@ class OrderController extends Controller
     {
         $order->load(['details', 'table']);
         $categories = Category::where('status', true)->get();
-        // Load products grouped by category for mobile view optimization
-        $products = Product::where('status', true)->get();
-        
-        return view('orders.mobile', compact('order', 'categories', 'products'));
+        $products = Product::where('status', true)->with(['flavors' => function ($query) {
+            $query->where('is_active', true);
+        }, 'comboItems.componentProduct.flavors'])->get();
+
+        $productFlavorsMap = $products->mapWithKeys(function ($product) {
+            return [
+                $product->id => $product->flavors->map(function ($flavor) {
+                    return [
+                        'id' => $flavor->id,
+                        'name' => $flavor->name,
+                        'additional_price' => (float) $flavor->additional_price,
+                    ];
+                })->values(),
+            ];
+        });
+
+        $productCombosMap = $products->mapWithKeys(function ($product) {
+            return [
+                $product->id => $product->comboItems->map(function ($item) {
+                    return [
+                        'combo_item_id' => $item->id,
+                        'component_product_id' => $item->component_product_id,
+                        'component_name' => $item->componentProduct?->name,
+                        'quantity' => (int) $item->quantity,
+                        'default_flavor_id' => $item->default_flavor_id,
+                        'flavors' => ($item->componentProduct?->flavors ?? collect())->where('is_active', true)->map(function ($flavor) {
+                            return [
+                                'id' => $flavor->id,
+                                'name' => $flavor->name,
+                                'additional_price' => (float) $flavor->additional_price,
+                            ];
+                        })->values(),
+                    ];
+                })->values(),
+            ];
+        });
+
+        return view('orders.mobile', compact('order', 'categories', 'products', 'productFlavorsMap', 'productCombosMap'));
     }
 }

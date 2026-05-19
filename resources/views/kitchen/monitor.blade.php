@@ -26,11 +26,11 @@
             <div class="card-body p-0">
                 <div class="list-group list-group-flush">
                     @foreach($order->details as $detail)
-                    <div class="list-group-item">
+                    <div class="list-group-item {{ $detail->is_combo_component ? 'bg-label-warning-subtle' : '' }}">
                         <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1 text-truncate" style="max-width: 80%;">
                                 <span class="badge bg-primary rounded-pill me-1">{{ $detail->quantity }}</span>
-                                {{ $detail->product_name }}
+                                {{ $detail->kitchen_display_name ?? $detail->product_name }}
                             </h6>
                             
                             @if($detail->updated_at->diffInMinutes(now()) < 5)
@@ -39,9 +39,16 @@
                                 <small class="text-muted">{{ $detail->updated_at->format('H:i') }}</small>
                             @endif
                         </div>
-                        @if($detail->notes)
+                        @if($detail->is_combo_component && !empty($detail->kitchen_combo_name))
+                        <div class="mb-1">
+                            <span class="badge bg-label-warning">
+                                <i class="ti tabler-package me-1"></i>Combo: {{ $detail->kitchen_combo_name }}
+                            </span>
+                        </div>
+                        @endif
+                        @if(!empty($detail->kitchen_waiter_notes))
                         <div class="alert alert-warning p-1 mb-0 mt-1 small">
-                            <i class="ti tabler-note me-1"></i> {{ $detail->notes }}
+                            <i class="ti tabler-note me-1"></i> {{ $detail->kitchen_waiter_notes }}
                         </div>
                         @endif
                     </div>

@@ -20,14 +20,44 @@ class KitchenController extends Controller
         $orders = Order::where('status', 'open')
             ->whereHas('details', function($q) use ($area) {
                 $q->where('preparation_area_id', $area->id)
-                  ->where('status', 'sent');
+                  ->where('status', 'sent')
+                  ->where(function ($q) {
+                      // Show combo components, hide combo parent line in kitchen monitor
+                      $q->where('is_combo_component', true)
+                        ->orWhere(function ($q) {
+                            $q->where('is_combo_component', false)
+                              ->where(function ($q) {
+                                  $q->whereNull('notes')
+                                    ->orWhere('notes', 'not like', 'Combo:%');
+                              });
+                        });
+                  });
             })
             ->with(['details' => function($q) use ($area) {
                 $q->where('preparation_area_id', $area->id)
-                  ->where('status', 'sent');
+                  ->where('status', 'sent')
+                  ->where(function ($q) {
+                      $q->where('is_combo_component', true)
+                        ->orWhere(function ($q) {
+                            $q->where('is_combo_component', false)
+                              ->where(function ($q) {
+                                  $q->whereNull('notes')
+                                    ->orWhere('notes', 'not like', 'Combo:%');
+                              });
+                        });
+                  });
             }, 'table'])
             ->orderBy('created_at', 'asc')
             ->get();
+
+        // Decorate details with combo metadata for clear kitchen UI
+        $orders->each(function ($order) {
+            $order->details->each(function ($detail) {
+                $detail->kitchen_combo_name = $this->extractComboName($detail->notes);
+                $detail->kitchen_display_name = $detail->product_name . ($detail->flavor_name ? ' (' . $detail->flavor_name . ')' : '');
+                $detail->kitchen_waiter_notes = $this->extractWaiterNotes($detail->notes);
+            });
+        });
             
         // Get Settings (Printer & Bridge URL)
         $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
@@ -46,6 +76,16 @@ class KitchenController extends Controller
         $newItems = \App\Models\OrderDetail::where('preparation_area_id', $area->id)
             ->where('status', 'sent')
             ->where('is_printed', false)
+            ->where(function ($q) {
+                $q->where('is_combo_component', true)
+                  ->orWhere(function ($q) {
+                      $q->where('is_combo_component', false)
+                        ->where(function ($q) {
+                            $q->whereNull('notes')
+                              ->orWhere('notes', 'not like', 'Combo:%');
+                        });
+                  });
+            })
             ->where('created_at', '>=', now()->subMinutes(25)) // Safety: Only last 25 minutes
             ->whereHas('order', function($q) {
                 $q->where('status', 'open'); // Only from open orders
@@ -83,11 +123,14 @@ class KitchenController extends Controller
                 'waiter_name' => $firstItem->order->user->name ?? 'Mesero',
                 'created_at' => $firstItem->created_at->format('H:i'),
                 'items' => $items->map(function ($item) {
+                    $comboName = $this->extractComboName($item->notes);
+                    $displayName = $item->product_name . ($item->flavor_name ? ' (' . $item->flavor_name . ')' : '');
+                    $finalName = $comboName ? "[COMBO: {$comboName}] {$displayName}" : $displayName;
                     return [
                         'id' => $item->id,
-                        'name' => $item->product_name,
+                        'name' => $finalName,
                         'quantity' => $item->quantity,
-                        'notes' => $item->notes,
+                        'notes' => $this->extractWaiterNotes($item->notes),
                     ];
                 })->values()
             ];
@@ -109,5 +152,47 @@ class KitchenController extends Controller
             ->update(['is_printed' => true]);
 
         return response()->json(['status' => 'success']);
+    }
+
+    private function extractComboName(?string $notes): ?string
+    {
+        if (!$notes) {
+            return null;
+        }
+
+        if (preg_match('/Combo:\s*([^|]+)/i', $notes, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return null;
+    }
+
+    private function extractWaiterNotes(?string $notes): ?string
+    {
+        if (!$notes) {
+            return null;
+        }
+
+        $segments = array_map('trim', explode('|', $notes));
+        $clean = [];
+
+        foreach ($segments as $segment) {
+            if ($segment === '') {
+                continue;
+            }
+            if (stripos($segment, 'Combo:') === 0) {
+                continue;
+            }
+            if (stripos($segment, 'Incluye:') === 0) {
+                continue;
+            }
+            $clean[] = $segment;
+        }
+
+        if (empty($clean)) {
+            return null;
+        }
+
+        return implode(' | ', $clean);
     }
 }

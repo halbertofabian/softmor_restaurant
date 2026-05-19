@@ -13,6 +13,7 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
+                    <th>Área por defecto</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -21,6 +22,7 @@
                 @foreach($categories as $category)
                 <tr>
                     <td>{{ $category->name }}</td>
+                    <td>{{ $category->preparationArea->name ?? '-' }}</td>
                     <td>
                         @if($category->status)
                             <span class="badge bg-label-success">Activo</span>

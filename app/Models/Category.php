@@ -10,10 +10,15 @@ class Category extends Model
     /** @use HasFactory<\Database\Factories\CategoryFactory> */
     use HasFactory, \App\Models\Traits\BelongsToBranch;
 
-    protected $fillable = ['name', 'description', 'status', 'tenant_id'];
+    protected $fillable = ['name', 'description', 'status', 'preparation_area_id', 'tenant_id'];
 
     public function products()
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function preparationArea()
+    {
+        return $this->belongsTo(PreparationArea::class);
     }
 }

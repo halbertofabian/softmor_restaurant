@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
             Route::resource('preparation-areas', \App\Http\Controllers\PreparationAreaController::class);
             Route::resource('categories', \App\Http\Controllers\CategoryController::class);
             Route::resource('products', \App\Http\Controllers\ProductController::class);
+            Route::post('products/{product}/duplicate', [\App\Http\Controllers\ProductController::class, 'duplicate'])->name('products.duplicate');
 
             // POS
             Route::middleware(['cash.register'])->group(function () {

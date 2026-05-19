@@ -24,9 +24,48 @@ class PosController extends Controller
         }
 
         $categories = Category::all();
-        $products = Product::with('category')->where('status', true)->get();
+        $products = Product::with([
+            'category',
+            'flavors' => function ($query) {
+                $query->where('is_active', true);
+            },
+            'comboItems.componentProduct.flavors',
+        ])->where('status', true)->get();
 
-        return view('pos.checkout', compact('order', 'categories', 'products'));
+        $productFlavorsMap = $products->mapWithKeys(function ($product) {
+            return [
+                $product->id => $product->flavors->map(function ($flavor) {
+                    return [
+                        'id' => $flavor->id,
+                        'name' => $flavor->name,
+                        'additional_price' => (float) $flavor->additional_price,
+                    ];
+                })->values(),
+            ];
+        });
+
+        $productCombosMap = $products->mapWithKeys(function ($product) {
+            return [
+                $product->id => $product->comboItems->map(function ($item) {
+                    return [
+                        'combo_item_id' => $item->id,
+                        'component_product_id' => $item->component_product_id,
+                        'component_name' => $item->componentProduct?->name,
+                        'quantity' => (int) $item->quantity,
+                        'default_flavor_id' => $item->default_flavor_id,
+                        'flavors' => ($item->componentProduct?->flavors ?? collect())->where('is_active', true)->map(function ($flavor) {
+                            return [
+                                'id' => $flavor->id,
+                                'name' => $flavor->name,
+                                'additional_price' => (float) $flavor->additional_price,
+                            ];
+                        })->values(),
+                    ];
+                })->values(),
+            ];
+        });
+
+        return view('pos.checkout', compact('order', 'categories', 'products', 'productFlavorsMap', 'productCombosMap'));
     }
 
     public function pay(Request $request, Order $order)

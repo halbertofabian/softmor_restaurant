@@ -14,6 +14,7 @@
                     <th>Tipo</th>
                     <th>Categoría</th>
                     <th>Precio</th>
+                    <th>Sabores</th>
                     <th>Stock</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -29,10 +30,18 @@
                             @case('drink') <span class="badge bg-label-info">Bebida</span> @break
                             @case('finished') <span class="badge bg-label-warning">Terminado</span> @break
                             @case('extra') <span class="badge bg-label-secondary">Extra</span> @break
+                            @case('combo') <span class="badge bg-label-dark">Combo</span> @break
                         @endswitch
                     </td>
                     <td>{{ $product->category->name ?? 'N/A' }}</td>
                     <td>${{ number_format($product->price, 2) }}</td>
+                    <td>
+                        @if($product->flavors->count())
+                            {{ $product->flavors->pluck('name')->join(', ') }}
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
+                    </td>
                     <td>
                         @if($product->controls_inventory)
                             {{ $product->stock }}
@@ -48,7 +57,11 @@
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ti tabler-edit"></i></a>
+                        <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-icon btn-text-secondary" title="Editar"><i class="ti tabler-edit"></i></a>
+                        <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-icon btn-text-primary" title="Duplicar"><i class="ti tabler-copy"></i></button>
+                        </form>
                         <form action="{{ route('products.destroy', $product) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')

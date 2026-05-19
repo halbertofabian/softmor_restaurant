@@ -45,6 +45,9 @@ class ApiProductController extends Controller
                               ->where('tenant_id', $user->tenant_id)
                               ->where('branch_id', $branchId)
                               ->where('status', true)
+                              ->with(['flavors' => function ($query) {
+                                  $query->where('is_active', true)->orderBy('sort_order')->orderBy('name');
+                              }])
                               ->get()
                               ->map(function($product) {
                                   return [
@@ -55,7 +58,14 @@ class ApiProductController extends Controller
                                       'description' => $product->description,
                                       'controls_inventory' => $product->controls_inventory,
                                       'stock' => $product->stock,
-                                      'preparation_area_id' => $product->preparation_area_id
+                                      'preparation_area_id' => $product->preparation_area_id,
+                                      'flavors' => $product->flavors->map(function ($flavor) {
+                                          return [
+                                              'id' => $flavor->id,
+                                              'name' => $flavor->name,
+                                              'additional_price' => (float) $flavor->additional_price,
+                                          ];
+                                      })->values(),
                                   ];
                               });
             

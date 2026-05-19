@@ -13,6 +13,15 @@
                 <input type="text" class="form-control" id="name" name="name" required>
             </div>
             <div class="mb-3">
+                <label class="form-label" for="preparation_area_id">Área de Preparación por Defecto (opcional)</label>
+                <select class="form-select" id="preparation_area_id" name="preparation_area_id">
+                    <option value="">Sin área por defecto</option>
+                    @foreach($preparationAreas as $area)
+                        <option value="{{ $area->id }}">{{ $area->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="mb-3">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="status" name="status" checked>
                     <label class="form-check-label" for="status">Activo</label>

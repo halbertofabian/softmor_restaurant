@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
+use App\Models\ProductFlavor;
 use App\Models\Table;
 use Illuminate\Support\Facades\DB;
 
@@ -82,6 +83,7 @@ class ApiOrderController extends Controller
         
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'product_flavor_id' => 'nullable|exists:product_flavors,id',
             'quantity' => 'required|integer|min:1',
             'notes' => 'nullable|string'
         ]);
@@ -91,12 +93,33 @@ class ApiOrderController extends Controller
         }
 
         $product = Product::find($request->product_id);
+        $flavor = null;
+
+        if ($request->filled('product_flavor_id')) {
+            $flavor = ProductFlavor::where('id', $request->product_flavor_id)
+                ->where('product_id', $product->id)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$flavor) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'El sabor seleccionado no es válido para este producto'
+                ], 422);
+            }
+        }
+
+        $flavorDelta = $flavor ? (float) $flavor->additional_price : 0;
+        $unitPrice = (float) $product->price + $flavorDelta;
 
         $detail = OrderDetail::create([
             'order_id' => $order->id,
             'product_id' => $product->id,
+            'product_flavor_id' => $flavor?->id,
             'product_name' => $product->name,
-            'price' => $product->price,
+            'flavor_name' => $flavor?->name,
+            'price' => $unitPrice,
+            'flavor_price_delta' => $flavorDelta,
             'quantity' => $request->quantity,
             'preparation_area_id' => $product->preparation_area_id,
             'notes' => $request->notes,

@@ -84,11 +84,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($order->details as $detail)
+                        @foreach($order->details->where('is_combo_component', false) as $detail)
                         <tr>
                             <td>{{ $detail->quantity }}</td>
                             <td>
                                 <div class="fw-bold">{{ $detail->product_name }}</div>
+                                @if($detail->flavor_name)
+                                <small class="text-info d-block">Sabor: {{ $detail->flavor_name }}</small>
+                                @endif
                                 <small class="text-muted">{{ $detail->notes }}</small>
                             </td>
                             <td class="text-end">${{ number_format($detail->price * $detail->quantity, 2) }}</td>
@@ -138,6 +141,8 @@
         <form id="addProductForm" action="{{ route('orders.add-item', $order) }}" method="POST" class="modal-content">
             @csrf
             <input type="hidden" name="product_id" id="input_product_id">
+            <input type="hidden" name="product_flavor_id" id="input_product_flavor_id">
+            <input type="hidden" name="combo_components" id="input_combo_components">
             
             <div class="modal-header">
                 <h5 class="modal-title" id="modalProductTitle">Agregar Producto</h5>
@@ -146,6 +151,16 @@
             
             <div class="modal-body">
                 <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Sabor</label>
+                        <select class="form-select" id="input_flavor_select" onchange="syncFlavorValue()">
+                            <option value="">Sin sabor</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mb-3 d-none" id="combo-components-picker">
+                        <label class="form-label">Componentes del combo</label>
+                        <div id="combo-components-list"></div>
+                    </div>
                     <div class="col-12 mb-3">
                         <label class="form-label">Cantidad</label>
                         <div class="input-group">
@@ -171,11 +186,16 @@
 
 @section('scripts')
 <script>
+const productFlavorsMap = @json($productFlavorsMap ?? []);
+const productCombosMap = @json($productCombosMap ?? []);
+
 function addProduct(id, name) {
     document.getElementById('input_product_id').value = id;
     document.getElementById('modalProductTitle').innerText = name;
     document.getElementById('input_quantity').value = 1;
     document.querySelector('textarea[name="notes"]').value = '';
+    loadFlavorOptions(id);
+    loadComboComponents(id);
     
     var myModal = new bootstrap.Modal(document.getElementById('addProductModal'));
     myModal.show();
@@ -192,6 +212,56 @@ function adjustQty(amount) {
     let newValue = current + amount;
     if(newValue < 1) newValue = 1;
     input.value = newValue;
+}
+
+function loadFlavorOptions(productId) {
+    const select = document.getElementById('input_flavor_select');
+    const hidden = document.getElementById('input_product_flavor_id');
+    const flavors = productFlavorsMap[productId] || [];
+    select.innerHTML = '<option value=\"\">Sin sabor</option>';
+    flavors.forEach(flavor => {
+        const extra = Number(flavor.additional_price || 0);
+        const label = extra > 0 ? `${flavor.name} (+$${extra.toFixed(2)})` : flavor.name;
+        select.insertAdjacentHTML('beforeend', `<option value=\"${flavor.id}\">${label}</option>`);
+    });
+    select.closest('.col-12').style.display = flavors.length ? 'block' : 'none';
+    hidden.value = '';
+}
+
+function syncFlavorValue() {
+    document.getElementById('input_product_flavor_id').value = document.getElementById('input_flavor_select').value;
+}
+
+function loadComboComponents(productId) {
+    const wrapper = document.getElementById('combo-components-picker');
+    const list = document.getElementById('combo-components-list');
+    const components = productCombosMap[productId] || [];
+    if (!components.length) {
+        wrapper.classList.add('d-none');
+        list.innerHTML = '';
+        document.getElementById('input_combo_components').value = '';
+        return;
+    }
+
+    wrapper.classList.remove('d-none');
+    list.innerHTML = components.map((c, i) => {
+        const options = ['<option value="">Sin sabor</option>'].concat((c.flavors || []).map(f => `<option value="${f.id}" ${String(c.default_flavor_id)===String(f.id)?'selected':''}>${f.name}</option>`)).join('');
+        return `<div class="row g-2 mb-2 combo-component-row" data-component-id="${c.component_product_id}">
+            <div class="col-6"><input class="form-control" readonly value="${c.component_name} x${c.quantity}"></div>
+            <div class="col-6"><select class="form-select combo-component-flavor">${options}</select></div>
+        </div>`;
+    }).join('');
+    syncComboComponentsValue();
+    list.querySelectorAll('.combo-component-flavor').forEach(sel => sel.addEventListener('change', syncComboComponentsValue));
+}
+
+function syncComboComponentsValue() {
+    const rows = document.querySelectorAll('#combo-components-list .combo-component-row');
+    const payload = Array.from(rows).map(row => ({
+        component_product_id: Number(row.dataset.componentId),
+        product_flavor_id: row.querySelector('.combo-component-flavor').value || null
+    }));
+    document.getElementById('input_combo_components').value = JSON.stringify(payload);
 }
 </script>
 @endsection
