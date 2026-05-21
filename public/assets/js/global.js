@@ -39,6 +39,7 @@ window.GF.createAjaxDataTable = function (selector, config) {
     responsive: true,
     scrollX: false,
     autoWidth: true,
+    order: false,
     language: {
       search: 'Buscar:',
       searchPlaceholder: 'Buscar...',

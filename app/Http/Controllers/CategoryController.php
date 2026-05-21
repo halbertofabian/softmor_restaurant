@@ -15,7 +15,9 @@ class CategoryController extends Controller
 
     public function datatable()
     {
-        $categories = Category::with('preparationArea')->get();
+        $categories = Category::with('preparationArea')
+        ->orderBy('id', 'desc')
+        ->get();
 
         $data = $categories->map(function ($category) {
             $editUrl = route('categories.edit', $category);
