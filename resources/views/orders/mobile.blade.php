@@ -96,6 +96,7 @@
                     id="product-search" 
                     placeholder="Buscar productos..."
                     oninput="searchProducts()"
+                    autofocus
                 >
             </div>
         </div>

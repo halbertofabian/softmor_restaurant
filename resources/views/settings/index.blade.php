@@ -3,7 +3,7 @@
 @section('title', 'Configuración de Sistema')
 
 @section('content')
-<div class="container-fluid flex-grow-1 container-p-y">
+<div class="container-fluid flex-grow-1 container-p-y settings-page">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -63,7 +63,7 @@
                             
                             <!-- Tab: Impresoras -->
                             <div class="tab-pane fade show active" id="tab-general">
-                                <div class="d-flex align-items-center mb-4">
+                                <div class="d-flex align-items-center mb-4 settings-section-title">
                                     <div class="avatar avatar-sm me-3 bg-label-primary rounded p-2">
                                         <i class="ti tabler-printer fs-4"></i>
                                     </div>
@@ -160,7 +160,7 @@
 
                             <!-- Tab: Textos -->
                             <div class="tab-pane fade" id="tab-texts">
-                                <div class="d-flex align-items-center mb-4">
+                                <div class="d-flex align-items-center mb-4 settings-section-title">
                                     <div class="avatar avatar-sm me-3 bg-label-warning rounded p-2">
                                         <i class="ti tabler-text-caption fs-4"></i>
                                     </div>
@@ -191,7 +191,7 @@
 
                             <!-- Tab: Propinas -->
                             <div class="tab-pane fade" id="tab-tips">
-                                <div class="d-flex align-items-center mb-4">
+                                <div class="d-flex align-items-center mb-4 settings-section-title">
                                     <div class="avatar avatar-sm me-3 bg-label-success rounded p-2">
                                         <i class="ti tabler-coin fs-4"></i>
                                     </div>
@@ -227,7 +227,7 @@
 
                             <!-- Tab: Sistema -->
                             <div class="tab-pane fade" id="tab-system">
-                                <div class="d-flex align-items-center mb-4">
+                                <div class="d-flex align-items-center mb-4 settings-section-title">
                                     <div class="avatar avatar-sm me-3 bg-label-primary rounded p-2">
                                         <i class="ti tabler-world fs-4"></i>
                                     </div>
@@ -293,7 +293,7 @@
 
                             <!-- Tab: IA -->
                             <div class="tab-pane fade" id="tab-ai">
-                                <div class="d-flex align-items-center mb-4">
+                                <div class="d-flex align-items-center mb-4 settings-section-title">
                                     <div class="avatar avatar-sm me-3 bg-label-info rounded p-2">
                                         <i class="ti tabler-sparkles fs-4"></i>
                                     </div>
@@ -333,6 +333,44 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .settings-page #settingsTabs {
+        align-items: stretch;
+    }
+    .settings-page #settingsTabs .nav-item {
+        width: 100%;
+    }
+    .settings-page #settingsTabs .nav-link {
+        width: 100%;
+        justify-content: flex-start !important;
+        text-align: left !important;
+    }
+    .settings-page #settingsTabs .nav-link span {
+        text-align: left;
+    }
+    .settings-page .settings-section-title {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+    }
+    .settings-page .settings-section-title .avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    .settings-page .settings-section-title .avatar i {
+        line-height: 1;
+    }
+    .settings-page .settings-section-title h5 {
+        margin-bottom: 0;
+        line-height: 1.2;
+    }
+</style>
+@endpush
 
 <script>
 async function fetchPrinters() {

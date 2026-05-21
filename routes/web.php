@@ -10,11 +10,11 @@ use App\Http\Controllers\Auth\AuthController;
 
 // Guest Routes
 Route::middleware('guest')->group(function () {
-    
-// Public QR Menu Route
-Route::get('/menu/{tenantId}/{branchId}', [QrMenuController::class, 'index'])->name('menu.public');
 
-Route::get('/', function () {
+    // Public QR Menu Route
+    Route::get('/menu/{tenantId}/{branchId}', [QrMenuController::class, 'index'])->name('menu.public');
+
+    Route::get('/', function () {
         return view('welcome');
     })->name('welcome');
 
@@ -41,11 +41,11 @@ Route::middleware(['auth', \App\Http\Middleware\SuperAdminMiddleware::class])->p
     Route::get('/dashboard', [\App\Http\Controllers\SuperAdminController::class, 'dashboard'])->name('super-admin.dashboard');
     Route::get('/tenants', [\App\Http\Controllers\SuperAdminController::class, 'tenants'])->name('super-admin.tenants');
     Route::get('/impersonate/{user}', [\App\Http\Controllers\SuperAdminController::class, 'impersonate'])->name('super-admin.impersonate');
-    
+
     // Subscription Routes
     Route::get('/subscriptions/create', [\App\Http\Controllers\SuperAdminController::class, 'createSubscription'])->name('super-admin.subscriptions.create');
     Route::post('/subscriptions', [\App\Http\Controllers\SuperAdminController::class, 'storeSubscription'])->name('super-admin.subscriptions.store');
-    
+
     // AI Queries
     Route::name('super_admin.')->group(function () {
         Route::resource('ai_queries', AiQueryController::class);
@@ -64,12 +64,12 @@ Route::middleware('auth')->group(function () {
 
     // Branch Protected Routes
     Route::middleware('branch')->group(function () {
-        
+
         // --- Management & Catalog Routes (Admin, Caja) ---
         // Excludes Mesero and Cocinero
         Route::middleware(['role:administrador,caja'])->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-            
+
             // Users (Scoped by Tenant)
             Route::get('users/datatable', [\App\Http\Controllers\UserController::class, 'datatable'])->name('users.datatable');
             Route::resource('users', \App\Http\Controllers\UserController::class);
@@ -93,23 +93,23 @@ Route::middleware('auth')->group(function () {
             });
 
 
-            
+
             // Cash Registers
             Route::get('cash-registers/datatable', [\App\Http\Controllers\CashRegisterController::class, 'datatable'])->name('cash-registers.datatable');
             Route::resource('cash-registers', \App\Http\Controllers\CashRegisterController::class);
             Route::post('cash-registers/{cash_register}/movements', [\App\Http\Controllers\CashRegisterController::class, 'storeMovement'])->name('cash-registers.movements.store');
             Route::get('cash-registers/{cash_register}/print', [\App\Http\Controllers\CashRegisterController::class, 'print'])->name('cash-registers.print');
             Route::get('cash-registers/{cash_register}/report', [\App\Http\Controllers\CashRegisterController::class, 'report'])->name('cash-registers.report');
-            
+
             Route::resource('expense-categories', \App\Http\Controllers\ExpenseCategoryController::class)->only(['index', 'store', 'destroy']);
-            
+
             // AI Reports
             Route::get('ai-reports', [\App\Http\Controllers\AiReportController::class, 'index'])->name('ai-reports.index');
             Route::post('ai-reports/ask', [\App\Http\Controllers\AiReportController::class, 'ask'])->name('ai-reports.ask');
             Route::get('ai-reports/{aiReport}', [\App\Http\Controllers\AiReportController::class, 'show'])->name('ai-reports.show');
             Route::post('ai-reports/{aiReport}/favorite', [\App\Http\Controllers\AiReportController::class, 'toggleFavorite'])->name('ai-reports.favorite');
             Route::delete('ai-reports/{aiReport}', [\App\Http\Controllers\AiReportController::class, 'destroy'])->name('ai-reports.destroy');
-            
+
             Route::get('settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
             Route::post('settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
 
@@ -142,12 +142,12 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::middleware(['role:administrador'])->group(function () {
-             Route::get('branches/datatable', [\App\Http\Controllers\BranchController::class, 'datatable'])->name('branches.datatable');
-             Route::resource('branches', \App\Http\Controllers\BranchController::class);
-             
-             // QR Codes
-             Route::get('branches/{branch}/qr', [\App\Http\Controllers\QrMenuController::class, 'generate'])->name('branches.qr');
-             Route::get('branches/{branch}/qr/download', [\App\Http\Controllers\QrMenuController::class, 'download'])->name('branches.qr.download');
+            Route::get('branches/datatable', [\App\Http\Controllers\BranchController::class, 'datatable'])->name('branches.datatable');
+            Route::resource('branches', \App\Http\Controllers\BranchController::class);
+
+            // QR Codes
+            Route::get('branches/{branch}/qr', [\App\Http\Controllers\QrMenuController::class, 'generate'])->name('branches.qr');
+            Route::get('branches/{branch}/qr/download', [\App\Http\Controllers\QrMenuController::class, 'download'])->name('branches.qr.download');
         });
 
         // --- Kitchen Routes (Cocinero, Admin) ---

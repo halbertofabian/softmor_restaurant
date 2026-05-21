@@ -1,9 +1,9 @@
 @extends('layouts.master')
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="card border-0 shadow-lg">
-        <div class="card-header bg-danger text-white py-3">
+<div class="container-fluid py-4 cash-close-page">
+    <div class="card border-0 shadow-lg cash-close-main">
+        <div class="card-header bg-danger text-white py-3 cash-close-header">
             <h4 class="mb-0 fw-bold"><i class="ti tabler-lock me-2"></i> Realizar Corte de Caja</h4>
         </div>
         <div class="card-body p-4">
@@ -12,15 +12,15 @@
                 <strong>Atención:</strong> Al realizar el corte, la caja se cerrará y no podrás registrar más movimientos hasta abrir una nueva.
             </div>
 
-            <form action="{{ route('cash-registers.update', $cashRegister) }}" method="POST">
+            <form id="cash-close-form" action="{{ route('cash-registers.update', $cashRegister) }}" method="POST">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="close_register" value="1">
 
-                <div class="row">
+                <div class="row g-4 cash-close-layout">
                     <!-- Left Column: Summary (7) -->
-                    <div class="col-lg-7">
-                        <h6 class="fw-bold text-muted text-uppercase mb-3">Resumen de Caja</h6>
+                    <div class="col-lg-7 cash-close-col-left">
+                        <h6 class="fw-bold text-muted text-uppercase mb-3"><span class="cash-step">1</span> Resumen de Caja</h6>
                         <ul class="list-group list-group-flush border rounded mb-4">
                             <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
                                 <span class="text-muted">Monto Inicial</span>
@@ -57,8 +57,8 @@
                             <div class="form-text">Cuenta todo el dinero en efectivo que tienes físicamente en la caja.</div>
                         </div>
 
-                        <div class="card border-0 mb-4">
-                            <div class="card-header border-bottom">
+                        <div class="card border-0 mb-4 cash-close-inner-card">
+                            <div class="card-header border-bottom cash-close-inner-header">
                                 <h6 class="mb-0 fw-bold text-uppercase">
                                     <i class="ti tabler-building-bank me-2"></i>Declaración de Pagos Electrónicos
                                 </h6>
@@ -101,18 +101,18 @@
 
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{{ route('cash-registers.show', $cashRegister) }}" class="btn btn-light fw-bold">Cancelar</a>
-                            <button type="submit" class="btn btn-danger fw-bold px-4">
+                            <button id="cash-close-submit" type="submit" class="btn btn-danger fw-bold px-4">
                                 <i class="ti tabler-lock me-2"></i> Cerrar Caja Definitivamente
                             </button>
                         </div>
                     </div>
 
                     <!-- Right Column: Denomination Calculator (5) -->
-                    <div class="col-lg-5">
-                        <div class="card border-0 sticky-top" style="top: 20px;">
-                            <div class="card-header border-bottom">
+                    <div class="col-lg-5 cash-close-col-right">
+                        <div class="card border-0 sticky-top cash-close-inner-card cash-denom-panel" style="top: 20px;">
+                            <div class="card-header border-bottom cash-close-inner-header">
                                 <h6 class="mb-0 fw-bold text-uppercase">
-                                    <i class="ti tabler-calculator me-2"></i>Contador de Denominaciones
+                                    <span class="cash-step">2</span> <i class="ti tabler-calculator me-2"></i>Contador de Denominaciones
                                 </h6>
                             </div>
                             <div class="card-body">
@@ -173,6 +173,129 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    .cash-close-page.container-fluid {
+        max-width: 1440px;
+    }
+    .cash-close-page .cash-close-main {
+        background: linear-gradient(180deg, rgba(56, 63, 103, 0.82) 0%, rgba(49, 56, 92, 0.86) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 20px 44px rgba(8, 11, 24, 0.35);
+    }
+    .cash-close-page .cash-close-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(120deg, #ff4d5a 0%, #f44f67 100%) !important;
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+    .cash-close-page .cash-close-header h4 {
+        font-size: 2rem;
+    }
+    .cash-close-page .cash-close-inner-card {
+        background: rgba(35, 41, 71, 0.88);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 0.9rem;
+        box-shadow: 0 12px 28px rgba(9, 11, 24, 0.25);
+    }
+    .cash-close-page .cash-close-inner-header {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        padding-top: .9rem;
+        padding-bottom: .9rem;
+    }
+    .cash-close-page .cash-close-layout .cash-close-col-left {
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        padding-right: 1.25rem;
+    }
+    .cash-close-page .cash-close-layout .cash-close-col-right {
+        padding-left: 1.25rem;
+    }
+    .cash-close-page .list-group-item {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.08);
+        padding-top: .95rem;
+        padding-bottom: .95rem;
+    }
+    .cash-close-page .input-group-text,
+    .cash-close-page .form-control {
+        border-color: rgba(255, 255, 255, 0.12);
+        min-height: 44px;
+    }
+    .cash-close-page #closingAmount {
+        letter-spacing: 0.5px;
+        font-size: 2.15rem !important;
+    }
+    .cash-close-page .card-body {
+        padding: 1.25rem;
+    }
+    .cash-close-page .cash-step {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.4rem;
+        height: 1.4rem;
+        margin-right: .5rem;
+        border-radius: 999px;
+        font-size: .75rem;
+        font-weight: 700;
+        color: #11152b;
+        background: #ffb020;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
+    }
+    .cash-close-page .alert-warning {
+        background: rgba(255, 176, 32, .16);
+        border: 1px solid rgba(255, 176, 32, .3);
+        color: #ffd58a;
+    }
+    .cash-close-page .list-group {
+        overflow: hidden;
+        border-radius: .75rem;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    .cash-close-page .list-group-item.bg-dark {
+        background: rgba(123, 128, 184, .6) !important;
+    }
+    .cash-close-page .form-text {
+        color: rgba(218, 223, 246, .76);
+    }
+    .cash-close-page .btn-danger {
+        box-shadow: 0 10px 24px rgba(244, 79, 103, .28);
+    }
+    .cash-close-page .btn-danger,
+    .cash-close-page .btn-light,
+    .cash-close-page .btn-primary {
+        min-height: 44px;
+        border-radius: .7rem;
+    }
+    .cash-close-page .cash-denom-panel .card.border.shadow-sm {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+    .cash-close-page .cash-denom-panel .alert-success {
+        background: rgba(34, 197, 94, .16);
+        border: 1px solid rgba(34, 197, 94, .32);
+        color: #7ef6af;
+    }
+    @media (max-width: 991.98px) {
+        .cash-close-page .cash-close-layout .cash-close-col-left,
+        .cash-close-page .cash-close-layout .cash-close-col-right {
+            border-right: 0;
+            padding-right: 0;
+            padding-left: 0;
+        }
+        .cash-close-page .cash-close-header h4 {
+            font-size: 1.45rem;
+        }
+    }
+    .cash-close-page #denominationTotal {
+        letter-spacing: .3px;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
     // Calculate denomination totals
@@ -210,6 +333,50 @@
     
     // Listen for changes in denomination inputs
     document.addEventListener('DOMContentLoaded', function() {
+        const closeForm = document.getElementById('cash-close-form');
+        const cardLabel = document.querySelector('input[name="declared_card"]')?.closest('.col-md-4')?.querySelector('label');
+        const transferLabel = document.querySelector('input[name="declared_transfer"]')?.closest('.col-md-4')?.querySelector('label');
+        const depositLabel = document.querySelector('input[name="declared_deposit"]')?.closest('.col-md-4')?.querySelector('label');
+
+        if (cardLabel) {
+            cardLabel.innerHTML = '<i class="ti tabler-credit-card me-1"></i> Tarjeta';
+        }
+        if (transferLabel) {
+            transferLabel.innerHTML = '<i class="ti tabler-arrows-transfer-up-down me-1"></i> Transferencia';
+        }
+        if (depositLabel) {
+            depositLabel.innerHTML = '<i class="ti tabler-building-bank me-1"></i> Deposito';
+        }
+
+        if (closeForm) {
+            closeForm.addEventListener('keydown', function(event) {
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                if (event.target && event.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+
+                event.preventDefault();
+            });
+
+            closeForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                if (window.GF && typeof window.GF.showModalConfirm === 'function') {
+                    window.GF.showModalConfirm(
+                        'Confirmar accion',
+                        'Seguro que quieres cerrar caja definitivamente?',
+                        function() { closeForm.submit(); }
+                    );
+                    return;
+                }
+
+                closeForm.submit();
+            });
+        }
+
         document.querySelectorAll('.denomination-input, .denomination-change').forEach(input => {
             input.addEventListener('input', calculateDenominations);
         });
