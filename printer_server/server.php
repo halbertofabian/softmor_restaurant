@@ -160,7 +160,7 @@ try {
         if (isset($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as $item) {
                 $name = $item['name'] ?? 'Producto';
-                if(strlen($name) > 20) $name = substr($name, 0, 20);
+                // Mantener nombre completo; la impresora hará salto de línea según ancho
                 
                 $qty = $item['quantity'] ?? 1;
                 $price = $item['price'] ?? 0;
