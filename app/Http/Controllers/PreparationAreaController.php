@@ -9,8 +9,43 @@ class PreparationAreaController extends Controller
 {
     public function index()
     {
+        return view('preparation-areas.index');
+    }
+
+    public function datatable()
+    {
         $areas = PreparationArea::all();
-        return view('preparation-areas.index', compact('areas'));
+
+        $data = $areas->map(function ($area) {
+            $editUrl = route('preparation-areas.edit', $area);
+            $destroyUrl = route('preparation-areas.destroy', $area);
+            $token = csrf_token();
+
+            $printTicketBadge = $area->print_ticket
+                ? '<span class="badge bg-label-success">SÃ­</span>'
+                : '<span class="badge bg-label-secondary">No</span>';
+
+            $statusBadge = $area->status
+                ? '<span class="badge bg-label-success">Activo</span>'
+                : '<span class="badge bg-label-secondary">Inactivo</span>';
+
+            $actions = '<a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-text-secondary"><i class="ti tabler-edit"></i></a>'
+                . '<form action="' . $destroyUrl . '" method="POST" class="d-inline">'
+                . '<input type="hidden" name="_token" value="' . $token . '">'
+                . '<input type="hidden" name="_method" value="DELETE">'
+                . '<button type="submit" class="btn btn-sm btn-icon btn-text-danger" data-gf-confirm="auto" data-gf-entity="el area de preparacion" data-gf-name="' . e($area->name) . '"><i class="ti tabler-trash"></i></button>'
+                . '</form>';
+
+            return [
+                'name' => e($area->name),
+                'sort_order' => (string) $area->sort_order,
+                'print_ticket' => $printTicketBadge,
+                'status' => $statusBadge,
+                'actions' => $actions,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
     }
 
     public function create()

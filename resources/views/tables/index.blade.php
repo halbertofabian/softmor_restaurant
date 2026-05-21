@@ -186,7 +186,7 @@
                     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#zone-all" type="button">Todas</button>
                 </li>
                 @php
-                    $zones = $tables->pluck('zone')->filter()->unique()->values();
+                    $zones = $tables->pluck('zone')->filter()->unique()->sort()->values();
                 @endphp
                 @foreach($zones as $index => $zone)
                 <li class="nav-item me-2">
@@ -213,7 +213,7 @@
         <div class="tab-pane fade" id="zone-{{ Str::slug($zone) }}">
             <div class="row g-2">
                  @foreach($tables->where('zone', $zone) as $table)
-                     <div class="col-12 col-md-4 col-xl-3">
+                     <div class="col-12 col-md-4 col-xl-3 table-item" data-name="{{ strtolower($table->name) }}">
                         @include('tables.partials.card', ['table' => $table])
                     </div>
                 @endforeach
@@ -224,18 +224,22 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
-document.getElementById('searchTable').addEventListener('keyup', function() {
-    let query = this.value.toLowerCase();
-    document.querySelectorAll('.table-item').forEach(item => {
-        let name = item.getAttribute('data-name');
-        if(name.includes(query)) {
-            item.style.display = '';
-        } else {
-            item.style.display = 'none';
-        }
-    });
+document.addEventListener('DOMContentLoaded', function () {
+    var input = document.getElementById('searchTable');
+    if (!input) return;
+
+    var filterTables = function () {
+        var query = (input.value || '').toLowerCase().trim();
+        document.querySelectorAll('.table-item').forEach(function (item) {
+            var name = (item.getAttribute('data-name') || '').toLowerCase();
+            item.style.display = name.includes(query) ? '' : 'none';
+        });
+    };
+
+    input.addEventListener('input', filterTables);
+    filterTables();
 });
 </script>
-@endsection
+@endpush

@@ -16,8 +16,56 @@ class UserController extends Controller
             abort(403, 'No tienes permisos para administrar usuarios.');
         }
 
-        $users = User::where('tenant_id', auth()->user()->tenant_id)->with('roles')->paginate(10);
-        return view('users.index', compact('users'));
+        return view('users.index');
+    }
+
+    public function datatable()
+    {
+        if (!auth()->user()->hasRole('administrador')) {
+            abort(403, 'No tienes permisos para administrar usuarios.');
+        }
+
+        $users = User::where('tenant_id', auth()->user()->tenant_id)->with('roles')->get();
+
+        $data = $users->map(function ($user) {
+            $nameCell = '<div class="d-flex flex-column"><span class="fw-bold">' . e($user->name) . '</span><small class="text-muted">' . e($user->email) . '</small></div>';
+
+            $roles = '';
+            foreach ($user->roles as $role) {
+                $roles .= '<span class="badge bg-label-primary">' . e(ucfirst($role->name)) . '</span> ';
+            }
+
+            $status = $user->estado == 'activo'
+                ? '<span class="badge bg-label-success">Activo</span>'
+                : '<span class="badge bg-label-danger">Inactivo</span>';
+
+            $actions = '<div class="dropdown">'
+                . '<button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">'
+                . '<i class="ti tabler-dots-vertical"></i>'
+                . '</button>'
+                . '<div class="dropdown-menu">'
+                . '<a class="dropdown-item" href="' . route('users.edit', $user) . '">Editar</a>';
+
+            if ($user->id !== auth()->id()) {
+                $actions .= '<form action="' . route('users.destroy', $user) . '" method="POST">'
+                    . '<input type="hidden" name="_token" value="' . csrf_token() . '">'
+                    . '<input type="hidden" name="_method" value="DELETE">'
+                    . '<button type="submit" class="dropdown-item text-danger" data-gf-confirm="auto" data-gf-entity="el usuario" data-gf-name="' . e($user->name) . '">Eliminar</button>'
+                    . '</form>';
+            }
+
+            $actions .= '</div></div>';
+
+            return [
+                'name' => $nameCell,
+                'roles' => trim($roles),
+                'status' => $status,
+                'whatsapp' => e($user->pais_whatsapp),
+                'actions' => $actions,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
     }
 
     public function create()

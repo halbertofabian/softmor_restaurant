@@ -9,7 +9,7 @@
         <a href="{{ route('categories.create') }}" class="btn btn-primary">Nueva Categoría</a>
     </div>
     <div class="table-responsive text-nowrap">
-        <table class="table">
+        <table class="table" id="categories-table">
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -18,30 +18,33 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($categories as $category)
-                <tr>
-                    <td>{{ $category->name }}</td>
-                    <td>{{ $category->preparationArea->name ?? '-' }}</td>
-                    <td>
-                        @if($category->status)
-                            <span class="badge bg-label-success">Activo</span>
-                        @else
-                            <span class="badge bg-label-secondary">Inactivo</span>
-                        @endif
-                    </td>
-                    <td>
-                        <a href="{{ route('categories.edit', $category) }}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ti tabler-edit"></i></a>
-                        <form action="{{ route('categories.destroy', $category) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-icon btn-text-danger" onclick="return confirm('¿Seguro?')"><i class="ti tabler-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
+           
         </table>
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}" />
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}" />
+@endpush
+
+@push('scripts')
+<script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
+<script>
+    GF.createAjaxDataTable('#categories-table', {
+        ajax: "{{ route('categories.datatable') }}",
+        responsive: true,
+        columns: [
+            { data: 'name' },
+            { data: 'preparation_area' },
+            { data: 'status', orderable: false, searchable: false },
+            { data: 'actions', orderable: false, searchable: false }
+        ],
+        columnDefs: [
+            { targets: [2, 3], render: function (data) { return data; } }
+        ]
+    });
+</script>
+@endpush

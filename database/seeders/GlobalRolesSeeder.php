@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class GlobalRolesSeeder extends Seeder
 {
@@ -20,7 +21,7 @@ class GlobalRolesSeeder extends Seeder
         ];
 
         foreach ($roles as $role) {
-            \DB::table('roles')->insert([
+            DB::table('roles')->insert([
                 'name' => $role['name'],
                 'description' => $role['description'],
                 'tenant_id' => null, // Global

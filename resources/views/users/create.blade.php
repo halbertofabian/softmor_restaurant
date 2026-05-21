@@ -10,7 +10,7 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Nombre Completo</label>
-                    <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
+                    <input type="text" name="name" class="form-control" value="{{ old('name') }}" required autofocus>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Correo Electrónico</label>

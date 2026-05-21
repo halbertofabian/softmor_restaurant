@@ -11,7 +11,7 @@
         <div class="card bg-label-success shadow-none border-0">
              <div class="card-body py-2 px-3">
                  <small class="d-block text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Filtrado</small>
-                 <span class="fs-4 fw-bold text-success">${{ number_format($totalAmount, 2) }}</span>
+                 <span class="fs-4 fw-bold text-success" id="sales-total-amount">${{ number_format($totalAmount, 2) }}</span>
              </div>
         </div>
     </div>
@@ -19,7 +19,7 @@
     <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
-            <form action="{{ route('reports.sales.index') }}" method="GET" class="row g-3 align-items-end">
+            <form id="sales-filter-form" action="{{ route('reports.sales.index') }}" method="GET" class="row g-3 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label" for="start_date">Fecha Inicio</label>
                     <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request('start_date') }}">
@@ -55,7 +55,7 @@
     <!-- Table -->
     <div class="card">
         <div class="table-responsive text-nowrap">
-            <table class="table table-hover">
+            <table class="table table-hover" id="sales-table">
                 <thead>
                     <tr>
                         <th class="ps-4">Folio Venta</th>
@@ -67,76 +67,62 @@
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="table-border-bottom-0">
-                    @forelse($sales as $payment)
-                    <tr>
-                        <td class="ps-4">
-                            <span class="fw-bold text-primary">#{{ $payment->order_id }}</span>
-                        </td>
-                         <td>
-                            <div class="d-flex flex-column">
-                                <span class="fw-medium">{{ $payment->created_at->format('d/m/Y') }}</span>
-                                <small class="text-muted">{{ $payment->created_at->format('g:i A') }}</small>
-                            </div>
-                        </td>
-                        <td>
-                            @if($payment->order && $payment->order->name)
-                                {{ Str::limit($payment->order->name, 20) }}
-                            @else
-                                <span class="text-muted fst-italic">Público General</span>
-                            @endif
-                        </td>
-                        <td>
-                            @switch($payment->method)
-                                @case('cash')
-                                    <span class="badge bg-label-success"><i class="ti tabler-cash me-1"></i> Efectivo</span>
-                                    @break
-                                @case('card')
-                                    <span class="badge bg-label-info"><i class="ti tabler-credit-card me-1"></i> Tarjeta</span>
-                                    @break
-                                @case('transfer')
-                                    <span class="badge bg-label-primary"><i class="ti tabler-building-bank me-1"></i> Transf.</span>
-                                    @break
-                                @default
-                                    <span class="badge bg-label-secondary">{{ ucfirst($payment->method) }}</span>
-                            @endswitch
-                        </td>
-                        <td>
-                            {{ $payment->reference ?? '-' }}
-                        </td>
-                        <td class="text-end fw-bold">
-                            ${{ number_format($payment->amount, 2) }}
-                        </td>
-                        <td class="text-center">
-                            @if($payment->order)
-                            <a href="{{ route('pos.ticket', $payment->order) }}" 
-                               target="_blank"
-                               class="btn btn-sm btn-icon btn-text-secondary rounded-pill" 
-                               title="Reimprimir Ticket">
-                                <i class="ti tabler-printer"></i>
-                            </a>
-                            <a href="{{ route('orders.show', $payment->order) }}" class="btn btn-sm btn-icon btn-text-primary rounded-pill" title="Ver Comanda">
-                                <i class="ti tabler-eye"></i>
-                            </a>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-5">
-                            <div class="text-muted mb-2">
-                                <i class="ti tabler-receipt-off fs-1"></i>
-                            </div>
-                            <p class="mb-0">No se encontraron ventas con estos filtros.</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
             </table>
         </div>
-        <div class="card-footer py-3">
+        <div class="card-footer py-3 d-none">
+            @if(isset($sales))
             {{ $sales->links() }}
+            @endif
         </div>
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}" />
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}" />
+@endpush
+
+@push('scripts')
+<script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
+<script>
+    var salesTable = GF.createAjaxDataTable('#sales-table', {
+        ajax: "{{ route('reports.sales.datatable') }}",
+        ajaxData: function () {
+            return {
+                start_date: $('#start_date').val(),
+                end_date: $('#end_date').val(),
+                method: $('#method').val()
+            };
+        },
+        responsive: true,
+        columns: [
+            { data: 'folio' },
+            { data: 'date' },
+            { data: 'client' },
+            { data: 'method', orderable: false, searchable: false },
+            { data: 'reference' },
+            { data: 'amount' },
+            { data: 'actions', orderable: false, searchable: false }
+        ],
+        columnDefs: [
+            { targets: [0, 1, 2, 3, 6], render: function (data) { return data; } },
+            { targets: [5], className: 'text-end fw-bold' },
+            { targets: [6], className: 'text-center' }
+        ]
+    });
+
+    $('#sales-filter-form').on('submit', function (event) {
+        event.preventDefault();
+        salesTable.ajax.reload();
+    });
+
+    $('#sales-table').on('xhr.dt', function (e, settings, json) {
+        if (!json || typeof json.totalAmount === 'undefined') {
+            return;
+        }
+        $('#sales-total-amount').text('$' + json.totalAmount);
+    });
+</script>
+@endpush

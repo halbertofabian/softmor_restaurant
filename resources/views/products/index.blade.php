@@ -7,7 +7,7 @@
         <a href="{{ route('products.create') }}" class="btn btn-primary">Nuevo Producto</a>
     </div>
     <div class="table-responsive text-nowrap">
-        <table class="table">
+        <table class="table" id="products-table">
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -20,58 +20,36 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($products as $product)
-                <tr>
-                    <td>{{ $product->name }}</td>
-                    <td>
-                        @switch($product->type)
-                            @case('dish') <span class="badge bg-label-primary">Platillo</span> @break
-                            @case('drink') <span class="badge bg-label-info">Bebida</span> @break
-                            @case('finished') <span class="badge bg-label-warning">Terminado</span> @break
-                            @case('extra') <span class="badge bg-label-secondary">Extra</span> @break
-                            @case('combo') <span class="badge bg-label-dark">Combo</span> @break
-                        @endswitch
-                    </td>
-                    <td>{{ $product->category->name ?? 'N/A' }}</td>
-                    <td>${{ number_format($product->price, 2) }}</td>
-                    <td>
-                        @if($product->flavors->count())
-                            {{ $product->flavors->pluck('name')->join(', ') }}
-                        @else
-                            <span class="text-muted">-</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if($product->controls_inventory)
-                            {{ $product->stock }}
-                        @else
-                            <span class="text-muted">-</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if($product->status)
-                            <span class="badge bg-label-success">Activo</span>
-                        @else
-                            <span class="badge bg-label-secondary">Inactivo</span>
-                        @endif
-                    </td>
-                    <td>
-                        <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-icon btn-text-secondary" title="Editar"><i class="ti tabler-edit"></i></a>
-                        <form action="{{ route('products.duplicate', $product) }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-icon btn-text-primary" title="Duplicar"><i class="ti tabler-copy"></i></button>
-                        </form>
-                        <form action="{{ route('products.destroy', $product) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-icon btn-text-danger" onclick="return confirm('¿Seguro?')"><i class="ti tabler-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
         </table>
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}" />
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}" />
+@endpush
+
+@push('scripts')
+<script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
+<script>
+    GF.createAjaxDataTable('#products-table', {
+        ajax: "{{ route('products.datatable') }}",
+        responsive: true,
+        columns: [
+            { data: 'name' },
+            { data: 'type', orderable: false, searchable: false },
+            { data: 'category' },
+            { data: 'price' },
+            { data: 'flavors', orderable: false, searchable: false },
+            { data: 'stock', orderable: false, searchable: false },
+            { data: 'status', orderable: false, searchable: false },
+            { data: 'actions', orderable: false, searchable: false }
+        ],
+        columnDefs: [
+            { targets: [1, 4, 5, 6, 7], render: function (data) { return data; } }
+        ]
+    });
+</script>
+@endpush

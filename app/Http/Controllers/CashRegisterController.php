@@ -11,11 +11,71 @@ class CashRegisterController extends Controller
 {
     public function index()
     {
+        return view('cash_registers.index');
+    }
+
+    public function datatable()
+    {
         $registers = CashRegister::where('branch_id', session('branch_id'))
+            ->with('user')
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
-            
-        return view('cash_registers.index', compact('registers'));
+            ->get();
+
+        $data = $registers->map(function ($register) {
+            $statusBadge = $register->status == 'open'
+                ? '<span class="badge bg-label-success">Abierta</span>'
+                : '<span class="badge bg-label-secondary">Cerrada</span>';
+
+            $openedAt = '<div class="d-flex flex-column">'
+                . '<span class="fw-medium">' . $register->opened_at->format('d/m/Y') . '</span>'
+                . '<small class="text-muted">' . $register->opened_at->format('g:i A') . '</small>'
+                . '</div>';
+
+            $closedAt = $register->closed_at
+                ? '<div class="d-flex flex-column"><span>' . $register->closed_at->format('d/m/Y') . '</span><small class="text-muted">' . $register->closed_at->format('g:i A') . '</small></div>'
+                : '<span class="text-muted fst-italic">-</span>';
+
+            $userInitial = strtoupper(substr($register->user->name ?? 'U', 0, 1));
+            $userName = e($register->user->name ?? 'Usuario');
+            $userCell = '<div class="d-flex align-items-center">'
+                . '<div class="avatar avatar-xs me-2"><span class="avatar-initial rounded-circle bg-label-primary">' . $userInitial . '</span></div>'
+                . '<span class="text-truncate" style="max-width: 150px;">' . $userName . '</span>'
+                . '</div>';
+
+            $openingAmount = '$' . number_format($register->opening_amount, 2);
+            $closingAmount = $register->closing_amount !== null
+                ? '<span class="fw-medium text-success">$' . number_format($register->closing_amount, 2) . '</span>'
+                : '-';
+
+            $actions = '<div class="dropdown">'
+                . '<button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ti tabler-dots-vertical"></i></button>'
+                . '<div class="dropdown-menu">'
+                . '<a class="dropdown-item" href="' . route('cash-registers.show', $register) . '"><i class="ti tabler-eye me-1"></i> Ver Detalle</a>';
+
+            if ($register->status == 'closed') {
+                $actions .= '<a class="dropdown-item" href="' . route('cash-registers.print', $register) . '" target="_blank"><i class="ti tabler-printer me-1"></i> Imprimir Ticket</a>';
+                $actions .= '<a class="dropdown-item" href="' . route('cash-registers.report', $register) . '" target="_blank"><i class="ti tabler-file-analytics me-1"></i> Reporte PDF</a>';
+            }
+
+            if ($register->status == 'open') {
+                $actions .= '<a class="dropdown-item text-primary" href="' . route('cash-registers.show', $register) . '"><i class="ti tabler-lock-open me-1"></i> Hacer Corte</a>';
+            }
+
+            $actions .= '</div></div>';
+
+            return [
+                'folio' => '<span class="fw-medium">#' . $register->id . '</span>',
+                'status' => $statusBadge,
+                'opened_at' => $openedAt,
+                'closed_at' => $closedAt,
+                'user' => $userCell,
+                'opening_amount' => $openingAmount,
+                'closing_amount' => $closingAmount,
+                'actions' => $actions,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
     }
 
     public function create()

@@ -71,10 +71,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
             
             // Users (Scoped by Tenant)
+            Route::get('users/datatable', [\App\Http\Controllers\UserController::class, 'datatable'])->name('users.datatable');
             Route::resource('users', \App\Http\Controllers\UserController::class);
 
+            Route::get('preparation-areas/datatable', [\App\Http\Controllers\PreparationAreaController::class, 'datatable'])->name('preparation-areas.datatable');
             Route::resource('preparation-areas', \App\Http\Controllers\PreparationAreaController::class);
+            Route::get('categories/datatable', [\App\Http\Controllers\CategoryController::class, 'datatable'])->name('categories.datatable');
             Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+            Route::get('products/datatable', [\App\Http\Controllers\ProductController::class, 'datatable'])->name('products.datatable');
             Route::resource('products', \App\Http\Controllers\ProductController::class);
             Route::post('products/{product}/duplicate', [\App\Http\Controllers\ProductController::class, 'duplicate'])->name('products.duplicate');
 
@@ -91,6 +95,7 @@ Route::middleware('auth')->group(function () {
 
             
             // Cash Registers
+            Route::get('cash-registers/datatable', [\App\Http\Controllers\CashRegisterController::class, 'datatable'])->name('cash-registers.datatable');
             Route::resource('cash-registers', \App\Http\Controllers\CashRegisterController::class);
             Route::post('cash-registers/{cash_register}/movements', [\App\Http\Controllers\CashRegisterController::class, 'storeMovement'])->name('cash-registers.movements.store');
             Route::get('cash-registers/{cash_register}/print', [\App\Http\Controllers\CashRegisterController::class, 'print'])->name('cash-registers.print');
@@ -109,6 +114,7 @@ Route::middleware('auth')->group(function () {
             Route::post('settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
 
             // Sales Report
+            Route::get('reports/sales/datatable', [\App\Http\Controllers\SalesReportController::class, 'datatable'])->name('reports.sales.datatable');
             Route::get('reports/sales', [\App\Http\Controllers\SalesReportController::class, 'index'])->name('reports.sales.index');
         });
 
@@ -127,6 +133,7 @@ Route::middleware('auth')->group(function () {
 
             // Orders (Cash register required)
             Route::middleware(['cash.register'])->group(function () {
+                Route::get('orders/datatable', [\App\Http\Controllers\OrderController::class, 'datatable'])->name('orders.datatable');
                 Route::resource('orders', \App\Http\Controllers\OrderController::class)->except(['create', 'edit']);
                 Route::get('orders/{order}/pre-check', [\App\Http\Controllers\PosController::class, 'preCheck'])->name('orders.pre-check');
                 Route::get('orders/{order}/pre-check/print-direct', [\App\Http\Controllers\PosController::class, 'preCheckPrintDirect'])->name('orders.pre-check.print-direct');
@@ -135,6 +142,7 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::middleware(['role:administrador'])->group(function () {
+             Route::get('branches/datatable', [\App\Http\Controllers\BranchController::class, 'datatable'])->name('branches.datatable');
              Route::resource('branches', \App\Http\Controllers\BranchController::class);
              
              // QR Codes

@@ -9,7 +9,7 @@
         <a href="{{ route('preparation-areas.create') }}" class="btn btn-primary">Nueva Área</a>
     </div>
     <div class="table-responsive text-nowrap">
-        <table class="table">
+        <table class="table" id="preparation-areas-table">
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -19,37 +19,33 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($areas as $area)
-                <tr>
-                    <td>{{ $area->name }}</td>
-                    <td>{{ $area->sort_order }}</td>
-                    <td>
-                        @if($area->print_ticket)
-                            <span class="badge bg-label-success">Sí</span>
-                        @else
-                            <span class="badge bg-label-secondary">No</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if($area->status)
-                            <span class="badge bg-label-success">Activo</span>
-                        @else
-                            <span class="badge bg-label-secondary">Inactivo</span>
-                        @endif
-                    </td>
-                    <td>
-                        <a href="{{ route('preparation-areas.edit', $area) }}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ti tabler-edit"></i></a>
-                        <form action="{{ route('preparation-areas.destroy', $area) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-icon btn-text-danger" onclick="return confirm('¿Seguro?')"><i class="ti tabler-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
         </table>
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}" />
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}" />
+@endpush
+
+@push('scripts')
+<script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
+<script>
+    GF.createAjaxDataTable('#preparation-areas-table', {
+        ajax: "{{ route('preparation-areas.datatable') }}",
+        responsive: true,
+        columns: [
+            { data: 'name' },
+            { data: 'sort_order' },
+            { data: 'print_ticket', orderable: false, searchable: false },
+            { data: 'status', orderable: false, searchable: false },
+            { data: 'actions', orderable: false, searchable: false }
+        ],
+        columnDefs: [
+            { targets: [2, 3, 4], render: function (data) { return data; } }
+        ]
+    });
+</script>
+@endpush

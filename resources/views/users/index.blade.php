@@ -1,73 +1,74 @@
 @extends('layouts.master')
 @section('title', 'Usuarios')
 @section('content')
-<div class="row align-items-center mb-4">
-    <div class="col-6">
-        <h4 class="mb-0">Usuarios del Sistema</h4>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Usuarios del Sistema</h5>
+            <a href="{{ route('users.create') }}" class="btn btn-primary">
+                <i class="ti tabler-plus me-1"></i> Nueva Usuario
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover" id="users-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>WhatsApp/País</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div class="card-footer py-2 d-none">
+            @if (isset($users))
+                {{ $users->links() }}
+            @endif
+        </div>
     </div>
-    <div class="col-6 text-end">
-        <a href="{{ route('users.create') }}" class="btn btn-primary">Nuevo Usuario</a>
-    </div>
-</div>
-
-<div class="card">
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                    <th>WhatsApp/País</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($users as $user)
-                <tr>
-                    <td>
-                        <div class="d-flex flex-column">
-                            <span class="fw-bold">{{ $user->name }}</span>
-                            <small class="text-muted">{{ $user->email }}</small>
-                        </div>
-                    </td>
-                    <td>
-                        @foreach($user->roles as $role)
-                            <span class="badge bg-label-primary">{{ ucfirst($role->name) }}</span>
-                        @endforeach
-                    </td>
-                    <td>
-                        @if($user->estado == 'activo')
-                            <span class="badge bg-label-success">Activo</span>
-                        @else
-                            <span class="badge bg-label-danger">Inactivo</span>
-                        @endif
-                    </td>
-                    <td>{{ $user->pais_whatsapp }}</td>
-                    <td>
-                        <div class="dropdown">
-                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                <i class="ti tabler-dots-vertical"></i>
-                            </button>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ route('users.edit', $user) }}">Editar</a>
-                                @if($user->id !== auth()->id())
-                                <form action="{{ route('users.destroy', $user) }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')">Eliminar</button>
-                                </form>
-                                @endif
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div class="card-footer py-2">
-        {{ $users->links() }}
-    </div>
-</div>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}" />
+@endpush
+
+@push('scripts')
+    <script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
+    <script>
+        GF.createAjaxDataTable('#users-table', {
+            ajax: "{{ route('users.datatable') }}",
+            responsive: true,
+            columns: [{
+                    data: 'name'
+                },
+                {
+                    data: 'roles',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'status',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'whatsapp'
+                },
+                {
+                    data: 'actions',
+                    orderable: false,
+                    searchable: false
+                }
+            ],
+            columnDefs: [{
+                targets: [0, 1, 2, 4],
+                render: function(data) {
+                    return data;
+                }
+            }]
+        });
+    </script>
+@endpush

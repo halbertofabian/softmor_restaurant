@@ -9,7 +9,7 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label" for="name">Nombre</label>
-                    <input type="text" class="form-control" id="name" name="name" required>
+                    <input type="text" class="form-control" id="name" name="name" required autofocus>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label" for="type">Tipo</label>

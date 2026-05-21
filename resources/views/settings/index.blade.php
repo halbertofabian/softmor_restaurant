@@ -15,8 +15,8 @@
     <div class="row">
         <!-- Sidebar Navigation -->
         <div class="col-md-3 col-lg-2 mb-4">
-            <div class="card shadow-none bg-transparent border-0">
-                <div class="card-body p-0">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-2">
                     <ul class="nav nav-pills flex-column gap-2" id="settingsTabs" role="tablist">
                         <li class="nav-item">
                             <button class="nav-link active d-flex align-items-center py-2 px-3 text-start" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
@@ -244,7 +244,7 @@
 
                                 <div class="mb-4">
                                     <label class="form-label fw-bold" for="app_timezone">Zona Horaria del Restaurante</label>
-                                    <div class="input-group input-group-lg">
+                                    <div class="input-group">
                                         <span class="input-group-text"><i class="ti tabler-clock"></i></span>
                                         <select id="app_timezone" class="form-select" name="app_timezone">
                                             <optgroup label="México">

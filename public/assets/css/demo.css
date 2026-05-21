@@ -103,3 +103,114 @@
   text-align: center;
   margin-top: 1rem;
 }
+
+/* Global table action buttons */
+.table .btn.btn-sm.btn-icon.btn-text-secondary,
+.table .btn.btn-sm.btn-icon.btn-text-primary,
+.table .btn.btn-sm.btn-icon.btn-text-danger {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+}
+
+.table .btn.btn-sm.btn-icon.btn-text-secondary i,
+.table .btn.btn-sm.btn-icon.btn-text-primary i,
+.table .btn.btn-sm.btn-icon.btn-text-danger i {
+  font-size: 1rem;
+}
+
+table.table td .btn.btn-sm.btn-icon {
+  width: 2.6rem !important;
+  height: 2.6rem !important;
+  min-width: 2.6rem !important;
+  padding: 0 !important;
+}
+
+table.table td .btn.btn-sm.btn-icon i,
+table.table td .btn.btn-sm.btn-icon .icon-base {
+  font-size: 1.35rem !important;
+  line-height: 1 !important;
+}
+
+table.table td .dropdown .btn.p-0 {
+  width: 2.6rem !important;
+  height: 2.6rem !important;
+  min-width: 2.6rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+table.table td .dropdown .btn.p-0 i,
+table.table td .dropdown .btn.p-0 .icon-base {
+  font-size: 1.35rem !important;
+  line-height: 1 !important;
+}
+
+/* Global DataTables search size */
+div.dt-container .dt-search input,
+div.dt-container .dataTables_filter input {
+  min-width: 220px;
+  height: calc(2.5rem + 2px);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.95rem;
+}
+
+/* Select2 alignment inside input-group */
+.input-group > .select2-container {
+  flex: 1 1 auto;
+  width: auto !important;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.input-group > .select2-container .select2-selection--single,
+.input-group > .select2-container .select2-selection--multiple {
+  height: calc(2.25rem + 2px);
+  min-height: calc(2.25rem + 2px);
+  border-radius: 0;
+}
+
+.input-group.input-group-lg > .select2-container .select2-selection--single,
+.input-group.input-group-lg > .select2-container .select2-selection--multiple {
+  height: calc(3rem + 2px);
+  min-height: calc(3rem + 2px);
+}
+
+.input-group.input-group-sm > .select2-container .select2-selection--single,
+.input-group.input-group-sm > .select2-container .select2-selection--multiple {
+  height: calc(1.75rem + 2px);
+  min-height: calc(1.75rem + 2px);
+}
+
+.input-group > .input-group-text + .select2-container .select2-selection--single,
+.input-group > .input-group-text + .select2-container .select2-selection--multiple {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.input-group > .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: calc(2.25rem + 2px);
+  padding-left: 0.75rem;
+  padding-right: 2rem;
+}
+
+.input-group > .select2-container .select2-selection--single .select2-selection__arrow {
+  height: calc(2.25rem + 2px);
+}
+
+.input-group.input-group-lg > .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: calc(3rem + 2px);
+}
+
+.input-group.input-group-lg > .select2-container .select2-selection--single .select2-selection__arrow {
+  height: calc(3rem + 2px);
+}
+
+.input-group.input-group-sm > .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: calc(1.75rem + 2px);
+}
+
+.input-group.input-group-sm > .select2-container .select2-selection--single .select2-selection__arrow {
+  height: calc(1.75rem + 2px);
+}

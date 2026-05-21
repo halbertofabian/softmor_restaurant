@@ -17,8 +17,64 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'preparationArea', 'flavors', 'comboItems.componentProduct'])->get();
-        return view('products.index', compact('products'));
+        return view('products.index');
+    }
+
+    public function datatable()
+    {
+        $products = Product::with(['category', 'flavors'])->get();
+
+        $data = $products->map(function ($product) {
+            $editUrl = route('products.edit', $product);
+            $duplicateUrl = route('products.duplicate', $product);
+            $destroyUrl = route('products.destroy', $product);
+            $token = csrf_token();
+
+            $typeBadge = match ($product->type) {
+                'dish' => '<span class="badge bg-label-primary">Platillo</span>',
+                'drink' => '<span class="badge bg-label-info">Bebida</span>',
+                'finished' => '<span class="badge bg-label-warning">Terminado</span>',
+                'extra' => '<span class="badge bg-label-secondary">Extra</span>',
+                'combo' => '<span class="badge bg-label-dark">Combo</span>',
+                default => '',
+            };
+
+            $flavors = $product->flavors->count()
+                ? e($product->flavors->pluck('name')->join(', '))
+                : '<span class="text-muted">-</span>';
+
+            $stock = $product->controls_inventory
+                ? (string) $product->stock
+                : '<span class="text-muted">-</span>';
+
+            $statusBadge = $product->status
+                ? '<span class="badge bg-label-success">Activo</span>'
+                : '<span class="badge bg-label-secondary">Inactivo</span>';
+
+            $actions = '<a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-text-secondary" title="Editar"><i class="ti tabler-edit"></i></a>'
+                . '<form action="' . $duplicateUrl . '" method="POST" class="d-inline">'
+                . '<input type="hidden" name="_token" value="' . $token . '">'
+                . '<button type="submit" class="btn btn-sm btn-icon btn-text-primary" title="Duplicar"><i class="ti tabler-copy"></i></button>'
+                . '</form>'
+                . '<form action="' . $destroyUrl . '" method="POST" class="d-inline">'
+                . '<input type="hidden" name="_token" value="' . $token . '">'
+                . '<input type="hidden" name="_method" value="DELETE">'
+                . '<button type="submit" class="btn btn-sm btn-icon btn-text-danger" data-gf-confirm="auto" data-gf-entity="el producto" data-gf-name="' . e($product->name) . '"><i class="ti tabler-trash"></i></button>'
+                . '</form>';
+
+            return [
+                'name' => e($product->name),
+                'type' => $typeBadge,
+                'category' => e($product->category->name ?? 'N/A'),
+                'price' => '$' . number_format($product->price, 2),
+                'flavors' => $flavors,
+                'stock' => $stock,
+                'status' => $statusBadge,
+                'actions' => $actions,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
     }
 
     public function create()

@@ -84,6 +84,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             min-width: 110px;
+            flex: 0 0 110px;
             background: var(--card-bg);
             border: 2px solid var(--border-subtle);
             color: var(--text-secondary);
@@ -402,6 +403,7 @@
                             id="product-search" 
                             placeholder="Buscar productos..."
                             oninput="searchProducts()"
+                            autofocus
                         >
                     </div>
                 </div>
@@ -647,7 +649,7 @@
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid var(--border-subtle);">
                     <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" onclick="submitProduct()" class="btn btn-primary-custom d-flex align-items-center gap-2">
+                    <button type="button" onclick="submitProduct()" class="btn btn-primary-custom d-flex align-items-center gap-2" id="modal-add-product-btn">
                         <i data-lucide="plus-circle" size="20"></i>
                         Agregar al Pedido
                     </button>
@@ -859,6 +861,10 @@
             // Refresh icons when modal is shown
             modalEl.addEventListener('shown.bs.modal', function () {
                 lucide.createIcons();
+                const addBtn = document.getElementById('modal-add-product-btn');
+                if (addBtn) {
+                    addBtn.focus();
+                }
             }, { once: true });
         }
         
@@ -1056,6 +1062,10 @@
             paymentModal.addEventListener('shown.bs.modal', function () {
                 lucide.createIcons();
                 calculateModalChange();
+                if (modalAmountInput) {
+                    modalAmountInput.focus();
+                    modalAmountInput.select();
+                }
             });
         }
     </script>

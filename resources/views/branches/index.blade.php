@@ -10,7 +10,7 @@
         </a>
     </div>
     <div class="table-responsive text-nowrap">
-        <table class="table">
+        <table class="table" id="branches-table">
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -20,46 +20,38 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody class="table-border-bottom-0">
-                @forelse($branches as $branch)
-                <tr>
-                    <td><strong>{{ $branch->name }}</strong></td>
-                    <td>{{ $branch->phone ?? '-' }}</td>
-                    <td>{{ $branch->address ?? '-' }}</td>
-                    <td>
-                        @if($branch->is_active)
-                            <span class="badge bg-label-success">Activa</span>
-                        @else
-                            <span class="badge bg-label-secondary">Inactiva</span>
-                        @endif
-                    </td>
-                    <td>
-                        <div class="dropdown">
-                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                <i class="ti tabler-dots-vertical"></i>
-                            </button>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ route('branches.qr', $branch) }}"><i class="ti tabler-qrcode me-1"></i> Código QR</a>
-                                <a class="dropdown-item" href="{{ route('branches.edit', $branch) }}"><i class="ti tabler-pencil me-1"></i> Editar</a>
-                                <form action="{{ route('branches.destroy', $branch) }}" method="POST" onsubmit="return confirm('¿Eliminar sucursal?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="dropdown-item text-danger"><i class="ti tabler-trash me-1"></i> Eliminar</button>
-                                </form>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="5" class="text-center">No hay sucursales registradas.</td>
-                </tr>
-                @endforelse
-            </tbody>
         </table>
     </div>
-    <div class="card-footer">
+    <div class="card-footer d-none">
+        @if(isset($branches))
         {{ $branches->links() }}
+        @endif
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}" />
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}" />
+@endpush
+
+@push('scripts')
+<script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
+<script>
+    GF.createAjaxDataTable('#branches-table', {
+        ajax: "{{ route('branches.datatable') }}",
+        responsive: true,
+        columns: [
+            { data: 'name' },
+            { data: 'phone' },
+            { data: 'address' },
+            { data: 'status', orderable: false, searchable: false },
+            { data: 'actions', orderable: false, searchable: false }
+        ],
+        columnDefs: [
+            { targets: [0, 3, 4], render: function (data) { return data; } }
+        ]
+    });
+</script>
+@endpush

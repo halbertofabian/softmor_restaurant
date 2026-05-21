@@ -3,10 +3,8 @@
 @section('title', 'Categorías de Gastos')
 
 @section('content')
-<div class="container-fluid flex-grow-1 container-p-y">
     <div class="row justify-content-center">
-        <div class="col-md-10 col-lg-8">
-            
+        <div class="col-12">
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -25,7 +23,7 @@
                             <label class="form-label" for="name">Nombre de la Categoría</label>
                             <div class="input-group input-group-merge">
                                 <span class="input-group-text"><i class="ti tabler-tag"></i></span>
-                                <input type="text" id="name" name="name" class="form-control" placeholder="Ej. Proveedores" required />
+                                <input type="text" id="name" name="name" class="form-control" placeholder="Ej. Proveedores" required autofocus />
                             </div>
                         </div>
                         
@@ -91,5 +89,4 @@
 
         </div>
     </div>
-</div>
 @endsection

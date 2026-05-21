@@ -6,7 +6,7 @@
         <h5 class="mb-0">Comandas Activas</h5>
     </div>
     <div class="table-responsive text-nowrap">
-        <table class="table">
+        <table class="table" id="orders-table">
             <thead>
                 <tr>
                     <th>Comanda #</th>
@@ -17,32 +17,34 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                @foreach($orders as $order)
-                <tr>
-                    <td>{{ $order->id }}</td>
-                    <td>{{ $order->table->name ?? 'N/A' }}</td>
-                    <td>
-                        @switch($order->status)
-                            @case('open') <span class="badge bg-label-primary">Abierta</span> @break
-                            @case('sent') <span class="badge bg-label-warning">Enviada</span> @break
-                            @case('in_preparation') <span class="badge bg-label-info">En Prep.</span> @break
-                            @case('closed') <span class="badge bg-label-success">Cerrada</span> @break
-                            @case('canceled') <span class="badge bg-label-danger">Cancelada</span> @break
-                        @endswitch
-                    </td>
-                    <td>${{ number_format($order->total, 2) }}</td>
-                    <td>{{ $order->created_at->format('d/m H:i') }}</td>
-                    <td>
-                        <a href="{{ route('orders.show', $order) }}" class="btn btn-sm btn-icon btn-text-primary"><i class="ti tabler-eye"></i></a>
-                        @if(!auth()->user()->hasRole('mesero'))
-                        <a href="{{ route('pos.checkout', $order) }}" class="btn btn-sm btn-icon btn-text-success"><i class="ti tabler-cash"></i></a>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
         </table>
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}" />
+<link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}" />
+@endpush
+
+@push('scripts')
+<script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
+<script>
+    GF.createAjaxDataTable('#orders-table', {
+        ajax: "{{ route('orders.datatable') }}",
+        responsive: true,
+        columns: [
+            { data: 'id' },
+            { data: 'table' },
+            { data: 'status', orderable: false, searchable: false },
+            { data: 'total' },
+            { data: 'created_at' },
+            { data: 'actions', orderable: false, searchable: false }
+        ],
+        columnDefs: [
+            { targets: [2, 5], render: function (data) { return data; } }
+        ]
+    });
+</script>
+@endpush

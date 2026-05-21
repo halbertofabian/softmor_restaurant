@@ -15,8 +15,40 @@ class OrderController extends Controller
 {
     public function index()
     {
+        return view('orders.index');
+    }
+
+    public function datatable()
+    {
         $orders = Order::where('status', '!=', 'closed')->with('table')->get();
-        return view('orders.index', compact('orders'));
+
+        $data = $orders->map(function ($order) {
+            $statusBadge = match ($order->status) {
+                'open' => '<span class="badge bg-label-primary">Abierta</span>',
+                'sent' => '<span class="badge bg-label-warning">Enviada</span>',
+                'in_preparation' => '<span class="badge bg-label-info">En Prep.</span>',
+                'closed' => '<span class="badge bg-label-success">Cerrada</span>',
+                'canceled' => '<span class="badge bg-label-danger">Cancelada</span>',
+                default => '',
+            };
+
+            $actions = '<a href="' . route('orders.show', $order) . '" class="btn btn-sm btn-icon btn-text-primary"><i class="ti tabler-eye"></i></a>';
+
+            if (!auth()->user()->hasRole('mesero')) {
+                $actions .= '<a href="' . route('pos.checkout', $order) . '" class="btn btn-sm btn-icon btn-text-success"><i class="ti tabler-cash"></i></a>';
+            }
+
+            return [
+                'id' => (string) $order->id,
+                'table' => e($order->table->name ?? 'N/A'),
+                'status' => $statusBadge,
+                'total' => '$' . number_format($order->total, 2),
+                'created_at' => $order->created_at->format('d/m H:i'),
+                'actions' => $actions,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
     }
 
     public function create()

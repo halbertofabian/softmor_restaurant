@@ -18,8 +18,8 @@
                     <h5 class="card-title">{{ $area->name }}</h5>
                     <p class="card-text text-muted">{{ $area->description ?? 'Sin descripción' }}</p>
                 </div>
-                <div class="card-footer text-center bg-light border-top">
-                    <span class="text-primary fw-bold">Abrir Monitor <i class="ti tabler-arrow-right ms-1"></i></span>
+                <div class="card-footer d-flex align-items-center justify-content-center border-top p-0" style="min-height: 52px;">
+                    <span class="text-primary fw-bold d-flex align-items-center justify-content-center gap-1 w-100 h-100">Abrir Monitor <i class="ti tabler-arrow-right"></i></span>
                 </div>
             </a>
         </div>

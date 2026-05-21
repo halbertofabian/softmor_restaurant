@@ -8,7 +8,7 @@
             @csrf
             <div class="mb-3">
                 <label class="form-label" for="name">Nombre / Número</label>
-                <input type="text" class="form-control" id="name" name="name" placeholder="Ej. Mesa 1" required>
+                <input type="text" class="form-control" id="name" name="name" placeholder="Ej. Mesa 1" required autofocus>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">

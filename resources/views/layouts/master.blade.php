@@ -45,10 +45,12 @@
     <!-- Vendors CSS -->
 
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/select2/select2.css') }}" />
 
     <!-- endbuild -->
 
     <!-- Page CSS -->
+    @stack('styles')
 
     <!-- Helpers -->
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
@@ -437,7 +439,7 @@
                     <script>
                       document.write(new Date().getFullYear());
                     </script>
-                    , made with ❤️ by <a href="https://pixinvent.com" target="_blank" class="footer-link">Gestional Food</a>
+                    , hecha con ❤️ por <a href="https://softmor.com/" target="_blank" class="footer-link">Softmor Tecnología</a>
                   </div>
                 </div>
               </div>
@@ -473,6 +475,7 @@
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
 
     <script src="{{ asset('assets/vendor/libs/hammer/hammer.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
 
     <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
 
@@ -483,6 +486,7 @@
     <!-- Main JS -->
 
     <script src="{{ asset('assets/js/main.js') }}"></script>
+    <script src="{{ asset('assets/js/global.js') }}"></script>
 
     <!-- Page JS -->
     <!-- Page JS -->

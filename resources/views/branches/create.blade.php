@@ -13,7 +13,7 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Nombre de la Sucursal</label>
-                        <input type="text" class="form-control" name="name" placeholder="Ej. Matriz, Centro, Norte" required />
+                        <input type="text" class="form-control" name="name" placeholder="Ej. Matriz, Centro, Norte" required autofocus />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Teléfono</label>
