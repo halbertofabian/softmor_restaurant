@@ -151,7 +151,8 @@ class PosController extends Controller
             // Add the printer name configured in the cloud to the payload sent to local server
             $printData['printer_name'] = $settings['ticket_printer_name'] ?? 'POS-80';
 
-            return view('pos.print-bridge', compact('order', 'printData', 'settings'));
+            $redirectUrl = route('tables.index');
+            return view('pos.print-bridge', compact('order', 'printData', 'settings', 'redirectUrl'));
 
 
         } catch (\Exception $e) {

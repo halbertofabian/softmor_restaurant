@@ -114,6 +114,12 @@
             scrollbar-width: none;
         }
 
+        .category-scroll {
+            overflow-x: scroll;
+            overflow-y: hidden;
+            scrollbar-gutter: stable;
+        }
+
         /* Custom Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 6px;
@@ -409,7 +415,7 @@
                 </div>
                 
                 <!-- Categorías Rápidas -->
-                <div class="d-flex gap-3 mb-4 overflow-auto pb-2 hide-scrollbar">
+                <div class="d-flex flex-nowrap gap-3 mb-4 pb-2 category-scroll">
                     <div onclick="filterProducts('all')" class="card category-box category-active category-btn" id="cat-btn-all">
                         <i data-lucide="layout-grid" class="mb-2" size="24"></i>
                         <span class="fw-bold small">Todo</span>

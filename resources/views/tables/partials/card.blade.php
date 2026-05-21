@@ -46,11 +46,12 @@ if ($isActive) {
             
             @unless(auth()->user()->hasRole('mesero'))
             <div class="dropdown">
-                <button class="btn btn-sm btn-icon rounded-pill p-0" type="button" data-bs-toggle="dropdown" style="color: var(--text-secondary);">
-                    <i class="ti tabler-dots-vertical"></i>
+                <button class="btn btn-icon rounded-pill p-0" type="button" data-bs-toggle="dropdown" style="color: var(--text-secondary); width: 2.25rem; height: 2.25rem;">
+                    <i class="ti tabler-dots-vertical" style="font-size: 1.2rem;"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" style="background: var(--card-bg); border-color: var(--border-subtle);">
                     <li><a class="dropdown-item text-white hover-primary" href="{{ route('tables.edit', $table) }}"><i class="ti tabler-edit me-2"></i>Editar</a></li>
+                    @if($status !== 'occupied')
                     <li>
                         <form action="{{ route('tables.destroy', $table) }}" method="POST">
                             @csrf
@@ -58,6 +59,7 @@ if ($isActive) {
                             <button type="submit" class="dropdown-item text-danger" onclick="return confirm('¿Eliminar?')"><i class="ti tabler-trash me-2"></i>Eliminar</button>
                         </form>
                     </li>
+                    @endif
                 </ul>
             </div>
             @endunless
