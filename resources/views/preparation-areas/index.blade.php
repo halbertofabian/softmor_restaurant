@@ -6,7 +6,9 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Áreas de Preparación</h5>
-        <a href="{{ route('preparation-areas.create') }}" class="btn btn-primary">Nueva Área</a>
+        <a href="{{ route('preparation-areas.create') }}" class="btn btn-primary">
+            <i class="ti tabler-plus me-1"></i> Nueva Área
+        </a>
     </div>
     <div class="table-responsive text-nowrap">
         <table class="table" id="preparation-areas-table">

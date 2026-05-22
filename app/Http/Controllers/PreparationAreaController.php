@@ -22,7 +22,7 @@ class PreparationAreaController extends Controller
             $token = csrf_token();
 
             $printTicketBadge = $area->print_ticket
-                ? '<span class="badge bg-label-success">SÃ­</span>'
+                ? '<span class="badge bg-label-success">Sí­</span>'
                 : '<span class="badge bg-label-secondary">No</span>';
 
             $statusBadge = $area->status

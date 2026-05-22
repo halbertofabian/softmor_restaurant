@@ -6,7 +6,9 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Categorías</h5>
-        <a href="{{ route('categories.create') }}" class="btn btn-primary">Nueva Categoría</a>
+        <a href="{{ route('categories.create') }}" class="btn btn-primary">
+            <i class="ti tabler-plus me-1"></i> Nueva Categoría
+        </a>
     </div>
     <div class="table-responsive text-nowrap">
         <table class="table" id="categories-table">

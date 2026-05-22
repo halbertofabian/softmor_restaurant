@@ -4,7 +4,9 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Productos</h5>
-        <a href="{{ route('products.create') }}" class="btn btn-primary">Nuevo Producto</a>
+        <a href="{{ route('products.create') }}" class="btn btn-primary">
+            <i class="ti tabler-plus me-1"></i> Nuevo Producto
+        </a>
     </div>
     <div class="table-responsive text-nowrap">
         <table class="table" id="products-table">
