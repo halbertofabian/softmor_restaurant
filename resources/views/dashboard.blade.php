@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-1">Bienvenido a Restaurant Softmor! 🚀</h4>
+            <h4 class="fw-bold mb-1">Bienvenido a Gestional Food! 🚀</h4>
             <p class="text-muted small">Este es tu panel principal. Aquí está el resumen de tu operación.</p>
         </div>
     </div>

@@ -283,7 +283,7 @@ class PosController extends Controller
             'printer_name' => $settings['ticket_printer_name'] ?? 'POS-80',
         ];
 
-        $redirectUrl = request('redirect', route('pos.checkout', $order));
+        $redirectUrl = route('pos.checkout', $order);
 
         return view('pos.print-bridge', compact('order', 'printData', 'settings', 'redirectUrl'));
     }

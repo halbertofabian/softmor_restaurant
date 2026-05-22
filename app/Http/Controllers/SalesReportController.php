@@ -62,7 +62,7 @@ class SalesReportController extends Controller
 
             $actions = '';
             if ($payment->order) {
-                $actions .= '<a href="' . route('orders.pre-check.print-direct', ['order' => $payment->order, 'redirect' => route('reports.sales.index')]) . '" target="_blank" class="btn btn-sm btn-icon btn-text-secondary rounded-pill" title="Reimprimir Ticket"><i class="ti tabler-printer"></i></a>';
+                $actions .= '<a href="' . route('pos.ticket', $payment->order) . '" target="_blank" class="btn btn-sm btn-icon btn-text-secondary rounded-pill" title="Reimprimir Ticket"><i class="ti tabler-printer"></i></a>';
                 $actions .= '<a href="' . route('orders.show', $payment->order) . '" class="btn btn-sm btn-icon btn-text-primary rounded-pill" title="Ver Comanda"><i class="ti tabler-eye"></i></a>';
             }
 

@@ -12,7 +12,7 @@
         body {
             font-family: 'Courier New', Courier, monospace;
             font-size: {{ $settings['ticket_font_size'] ?? '12' }}px;
-            line-height: 1.2;
+            line-height: 1.3;
             margin-top: {{ $settings['ticket_margin_top'] ?? '0' }}mm;
             margin-left: {{ $settings['ticket_margin_left'] ?? '0' }}mm;
             margin-right: {{ $settings['ticket_margin_right'] ?? '0' }}mm;
@@ -20,20 +20,35 @@
             width: {{ $settings['ticket_printer_width'] ?? '80mm' }};
             box-sizing: border-box;
             background: #fff;
-            color: #000;
+            color: #000 !important;
+            font-weight: 600;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+            -webkit-font-smoothing: none;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
-        .font-bold { font-weight: bold; }
+        .font-bold { font-weight: 700; }
         .uppercase { text-transform: uppercase; }
         .mb-1 { margin-bottom: 4px; }
         .mb-2 { margin-bottom: 8px; }
         .border-b { border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 5px; }
         .flex { display: flex; justify-content: space-between; }
-        .no-print { display: block; }
+        .text-muted { color: #000; opacity: .8; }
+        .no-print { display: none !important; }
+        .ticket-header { text-align: center; margin-bottom: 8px; }
+        .ticket-title { font-size: 1.2em; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+        .divider { border-top: 1px dashed #000; margin: 8px 0; }
+        .info-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
+        .info-label { white-space: nowrap; }
+        .info-value { text-align: right; flex: 1; }
+        .item-row { margin-bottom: 6px; }
+        .item-name { word-break: break-word; }
+        .item-total { text-align: right; font-weight: 600; }
+        .section-title { text-align: center; font-weight: 700; margin: 4px 0; }
+        .ticket-total { display: flex; justify-content: space-between; font-size: 1.15em; font-weight: 700; }
         
         @media print {
-            .no-print { display: none; }
             body { padding: 0; width: 100%; }
         }
 
@@ -51,26 +66,30 @@
     </style>
 </head>
 <body>
-    <div class="text-center mb-2">
-        <div class="font-bold uppercase" style="font-size: 1.2em;">Gestional Food</div>
+    <div class="ticket-header">
+        <div class="ticket-title">Gestional Food</div>
         <div>Surcursal: {{ $order->branch->name ?? 'Principal' }}</div>
         <div>{{ now()->format('d/m/Y H:i A') }}</div>
         <div>Ticket #: {{ $order->id }}</div>
-        <div>Atendido por: {{ $order->user->name ?? 'Sistema' }}</div>
     </div>
 
-    <div class="border-b"></div>
+    <div class="divider"></div>
+    <div class="info-row">
+        <span class="info-label">Atendido por:</span>
+        <span class="info-value">{{ $order->user->name ?? 'Sistema' }}</span>
+    </div>
+    <div class="divider"></div>
 
     @foreach($order->details as $detail)
-    <div class="mb-1">
-        <div>{{ $detail->quantity }} x {{ $detail->product->name ?? 'Producto' }}</div>
-        <div class="text-right">${{ number_format($detail->price * $detail->quantity, 2) }}</div>
+    <div class="item-row">
+        <div class="item-name">{{ $detail->quantity }} x {{ $detail->product->name ?? 'Producto' }}</div>
+        <div class="item-total">${{ number_format($detail->price * $detail->quantity, 2) }}</div>
     </div>
     @endforeach
 
-    <div class="border-b"></div>
+    <div class="divider"></div>
 
-    <div class="flex font-bold" style="font-size: 1.1em;">
+    <div class="ticket-total">
         <span>TOTAL:</span>
         <span>${{ number_format($order->total, 2) }}</span>
     </div>
@@ -81,15 +100,24 @@
     @endif
 
     @if($order->status === 'closed' && !isset($isPreCheck))
+    @php
+        $paymentTotals = $order->payments->groupBy('method')->map(function($group){
+            return $group->sum('amount');
+        });
+    @endphp
+    <div class="divider"></div>
     <div class="mb-2" style="margin-top: 5px;">
-        @foreach($order->payments as $payment)
-        <div class="flex">
-            <span>{{ ucfirst($payment->method) }}:</span>
-            <span>${{ number_format($payment->amount, 2) }}</span>
+        <div class="section-title">METODOS DE PAGO</div>
+        @foreach($paymentTotals as $method => $amount)
+        <div class="info-row">
+            <span>{{ ucfirst($method) }}:</span>
+            <span>${{ number_format($amount, 2) }}</span>
         </div>
-        @if($payment->reference)
-        <div style="font-size: 10px;">Ref: {{ $payment->reference }}</div>
-        @endif
+        @endforeach
+        @foreach($order->payments as $payment)
+            @if($payment->reference)
+            <div class="text-muted" style="font-size: 10px;">Ref: {{ $payment->reference }}</div>
+            @endif
         @endforeach
     </div>
     @endif
@@ -141,10 +169,16 @@
     @endif
 
     <script>
-        window.onload = function() {
-            // Auto print logic can be enabled if desired
-            // window.print();
-        }
+        window.addEventListener('load', function () {
+            window.print();
+        });
+
+        window.addEventListener('afterprint', function () {
+            window.close();
+            setTimeout(function () {
+                window.location.href = 'about:blank';
+            }, 150);
+        });
     </script>
 </body>
 </html>

@@ -18,6 +18,12 @@
             padding: 10px;
             width: {{ $settings['ticket_printer_width'] ?? '80mm' }};
             background: #fff;
+            color: #000 !important;
+            font-weight: 600;
+            line-height: 1.35;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+            -webkit-font-smoothing: none;
         }
         .header {
             text-align: center;
@@ -27,6 +33,7 @@
             margin: 0;
             font-size: 1.25em;
             text-transform: uppercase;
+            font-weight: 700;
         }
         .info-row {
             display: flex;
@@ -43,8 +50,11 @@
         .total-row {
             display: flex;
             justify-content: space-between;
-            font-weight: bold;
+            font-weight: 700;
             font-size: 1.1em;
+        }
+        strong {
+            font-weight: 700;
         }
         .footer {
             text-align: center;
@@ -56,7 +66,7 @@
 <body onload="window.print()">
 
     <div class="header">
-        <h2>Restaurant Softmor</h2>
+        <h2>Gestional Food</h2>
         <p>Corte de Caja #{{ $cashRegister->id }}</p>
         <p>{{ $cashRegister->branch->name ?? 'Sucursal Principal' }}</p>
     </div>
@@ -174,6 +184,15 @@
         <p>Generado el {{ now()->format('d/m/Y H:i') }}</p>
         <p>*** Fin del Reporte ***</p>
     </div>
+
+    <script>
+        window.addEventListener('afterprint', function () {
+            window.close();
+            setTimeout(function () {
+                window.location.href = 'about:blank';
+            }, 150);
+        });
+    </script>
 
 </body>
 </html>
