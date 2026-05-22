@@ -230,11 +230,6 @@ static class TicketFormatter
                 var qty = item.quantity ?? 1;
                 var price = item.price ?? 0;
 
-                if (name.Length > 20)
-                {
-                    name = name[..20];
-                }
-
                 sb.AppendLine($"{qty:0.##} x {name}");
                 sb.AppendLine($"${(price * qty):0.00}");
             }

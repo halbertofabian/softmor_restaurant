@@ -22,7 +22,9 @@ class ProductController extends Controller
 
     public function datatable()
     {
-        $products = Product::with(['category', 'flavors'])->get();
+        $products = Product::with(['category', 'flavors'])
+        ->orderBy('id', 'desc')
+        ->get();
 
         $data = $products->map(function ($product) {
             $editUrl = route('products.edit', $product);

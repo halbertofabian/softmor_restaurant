@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 use Mike42\Escpos\Printer;
 
@@ -173,6 +174,58 @@ class PosController extends Controller
         // Update status to 'sent'
         foreach ($pendingDetails as $detail) {
             $detail->update(['status' => 'sent']);
+        }
+
+        // Direct local print by preparation area (no monitor tab required)
+        try {
+            $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
+                ->pluck('value', 'key')
+                ->toArray();
+
+            $bridgeUrl = $settings['local_bridge_url'] ?? 'http://localhost:8000/api/printer/raw';
+            $defaultPrinter = $settings['ticket_printer_name'] ?? 'POS-80';
+
+            $order->loadMissing(['table', 'user']);
+
+            $detailsByArea = $pendingDetails->groupBy('preparation_area_id');
+            $areas = \App\Models\PreparationArea::whereIn('id', $detailsByArea->keys()->filter()->values())
+                ->get()
+                ->keyBy('id');
+
+            foreach ($detailsByArea as $areaId => $items) {
+                if (!$areaId) {
+                    continue;
+                }
+
+                $area = $areas->get($areaId);
+                if (!$area || !$area->print_ticket) {
+                    continue;
+                }
+
+                $payload = [
+                    'type' => 'kitchen',
+                    'printer_name' => !empty($area->printer_name) ? $area->printer_name : $defaultPrinter,
+                    'table_name' => $order->table->name ?? '?',
+                    'waiter_name' => $order->user->name ?? 'Mesero',
+                    'date' => now()->format('H:i'),
+                    'items' => $items->map(function ($item) {
+                        return [
+                            'quantity' => $item->quantity,
+                            'name' => $item->product_name . ($item->flavor_name ? ' (' . $item->flavor_name . ')' : ''),
+                            'notes' => $item->notes ?? '',
+                        ];
+                    })->values()->all(),
+                ];
+
+                $response = Http::timeout(8)->post($bridgeUrl, $payload);
+
+                if ($response->ok()) {
+                    \App\Models\OrderDetail::whereIn('id', $items->pluck('id')->all())
+                        ->update(['is_printed' => true]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Keep order flow running even if local printer is unavailable
         }
         
         return back()->with('success', count($pendingDetails) . ' items enviados a cocina.');
