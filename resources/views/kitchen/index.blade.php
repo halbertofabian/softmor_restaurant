@@ -8,7 +8,7 @@
     <div class="row">
         @foreach($areas as $area)
         <div class="col-md-4 col-sm-6 mb-4">
-            <a href="{{ route('kitchen.monitor', $area) }}" class="card h-100 text-decoration-none text-body hover-shadow">
+            <a href="{{ route('kitchen.monitor', $area) }}" class="card h-100 text-decoration-none text-body hover-shadow" target="_blank">
                 <div class="card-body text-center">
                     <div class="avatar avatar-xl mx-auto mb-3">
                         <span class="avatar-initial rounded bg-label-primary display-4">
