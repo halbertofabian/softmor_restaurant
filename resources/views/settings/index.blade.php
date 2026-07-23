@@ -103,6 +103,12 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="mt-3 d-flex align-items-center gap-3">
+                                        <button class="btn btn-outline-primary" type="button" id="connect_print_agent">
+                                            <i class="ti tabler-plug-connected me-1"></i> Conectar agente
+                                        </button>
+                                        <span class="small text-muted" id="print_agent_status"></span>
+                                    </div>
                                 </div>
 
                                 <!-- Local Bridge Section -->
@@ -429,5 +435,42 @@ async function fetchPrinters() {
         btn.disabled = false;
     }
 }
+
+document.getElementById('connect_print_agent')?.addEventListener('click', async function () {
+    const button = this;
+    const status = document.getElementById('print_agent_status');
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+    try {
+        const response = await fetch('{{ route('settings.print-agent.connect') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        });
+        const config = await response.json();
+        if (!response.ok) throw new Error();
+
+        const agentResponse = await fetch('http://localhost:8000/api/agent/configure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+        if (!agentResponse.ok) throw new Error();
+
+        status.className = 'small text-success';
+        status.textContent = 'Agente conectado';
+    } catch (error) {
+        status.className = 'small text-danger';
+        status.textContent = 'No se pudo conectar el agente';
+    } finally {
+        button.disabled = false;
+        button.innerHTML = original;
+    }
+});
 </script>
 @endsection

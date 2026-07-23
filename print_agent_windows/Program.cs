@@ -11,6 +11,8 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseUrls("http://localhost:8000");
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<PrintJobPoller>();
 
 var app = builder.Build();
 
@@ -99,6 +101,18 @@ app.MapPost("/printer/raw", async (HttpContext ctx) =>
     {
         return Results.Json(new { status = "error", message = ex.Message }, statusCode: 500);
     }
+});
+
+app.MapPost("/api/agent/configure", async (HttpContext ctx) =>
+{
+    var config = await ctx.Request.ReadFromJsonAsync<AgentConfiguration>();
+    if (config is null || string.IsNullOrWhiteSpace(config.server_url) || string.IsNullOrWhiteSpace(config.token))
+    {
+        return Results.Json(new { status = "error", message = "Invalid configuration" }, statusCode: 400);
+    }
+
+    AgentConfigurationStore.Save(config);
+    return Results.Json(new { status = "success" });
 });
 
 app.MapGet("/", () => Results.Json(new
@@ -222,6 +236,8 @@ static class TicketFormatter
             sb.AppendLine($"Sucursal: {data.branch_name ?? "Principal"}");
             sb.AppendLine(data.date ?? DateTime.Now.ToString("dd/MM/yyyy hh:mm tt"));
             sb.AppendLine($"Ticket #: {data.ticket_id ?? "N/A"}");
+            if (!string.IsNullOrWhiteSpace(data.table_name)) sb.AppendLine($"Mesa: {data.table_name}");
+            if (!string.IsNullOrWhiteSpace(data.waiter_name)) sb.AppendLine($"Mesero: {data.waiter_name}");
             sb.AppendLine("--------------------------------");
 
             foreach (var item in data.items ?? Enumerable.Empty<PrintItem>())

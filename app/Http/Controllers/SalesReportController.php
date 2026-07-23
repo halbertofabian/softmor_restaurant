@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -30,6 +31,12 @@ class SalesReportController extends Controller
             $query->where('method', $request->method);
         }
 
+        if ($request->filled('waiter_id')) {
+            $query->whereHas('order', function ($orderQuery) use ($request) {
+                $orderQuery->where('user_id', $request->waiter_id);
+            });
+        }
+
         return $query;
     }
 
@@ -37,7 +44,17 @@ class SalesReportController extends Controller
     {
         $query = $this->applyFilters($request);
         $totalAmount = (clone $query)->sum('amount');
-        return view('reports.sales.index', compact('totalAmount'));
+        $waiters = User::where('tenant_id', auth()->user()->tenant_id)
+            ->whereHas('branches', function ($branchQuery) {
+                $branchQuery->where('branches.id', session('branch_id'));
+            })
+            ->whereHas('roles', function ($roleQuery) {
+                $roleQuery->where('name', 'mesero');
+            })
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('reports.sales.index', compact('totalAmount', 'waiters'));
     }
 
     public function datatable(Request $request)
@@ -46,12 +63,30 @@ class SalesReportController extends Controller
         $totalAmount = (clone $query)->sum('amount');
         $sales = $query->get();
 
+        $waiterTotals = $sales->groupBy(function ($payment) {
+            return $payment->order?->user_id ?? 'unassigned';
+        })->map(function ($payments) {
+            $waiter = $payments->first()->order?->user;
+
+            return [
+                'name' => $waiter?->name ?? 'Sin asignar',
+                'orders' => $payments->pluck('order_id')->unique()->count(),
+                'amount' => number_format($payments->sum('amount'), 2, '.', ''),
+            ];
+        })->sortByDesc(function ($waiter) {
+            return (float) $waiter['amount'];
+        })->values();
+
         $data = $sales->map(function ($payment) {
             $folio = '<span class="fw-bold text-primary">#' . e($payment->order_id) . '</span>';
             $date = '<div class="d-flex flex-column"><span class="fw-medium">' . $payment->created_at->format('d/m/Y') . '</span><small class="text-muted">' . $payment->created_at->format('g:i A') . '</small></div>';
             $client = ($payment->order && $payment->order->name)
                 ? e(\Illuminate\Support\Str::limit($payment->order->name, 20))
                 : '<span class="text-muted fst-italic">Público General</span>';
+
+            $waiter = $payment->order?->user
+                ? e($payment->order->user->name)
+                : '<span class="text-muted fst-italic">Sin asignar</span>';
 
             $method = match ($payment->method) {
                 'cash' => '<span class="badge bg-label-success"><i class="ti tabler-cash me-1"></i> Efectivo</span>',
@@ -70,6 +105,7 @@ class SalesReportController extends Controller
                 'folio' => $folio,
                 'date' => $date,
                 'client' => $client,
+                'waiter' => $waiter,
                 'method' => $method,
                 'reference' => e($payment->reference ?? '-'),
                 'amount' => '$' . number_format($payment->amount, 2),
@@ -80,6 +116,7 @@ class SalesReportController extends Controller
         return response()->json([
             'data' => $data,
             'totalAmount' => number_format($totalAmount, 2, '.', ''),
+            'waiterTotals' => $waiterTotals,
         ]);
     }
 }

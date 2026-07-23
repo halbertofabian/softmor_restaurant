@@ -7,6 +7,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Payment;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\PrintJobService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -135,6 +136,8 @@ class PosController extends Controller
                 'header' => 'Gestional Food',
                 'branch_name' => $order->branch->name ?? 'Principal',
                 'ticket_id' => $order->id,
+                'table_name' => $order->table->name ?? '?',
+                'waiter_name' => $order->user->name ?? 'Mesero',
                 'date' => now()->format('d/m/Y H:i A'),
                 'total' => $order->total,
                 'items' => $order->details->map(function($detail) {
@@ -184,6 +187,10 @@ class PosController extends Controller
 
             $bridgeUrl = $settings['local_bridge_url'] ?? 'http://localhost:8000/api/printer/raw';
             $defaultPrinter = $settings['ticket_printer_name'] ?? 'POS-80';
+
+            if (app(PrintJobService::class)->enqueueKitchen($order, $pendingDetails, $settings)) {
+                return back()->with('success', count($pendingDetails) . ' items enviados a cocina.');
+            }
 
             $order->loadMissing(['table', 'user']);
 

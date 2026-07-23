@@ -21,12 +21,12 @@
         <div class="card-body">
             <form id="sales-filter-form" action="{{ route('reports.sales.index') }}" method="GET"
                 class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label" for="start_date">Fecha Inicio</label>
                     <input type="date" id="start_date" name="start_date" class="form-control"
                         value="{{ request('start_date') }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label" for="end_date">Fecha Fin</label>
                     <input type="date" id="end_date" name="end_date" class="form-control"
                         value="{{ request('end_date') }}">
@@ -43,6 +43,18 @@
                     </select>
                 </div>
                 <div class="col-md-3">
+                    <label class="form-label" for="waiter_id">Mesero</label>
+                    <select id="waiter_id" name="waiter_id" class="form-select">
+                        <option value="">Todos</option>
+                        @foreach ($waiters as $waiter)
+                            <option value="{{ $waiter->id }}"
+                                {{ (string) request('waiter_id') === (string) $waiter->id ? 'selected' : '' }}>
+                                {{ $waiter->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="ti tabler-filter me-1"></i> Filtrar
@@ -56,6 +68,13 @@
         </div>
     </div>
 
+    <div class="card mb-4" id="sales-waiter-summary">
+        <div class="card-header">
+            <h5 class="mb-0 fw-bold">Ventas por Mesero</h5>
+        </div>
+        <div class="card-body" id="sales-waiter-summary-body"></div>
+    </div>
+
     <!-- Table -->
     <div class="card">
         <div class="table-responsive text-nowrap">
@@ -65,6 +84,7 @@
                         <th class="ps-4">Folio Venta</th>
                         <th>Fecha</th>
                         <th>Cliente</th>
+                        <th>Atendió</th>
                         <th>Método</th>
                         <th>Referencia</th>
                         <th class="text-end">Monto</th>
@@ -96,7 +116,8 @@
                 return {
                     start_date: $('#start_date').val(),
                     end_date: $('#end_date').val(),
-                    method: $('#method').val()
+                    method: $('#method').val(),
+                    waiter_id: $('#waiter_id').val()
                 };
             },
             responsive: true,
@@ -108,6 +129,9 @@
                 },
                 {
                     data: 'client'
+                },
+                {
+                    data: 'waiter'
                 },
                 {
                     data: 'method',
@@ -127,17 +151,17 @@
                 }
             ],
             columnDefs: [{
-                    targets: [0, 1, 2, 3, 6],
+                    targets: [0, 1, 2, 3, 4, 7],
                     render: function(data) {
                         return data;
                     }
                 },
                 {
-                    targets: [5],
+                    targets: [6],
                     className: 'text-end fw-bold'
                 },
                 {
-                    targets: [6],
+                    targets: [7],
                     className: 'text-center'
                 }
             ]
@@ -153,6 +177,51 @@
                 return;
             }
             $('#sales-total-amount').text('$' + json.totalAmount);
+            renderWaiterTotals(json.waiterTotals || []);
         });
+
+        function renderWaiterTotals(waiters) {
+            var body = $('#sales-waiter-summary-body').empty();
+
+            if (!waiters.length) {
+                body.append($('<span>', {
+                    class: 'text-muted',
+                    text: 'Sin ventas para los filtros seleccionados.'
+                }));
+                return;
+            }
+
+            var row = $('<div>', {
+                class: 'row g-3'
+            });
+
+            waiters.forEach(function(waiter) {
+                var column = $('<div>', {
+                    class: 'col-md-4'
+                });
+                var item = $('<div>', {
+                    class: 'border rounded p-3 d-flex justify-content-between align-items-center h-100'
+                });
+                var details = $('<div>');
+
+                details.append($('<div>', {
+                    class: 'fw-bold',
+                    text: waiter.name
+                }));
+                details.append($('<small>', {
+                    class: 'text-muted',
+                    text: waiter.orders + ' comandas cobradas'
+                }));
+                item.append(details);
+                item.append($('<span>', {
+                    class: 'fw-bold text-success fs-5',
+                    text: '$' + Number(waiter.amount).toFixed(2)
+                }));
+                column.append(item);
+                row.append(column);
+            });
+
+            body.append(row);
+        }
     </script>
 @endpush

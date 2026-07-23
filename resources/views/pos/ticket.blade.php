@@ -9,14 +9,19 @@
             margin: 0;
             size: {{ $settings['ticket_printer_width'] ?? '80mm' }} auto;
         }
+        html {
+            width: {{ $settings['ticket_printer_width'] ?? '80mm' }};
+            background: #fff;
+        }
         body {
             font-family: 'Courier New', Courier, monospace;
             font-size: {{ $settings['ticket_font_size'] ?? '12' }}px;
             line-height: 1.3;
-            margin-top: {{ $settings['ticket_margin_top'] ?? '0' }}mm;
-            margin-left: {{ $settings['ticket_margin_left'] ?? '0' }}mm;
-            margin-right: {{ $settings['ticket_margin_right'] ?? '0' }}mm;
-            padding: 10px;
+            margin: 0;
+            padding-top: calc({{ $settings['ticket_margin_top'] ?? '0' }}mm + 2mm);
+            padding-right: {{ $settings['ticket_margin_right'] ?? '0' }}mm;
+            padding-bottom: 4mm;
+            padding-left: {{ $settings['ticket_margin_left'] ?? '0' }}mm;
             width: {{ $settings['ticket_printer_width'] ?? '80mm' }};
             box-sizing: border-box;
             background: #fff;
@@ -41,17 +46,13 @@
         .divider { border-top: 1px dashed #000; margin: 8px 0; }
         .info-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
         .info-label { white-space: nowrap; }
-        .info-value { text-align: right; flex: 1; }
+        .info-value { text-align: right; flex: 1; min-width: 0; overflow-wrap: anywhere; }
         .item-row { margin-bottom: 6px; }
         .item-name { word-break: break-word; }
         .item-total { text-align: right; font-weight: 600; }
         .section-title { text-align: center; font-weight: 700; margin: 4px 0; }
         .ticket-total { display: flex; justify-content: space-between; font-size: 1.15em; font-weight: 700; }
         
-        @media print {
-            body { padding: 0; width: 100%; }
-        }
-
         .btn {
             background: #000;
             color: #fff;
@@ -74,6 +75,10 @@
     </div>
 
     <div class="divider"></div>
+    <div class="info-row">
+        <span class="info-label">Mesa:</span>
+        <span class="info-value">{{ $order->table->name ?? '?' }}</span>
+    </div>
     <div class="info-row">
         <span class="info-label">Atendido por:</span>
         <span class="info-value">{{ $order->user->name ?? 'Sistema' }}</span>

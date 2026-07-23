@@ -9,6 +9,8 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductFlavor;
 use App\Models\Table;
+use App\Models\Setting;
+use App\Services\PrintJobService;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -363,10 +365,18 @@ class OrderController extends Controller
 
     public function sendToKitchen(Order $order)
     {
+        $pendingDetails = $order->details()->where('status', 'pending')->get();
+
         $order->details()->where('status', 'pending')->update([
             'status' => 'sent',
             'updated_at' => now(),
         ]);
+
+        if ($pendingDetails->isNotEmpty()) {
+            $settings = Setting::where('branch_id', $order->branch_id)->pluck('value', 'key')->toArray();
+            app(PrintJobService::class)->enqueueKitchen($order, $pendingDetails, $settings);
+        }
+
         return redirect()->route('orders.mobile', $order)->with('success', '¡Pedido enviado a cocina exitosamente!');
     }
 

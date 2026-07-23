@@ -9,6 +9,7 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductFlavor;
 use App\Models\Table;
+use App\Services\PrintJobService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -190,6 +191,14 @@ class ApiOrderController extends Controller
 
             $bridgeUrl = $settings['local_bridge_url'] ?? 'http://localhost:8000/api/printer/raw';
             $defaultPrinter = $settings['ticket_printer_name'] ?? 'POS-80';
+
+            if (app(PrintJobService::class)->enqueueKitchen($order, $pendingDetails, $settings)) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => "$updatedCount items enviados a cocina",
+                    'updated_count' => $updatedCount
+                ]);
+            }
 
             $order->loadMissing(['table', 'user']);
 

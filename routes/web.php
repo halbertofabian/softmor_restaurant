@@ -112,6 +112,7 @@ Route::middleware('auth')->group(function () {
 
             Route::get('settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
             Route::post('settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+            Route::post('settings/print-agent/connect', [\App\Http\Controllers\PrintAgentController::class, 'connect'])->name('settings.print-agent.connect');
 
             // Sales Report
             Route::get('reports/sales/datatable', [\App\Http\Controllers\SalesReportController::class, 'datatable'])->name('reports.sales.datatable');

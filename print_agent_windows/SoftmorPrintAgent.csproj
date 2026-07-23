@@ -8,4 +8,8 @@
     <OutputType>Exe</OutputType>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Remove="bin\**;obj\**;publish\**" />
+    <None Remove="bin\**;obj\**;publish\**" />
+  </ItemGroup>
 </Project>
