@@ -103,7 +103,7 @@ if ($isActive) {
                                     {{-- Cajero/Admin --}}
                                     <div class="d-grid gap-2">
                                         <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn fw-bold" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000; border: none;">
-                                            <i class="ti tabler-cash me-1"></i> Cobrar
+                                            <i class="ti tabler-clipboard-list me-1"></i> Ver Orden
                                         </a>
                                         <div class="row g-2 align-items-stretch flex-nowrap">
                                             <div class="col-6">
@@ -113,7 +113,7 @@ if ($isActive) {
                                             </div>
                                             <div class="col-6">
                                                 <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn btn-sm w-100 h-100 d-flex align-items-center justify-content-center" style="border: 1px solid var(--primary); color: var(--primary);">
-                                                    <i class="ti tabler-door-enter me-1"></i> Entrar
+                                                    <i class="ti tabler-cash me-1"></i> Cobrar
                                                 </a>
                                             </div>
                                         </div>
