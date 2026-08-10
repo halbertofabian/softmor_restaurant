@@ -25,5 +25,5 @@ Thumbs.db
 /plantilla_base
 /print_agent_windows/bin
 /print_agent_windows/obj
-/print_agent_windows/publish/win-x64/publish/publish
+/print_agent_windows/publish
 /iniciar.bat

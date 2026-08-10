@@ -546,7 +546,7 @@
                                 @csrf
                                 <button type="submit" class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2">
                                     <i data-lucide="send" size="20"></i>
-                                    <span style="font-size: 0.9rem;">Enviar a Cocina ({{ $pendingCount }})</span>
+                                    <span style="font-size: 0.9rem;">Enviar comanda ({{ $pendingCount }})</span>
                                 </button>
                             </form>
                         </div>

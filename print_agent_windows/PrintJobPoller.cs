@@ -49,17 +49,21 @@ sealed class PrintJobPoller(IHttpClientFactory httpClientFactory) : BackgroundSe
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            var processedJob = false;
             var config = AgentConfigurationStore.Load();
             if (config is not null && !string.IsNullOrWhiteSpace(config.server_url) && !string.IsNullOrWhiteSpace(config.token))
             {
-                await ProcessNextJob(config, stoppingToken);
+                processedJob = await ProcessNextJob(config, stoppingToken);
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            if (!processedJob)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
+            }
         }
     }
 
-    private async Task ProcessNextJob(AgentConfiguration config, CancellationToken cancellationToken)
+    private async Task<bool> ProcessNextJob(AgentConfiguration config, CancellationToken cancellationToken)
     {
         var client = httpClientFactory.CreateClient();
         client.Timeout = TimeSpan.FromSeconds(8);
@@ -71,18 +75,19 @@ sealed class PrintJobPoller(IHttpClientFactory httpClientFactory) : BackgroundSe
             var response = await client.GetAsync($"{config.server_url!.TrimEnd('/')}/jobs/next", cancellationToken);
             if (response.StatusCode == System.Net.HttpStatusCode.NoContent || !response.IsSuccessStatusCode)
             {
-                return;
+                return false;
             }
 
             job = await response.Content.ReadFromJsonAsync<PrintJobEnvelope>(cancellationToken: cancellationToken);
             if (job?.payload is null)
             {
-                return;
+                return false;
             }
 
             var printerName = string.IsNullOrWhiteSpace(job.payload.printer_name) ? "POS-80" : job.payload.printer_name.Trim();
             RawPrinter.SendStringToPrinter(printerName, TicketFormatter.Build(job.payload));
             await client.PostAsync($"{config.server_url.TrimEnd('/')}/jobs/{job.id}/printed", null, cancellationToken);
+            return true;
         }
         catch (Exception ex) when (job is not null)
         {
@@ -97,9 +102,12 @@ sealed class PrintJobPoller(IHttpClientFactory httpClientFactory) : BackgroundSe
             catch
             {
             }
+
+            return false;
         }
         catch
         {
+            return false;
         }
     }
 }
