@@ -11,8 +11,10 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseUrls("http://localhost:8000");
+builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<PrintJobPoller>();
+builder.Services.AddSingleton<PrintJobPoller>();
+builder.Services.AddHostedService(serviceProvider => serviceProvider.GetRequiredService<PrintJobPoller>());
 
 var app = builder.Build();
 
@@ -103,7 +105,7 @@ app.MapPost("/printer/raw", async (HttpContext ctx) =>
     }
 });
 
-app.MapPost("/api/agent/configure", async (HttpContext ctx) =>
+app.MapPost("/api/agent/configure", async (HttpContext ctx, PrintJobPoller poller) =>
 {
     var config = await ctx.Request.ReadFromJsonAsync<AgentConfiguration>();
     if (config is null || string.IsNullOrWhiteSpace(config.server_url) || string.IsNullOrWhiteSpace(config.token))
@@ -112,6 +114,7 @@ app.MapPost("/api/agent/configure", async (HttpContext ctx) =>
     }
 
     AgentConfigurationStore.Save(config);
+    poller.ConfigurationChanged();
     return Results.Json(new { status = "success" });
 });
 

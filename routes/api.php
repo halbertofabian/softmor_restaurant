@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('/printer/raw', [\App\Http\Controllers\PosController::class, 'apiLocalPrint']);
 
+Route::get('/print-agent/config', [\App\Http\Controllers\PrintAgentController::class, 'config']);
 Route::get('/print-agent/jobs/next', [\App\Http\Controllers\PrintAgentController::class, 'next']);
 Route::post('/print-agent/jobs/{job}/printed', [\App\Http\Controllers\PrintAgentController::class, 'printed']);
 Route::post('/print-agent/jobs/{job}/failed', [\App\Http\Controllers\PrintAgentController::class, 'failed']);

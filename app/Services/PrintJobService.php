@@ -7,17 +7,20 @@ use App\Models\PreparationArea;
 use App\Models\PrintAgent;
 use App\Models\PrintJob;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class PrintJobService
 {
+    public function __construct(private PrintJobSignal $signal) {}
+
     public function enqueueKitchen(Order $order, Collection $details, array $settings): bool
     {
-        $hasAgent = PrintAgent::withoutGlobalScopes()
+        $agent = PrintAgent::withoutGlobalScopes()
             ->where('tenant_id', $order->tenant_id)
             ->where('branch_id', $order->branch_id)
-            ->exists();
+            ->first();
 
-        if (!$hasAgent) {
+        if (! $agent) {
             return false;
         }
 
@@ -28,6 +31,7 @@ class PrintJobService
             ->whereIn('id', $detailsByArea->keys()->filter()->values())
             ->get()
             ->keyBy('id');
+        $queued = false;
 
         foreach ($detailsByArea as $areaId => $items) {
             $area = $areas->get($areaId);
@@ -54,8 +58,15 @@ class PrintJobService
                 ],
                 'order_detail_ids' => $items->pluck('id')->values()->all(),
             ]);
+            $queued = true;
         }
 
-        return true;
+        if ($queued) {
+            DB::afterCommit(function () use ($agent) {
+                $this->signal->notify($agent);
+            });
+        }
+
+        return $queued;
     }
 }

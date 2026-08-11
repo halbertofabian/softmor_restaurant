@@ -19,6 +19,10 @@ if (!(Test-Path $inno)) {
 }
 
 if (!(Test-Path $inno)) {
+  $inno = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
+}
+
+if (!(Test-Path $inno)) {
   throw "No se encontró Inno Setup. Instálalo desde https://jrsoftware.org/isdl.php"
 }
 

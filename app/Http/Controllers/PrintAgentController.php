@@ -5,21 +5,30 @@ namespace App\Http\Controllers;
 use App\Models\OrderDetail;
 use App\Models\PrintAgent;
 use App\Models\PrintJob;
+use App\Services\PrintJobSignal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PrintAgentController extends Controller
 {
+    public function __construct(private PrintJobSignal $signal) {}
+
     public function connect(Request $request)
     {
         $branchId = session('branch_id');
         $token = Str::random(64);
+        $existingAgent = PrintAgent::withoutGlobalScopes()
+            ->where('tenant_id', $request->user()->tenant_id)
+            ->where('branch_id', $branchId)
+            ->first();
 
-        PrintAgent::withoutGlobalScopes()->updateOrCreate(
+        $agent = PrintAgent::withoutGlobalScopes()->updateOrCreate(
             ['tenant_id' => $request->user()->tenant_id, 'branch_id' => $branchId],
             ['token_hash' => hash('sha256', $token), 'last_seen_at' => null]
         );
+        $this->signal->forgetAgent($existingAgent?->token_hash);
+        $this->signal->rememberAgent($agent);
 
         return response()->json([
             'server_url' => url('/api/print-agent'),
@@ -30,8 +39,14 @@ class PrintAgentController extends Controller
     public function next(Request $request)
     {
         $agent = $this->agent($request);
-        if (!$agent) {
+        if (! $agent) {
             return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $this->touch($agent);
+
+        if (! $request->boolean('force') && ! $this->signal->consume($agent)) {
+            return response()->noContent();
         }
 
         $job = DB::transaction(function () use ($agent) {
@@ -60,13 +75,26 @@ class PrintAgentController extends Controller
             return $job;
         });
 
-        $agent->update(['last_seen_at' => now()]);
-
         if (!$job) {
             return response()->noContent();
         }
 
         return response()->json(['id' => $job->id, 'payload' => $job->payload]);
+    }
+
+    public function config(Request $request)
+    {
+        $agent = $this->agent($request);
+        if (!$agent) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $this->touch($agent);
+
+        return response()->json([
+            'poll_interval_ms' => config('printing.poll_interval_ms'),
+            'recovery_interval_seconds' => config('printing.recovery_interval_seconds'),
+        ]);
     }
 
     public function printed(Request $request, PrintJob $job)
@@ -96,6 +124,7 @@ class PrintAgentController extends Controller
             'locked_at' => null,
             'error' => (string) $request->input('error', 'Print failed'),
         ]);
+        $this->signal->notify($agent);
 
         return response()->noContent();
     }
@@ -107,13 +136,19 @@ class PrintAgentController extends Controller
             return null;
         }
 
-        return PrintAgent::withoutGlobalScopes()
-            ->where('token_hash', hash('sha256', $token))
-            ->first();
+        return $this->signal->resolveAgent(hash('sha256', $token));
     }
 
     private function owns(PrintJob $job, PrintAgent $agent): bool
     {
         return $job->tenant_id === $agent->tenant_id && (int) $job->branch_id === (int) $agent->branch_id;
+    }
+
+    private function touch(PrintAgent $agent): void
+    {
+        if (! $agent->last_seen_at || $agent->last_seen_at->lt(now()->subSeconds(30))) {
+            $agent->update(['last_seen_at' => now()]);
+            $this->signal->rememberAgent($agent);
+        }
     }
 }
