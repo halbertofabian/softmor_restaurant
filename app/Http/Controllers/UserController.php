@@ -85,7 +85,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'pais_whatsapp' => 'required|string|max:20',
+            'pais_whatsapp' => 'nullable|string|max:20',
             'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
         ]);
@@ -101,6 +101,17 @@ class UserController extends Controller
         // For now, if provided in request
         if ($request->has('branches')) {
             $user->branches()->syncWithPivotValues($request->input('branches'), ['tenant_id' => auth()->user()->tenant_id]);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Usuario creado correctamente.',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                ],
+            ]);
         }
 
         return redirect()->route('users.index')->with('success', 'Usuario creado correctamente.');
@@ -122,7 +133,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'pais_whatsapp' => 'required|string|max:20',
+            'pais_whatsapp' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
             'estado' => 'required|in:activo,inactivo',

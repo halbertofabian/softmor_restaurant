@@ -385,7 +385,7 @@
             <span class="opacity-75">#{{ $order->id }}</span>
             <span class="mx-1 opacity-50">|</span>
             <i data-lucide="user" size="14"></i>
-            {{ Str::limit($order->user->name ?? 'Usuario', 12) }}
+            {{ $order->user->name ?? 'Usuario' }}
         </span>
     </header>
 
@@ -552,13 +552,20 @@
                         </div>
                         @endif
                         <div class="col-6">
-                            <a href="{{ route('orders.pre-check.print-direct', $order) }}" class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2">
+                            <a href="{{ route('orders.pre-check.print-direct', $order) }}"
+                               class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2 {{ $order->details->count() === 0 ? 'disabled' : '' }}"
+                               {{ $order->details->count() === 0 ? 'aria-disabled="true" tabindex="-1"' : '' }}
+                               title="{{ $order->details->count() === 0 ? 'Agrega productos a la orden' : '' }}">
                                 <i data-lucide="printer" size="20"></i>
                                 <span style="font-size: 0.9rem;">Imprimir</span>
                             </a>
                         </div>
                         <div class="col-6">
-                            <button type="button" class="btn btn-primary-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                            <button type="button"
+                                class="btn btn-primary-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2"
+                                data-bs-toggle="modal" data-bs-target="#paymentModal"
+                                {{ $order->details->count() === 0 ? 'disabled' : '' }}
+                                title="{{ $order->details->count() === 0 ? 'Agrega productos a la orden' : '' }}">
                                 <i data-lucide="check-circle" size="20"></i>
                                 <span style="font-size: 0.9rem;">Cobrar</span>
                             </button>

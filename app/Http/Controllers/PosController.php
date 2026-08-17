@@ -72,6 +72,10 @@ class PosController extends Controller
 
     public function pay(Request $request, Order $order)
     {
+        if ($order->details()->count() === 0) {
+            return back()->with('error', 'No se puede cobrar una orden sin productos.');
+        }
+
         $request->validate([
             'amount' => 'required|numeric|min:0',
             'method' => 'required|string',
@@ -240,6 +244,10 @@ class PosController extends Controller
 
     public function ticket(Order $order)
     {
+        if ($order->details()->count() === 0) {
+            return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
+        }
+
         $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
             ->pluck('value', 'key')->toArray();
             
@@ -248,6 +256,10 @@ class PosController extends Controller
 
     public function preCheck(Order $order)
     {
+        if ($order->details()->count() === 0) {
+            return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
+        }
+
         $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
             ->pluck('value', 'key')->toArray();
 
@@ -256,6 +268,10 @@ class PosController extends Controller
 
     public function preCheckPrintDirect(Order $order)
     {
+        if ($order->details()->count() === 0) {
+            return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
+        }
+
         $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
             ->pluck('value', 'key')->toArray();
 
@@ -313,6 +329,10 @@ class PosController extends Controller
 
     public function printDirect(Order $order)
     {
+        if ($order->details()->count() === 0) {
+            return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
+        }
+
         try {
             // Get printer name from env or settings. defaults to 'POS-80' (common name)
             // You should share your printer in windows and use that share name here.

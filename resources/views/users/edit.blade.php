@@ -10,26 +10,26 @@
             @method('PUT')
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Nombre Completo</label>
+                    <label class="form-label">Nombre Completo <span class="text-danger">*</span></label>
                     <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Correo Electrónico</label>
+                    <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
                     <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">País + WhatsApp</label>
-                    <input type="text" name="pais_whatsapp" class="form-control" value="{{ old('pais_whatsapp', $user->pais_whatsapp) }}" required>
+                    <label class="form-label">País + WhatsApp <small class="text-muted">(opcional)</small></label>
+                    <input type="text" name="pais_whatsapp" class="form-control" value="{{ old('pais_whatsapp', $user->pais_whatsapp) }}">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Estado</label>
+                    <label class="form-label">Estado <span class="text-danger">*</span></label>
                     <select name="estado" class="form-select" required>
                         <option value="activo" {{ $user->estado == 'activo' ? 'selected' : '' }}>Activo</option>
                         <option value="inactivo" {{ $user->estado == 'inactivo' ? 'selected' : '' }}>Inactivo</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Rol</label>
+                    <label class="form-label">Rol <span class="text-danger">*</span></label>
                     <select name="role_id" class="form-select" required>
                         @foreach($roles as $role)
                             <option value="{{ $role->id }}" {{ $user->hasRole($role->name) ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>

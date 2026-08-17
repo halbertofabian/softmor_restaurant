@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Table;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class TableController extends Controller
@@ -10,7 +11,23 @@ class TableController extends Controller
     public function index()
     {
         $tables = Table::orderBy('name')->get();
-        return view('tables.index', compact('tables'));
+
+        // Waiters available in the current branch (to assign when an admin/cashier occupies a table)
+        $waiters = User::where('tenant_id', auth()->user()->tenant_id)
+            ->whereHas('roles', function ($roleQuery) {
+                $roleQuery->where('name', 'mesero');
+            })
+            ->when(session()->has('branch_id'), function ($query) {
+                $query->whereHas('branches', function ($branchQuery) {
+                    $branchQuery->where('branches.id', session('branch_id'));
+                });
+            })
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $roles = \App\Models\Role::whereNull('tenant_id')->orderBy('name')->get(['id', 'name']);
+
+        return view('tables.index', compact('tables', 'waiters', 'roles'));
     }
 
     public function create()
@@ -67,7 +84,7 @@ class TableController extends Controller
         return redirect()->route('tables.index')->with('success', 'Mesa eliminada con éxito.');
     }
 
-    public function occupy(Table $table)
+    public function occupy(Request $request, Table $table)
     {
         if (!$table->is_active) {
             return redirect()->back()->with('error', 'La mesa no está activa.');
@@ -77,17 +94,45 @@ class TableController extends Controller
             return redirect()->back()->with('error', 'La mesa no está libre.');
         }
 
+        $user = auth()->user();
+
+        // Meseros occupy with their own account; others must assign the waiter
+        $waiterId = $user->id;
+        if (!$user->hasRole('mesero')) {
+            $request->validate([
+                'waiter_id' => 'required|exists:users,id',
+            ]);
+
+            $waiter = User::where('id', $request->waiter_id)
+                ->where('tenant_id', $user->tenant_id)
+                ->whereHas('roles', function ($roleQuery) {
+                    $roleQuery->where('name', 'mesero');
+                })
+                ->when(session()->has('branch_id'), function ($query) {
+                    $query->whereHas('branches', function ($branchQuery) {
+                        $branchQuery->where('branches.id', session('branch_id'));
+                    });
+                })
+                ->first();
+
+            if (!$waiter) {
+                return redirect()->back()->with('error', 'Selecciona un mesero válido de esta sucursal.');
+            }
+
+            $waiterId = $waiter->id;
+        }
+
         $table->update(['status' => 'occupied']);
 
         // Auto-create order
         $order = \App\Models\Order::create([
             'table_id' => $table->id,
-            'user_id' => auth()->id(),
+            'user_id' => $waiterId,
             'status' => 'open',
         ]);
 
         // Redirect based on role: mesero -> mobile, cashier/admin -> checkout
-        if (auth()->user()->hasRole('mesero')) {
+        if ($user->hasRole('mesero')) {
             return redirect()->route('orders.mobile', $order);
         }
         

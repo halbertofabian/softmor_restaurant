@@ -8,21 +8,21 @@
                 @csrf
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Nombre Completo</label>
+                        <label class="form-label">Nombre Completo <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control" value="{{ old('name') }}" required
                             autofocus>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Correo Electrónico</label>
+                        <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
                         <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">País + WhatsApp</label>
+                        <label class="form-label">País + WhatsApp <small class="text-muted">(opcional)</small></label>
                         <input type="text" name="pais_whatsapp" class="form-control" placeholder="+52 ..."
-                            value="{{ old('pais_whatsapp') }}" required>
+                            value="{{ old('pais_whatsapp') }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Rol</label>
+                        <label class="form-label">Rol <span class="text-danger">*</span></label>
                         <select name="role_id" class="form-select" required>
                             <option value="">Seleccionar Rol...</option>
                             @foreach ($roles as $role)
@@ -31,11 +31,11 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Contraseña</label>
+                        <label class="form-label">Contraseña <span class="text-danger">*</span></label>
                         <input type="password" name="password" class="form-control" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Confirmar Contraseña</label>
+                        <label class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
                         <input type="password" name="password_confirmation" class="form-control" required>
                     </div>
                     <div class="col-12">

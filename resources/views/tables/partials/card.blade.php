@@ -73,12 +73,19 @@ if ($isActive) {
             @else
                 @switch($status)
                     @case('free')
-                        <form action="{{ route('tables.occupy', $table) }}" method="POST" class="w-100">
+                        <form action="{{ route('tables.occupy', $table) }}" method="POST" class="w-100" data-occupy-table="{{ $table->id }}">
                             @csrf
                             @method('PUT')
-                            <button type="submit" class="btn w-100 fw-bold d-flex align-items-center justify-content-center" style="border: 1px solid var(--status-free); color: var(--status-free); background: transparent; transition: all 0.2s;">
-                                <i class="ti tabler-plus me-1"></i> Ocupar
-                            </button>
+                            @if(auth()->user()->hasRole('mesero'))
+                                <button type="submit" class="btn w-100 fw-bold d-flex align-items-center justify-content-center" style="border: 1px solid var(--status-free); color: var(--status-free); background: transparent; transition: all 0.2s;">
+                                    <i class="ti tabler-plus me-1"></i> Ocupar
+                                </button>
+                            @else
+                                <input type="hidden" name="waiter_id" value="">
+                                <button type="button" data-table-id="{{ $table->id }}" data-table-name="{{ $table->name }}" onclick="openOccupierModal(this)" class="btn w-100 fw-bold d-flex align-items-center justify-content-center" style="border: 1px solid var(--status-free); color: var(--status-free); background: transparent; transition: all 0.2s;">
+                                    <i class="ti tabler-plus me-1"></i> Ocupar
+                                </button>
+                            @endif
                         </form>
                         @break
                     @case('occupied')
@@ -107,12 +114,12 @@ if ($isActive) {
                                         </a>
                                         <div class="row g-2 align-items-stretch flex-nowrap">
                                             <div class="col-6">
-                                                <a href="{{ route('orders.pre-check.print-direct', $activeOrder) }}" class="btn btn-sm w-100 h-100 d-flex align-items-center justify-content-center" style="border: 1px solid var(--border-subtle); color: var(--text-secondary);">
+                                                <a href="{{ route('orders.pre-check.print-direct', $activeOrder) }}" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold" style="border: 1px solid var(--border-subtle); color: var(--text-secondary);">
                                                     <i class="ti tabler-printer me-1"></i> Pre-Cuenta
                                                 </a>
                                             </div>
                                             <div class="col-6">
-                                                <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn btn-sm w-100 h-100 d-flex align-items-center justify-content-center" style="border: 1px solid var(--primary); color: var(--primary);">
+                                                <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold" style="border: 1px solid var(--primary); color: var(--primary);">
                                                     <i class="ti tabler-cash me-1"></i> Cobrar
                                                 </a>
                                             </div>
