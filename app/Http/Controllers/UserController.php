@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -73,7 +74,8 @@ class UserController extends Controller
         // Get global roles to assign
         $roles = Role::whereNull('tenant_id')->get();
         $branches = \App\Models\Branch::all();
-        return view('users.create', compact('roles', 'branches'));
+        $meseroRoleId = $roles->firstWhere('name', 'mesero')?->id;
+        return view('users.create', compact('roles', 'branches', 'meseroRoleId'));
     }
 
     public function store(Request $request)
@@ -84,11 +86,29 @@ class UserController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'nullable|string|email|max:255|unique:users',
             'pais_whatsapp' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'nullable|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
         ]);
+
+        $role = Role::find($data['role_id']);
+
+        // Email/password are optional for waiters (they only get assigned to tables, no login).
+        // Generate an internal unique email so the DB and reports keep working.
+        if (empty($data['email'])) {
+            do {
+                $data['email'] = 'mesero' . Str::lower(Str::random(8)) . '@gestional.local';
+            } while (User::where('email', $data['email'])->exists());
+        }
+
+        if (empty($data['password'])) {
+            if ($role && $role->name === 'mesero') {
+                $data['password'] = Str::random(16);
+            } else {
+                return back()->withErrors(['password' => 'La contraseña es obligatoria para este rol.'])->withInput();
+            }
+        }
 
         $data['password'] = Hash::make($data['password']);
         
@@ -121,7 +141,8 @@ class UserController extends Controller
     {
         $roles = Role::whereNull('tenant_id')->get();
         $branches = \App\Models\Branch::all(); // TenantScope applies automatically
-        return view('users.edit', compact('user', 'roles', 'branches'));
+        $meseroRoleId = $roles->firstWhere('name', 'mesero')?->id;
+        return view('users.edit', compact('user', 'roles', 'branches', 'meseroRoleId'));
     }
 
     public function update(Request $request, User $user)
@@ -132,7 +153,7 @@ class UserController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'email' => ['nullable', 'email', Rule::unique('users')->ignore($user->id)],
             'pais_whatsapp' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id',
@@ -140,6 +161,12 @@ class UserController extends Controller
             'branches' => 'nullable|array',
             'branches.*' => 'exists:branches,id',
         ]);
+
+        if (empty($data['email'])) {
+            do {
+                $data['email'] = 'mesero' . Str::lower(Str::random(8)) . '@gestional.local';
+            } while (User::where('email', $data['email'])->where('id', '!=', $user->id)->exists());
+        }
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($data['password']);

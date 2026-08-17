@@ -279,34 +279,15 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
-                            <input type="email" name="email" class="form-control" required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-12">
                             <label class="form-label">País + WhatsApp <small class="text-muted">(opcional)</small></label>
                             <input type="text" name="pais_whatsapp" class="form-control" placeholder="+52 ...">
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Rol <span class="text-danger">*</span></label>
+                            <label class="form-label">Perfil</label>
                             <select name="role_id" class="form-select" required>
-                                <option value="">Seleccionar Rol...</option>
-                                @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}" {{ $role->name === 'mesero' ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
-                                @endforeach
+                                <option value="{{ $roles->firstWhere('name', 'mesero')?->id }}" selected>Mesero</option>
                             </select>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Contraseña <span class="text-danger">*</span></label>
-                            <input type="password" name="password" class="form-control" required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
-                            <input type="password" name="password_confirmation" class="form-control" required>
-                            <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
                             <div class="form-check">

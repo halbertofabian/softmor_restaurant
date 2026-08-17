@@ -162,4 +162,42 @@ class TableTest extends TestCase
         $this->assertTrue($created->hasRole('mesero'));
         $this->assertTrue($created->branches()->where('branches.id', $this->branch->id)->exists());
     }
+
+    public function test_admin_can_create_waiter_without_credentials()
+    {
+        $this->setupContext();
+
+        $meseroRoleId = Role::where('name', 'mesero')->whereNull('tenant_id')->first()->id;
+
+        // No email/password: the system generates them internally
+        $response = $this->actingAs($this->admin)->postJson('/users', [
+            'name' => 'Mesero Sin Credenciales',
+            'role_id' => $meseroRoleId,
+            'branches' => [$this->branch->id],
+        ]);
+
+        $response->assertStatus(200)->assertJsonPath('status', 'success');
+
+        $created = User::where('name', 'Mesero Sin Credenciales')->first();
+        $this->assertNotNull($created);
+        $this->assertTrue($created->hasRole('mesero'));
+        $this->assertNotNull($created->email);
+        $this->assertNotNull($created->password);
+    }
+
+    public function test_non_mesero_role_still_requires_password()
+    {
+        $this->setupContext();
+
+        $adminRoleId = Role::where('name', 'administrador')->whereNull('tenant_id')->first()->id;
+
+        $response = $this->actingAs($this->admin)->post('/users', [
+            'name' => 'Nuevo Admin',
+            'email' => 'admin.nuevo@example.com',
+            'role_id' => $adminRoleId,
+            'branches' => [$this->branch->id],
+        ]);
+
+        $response->assertSessionHasErrors('password');
+    }
 }

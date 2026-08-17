@@ -13,8 +13,9 @@
                             autofocus>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
-                        <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
+                        <label class="form-label" id="label-email">Correo Electrónico <span class="text-danger">*</span></label>
+                        <input type="email" name="email" id="field-email" class="form-control" value="{{ old('email') }}" required>
+                        <div class="form-text" id="hint-email" style="display:none;">Opcional si solo será mesero de mesa (no usará la app).</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">País + WhatsApp <small class="text-muted">(opcional)</small></label>
@@ -23,20 +24,21 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Rol <span class="text-danger">*</span></label>
-                        <select name="role_id" class="form-select" required>
+                        <select name="role_id" id="field-role" class="form-select" required>
                             <option value="">Seleccionar Rol...</option>
                             @foreach ($roles as $role)
-                                <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
+                                <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Contraseña <span class="text-danger">*</span></label>
-                        <input type="password" name="password" class="form-control" required>
+                        <label class="form-label" id="label-password">Contraseña <span class="text-danger">*</span></label>
+                        <input type="password" name="password" id="field-password" class="form-control" required>
+                        <div class="form-text" id="hint-password" style="display:none;">Opcional si solo será mesero de mesa (no usará la app).</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Confirmar Contraseña <span class="text-danger">*</span></label>
-                        <input type="password" name="password_confirmation" class="form-control" required>
+                        <label class="form-label" id="label-password_confirmation">Confirmar Contraseña <span class="text-danger">*</span></label>
+                        <input type="password" name="password_confirmation" id="field-password_confirmation" class="form-control" required>
                     </div>
                     <div class="col-12">
                         <label class="form-label d-block text-primary fw-bold">Asignar Sucursales</label>
@@ -78,3 +80,45 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    var MESERO_ROLE_ID = @json($meseroRoleId ?? null);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var roleSelect = document.getElementById('field-role');
+        if (!roleSelect) return;
+
+        var fields = [
+            { name: 'email', label: 'label-email', hint: 'hint-email' },
+            { name: 'password', label: 'label-password', hint: 'hint-password' },
+            { name: 'password_confirmation', label: 'label-password_confirmation', hint: null }
+        ];
+
+        function sync() {
+            var isMesero = String(roleSelect.value) === String(MESERO_ROLE_ID);
+            fields.forEach(function (field) {
+                var input = document.getElementById('field-' + field.name);
+                var label = document.getElementById(field.label);
+                var hint = field.hint ? document.getElementById(field.hint) : null;
+
+                if (isMesero) {
+                    input.removeAttribute('required');
+                    var ast = label.querySelector('.text-danger');
+                    if (ast) ast.remove();
+                    if (hint) hint.style.display = 'block';
+                } else {
+                    input.setAttribute('required', 'required');
+                    if (!label.querySelector('.text-danger')) {
+                        label.insertAdjacentHTML('beforeend', ' <span class="text-danger">*</span>');
+                    }
+                    if (hint) hint.style.display = 'none';
+                }
+            });
+        }
+
+        roleSelect.addEventListener('change', sync);
+        sync();
+    });
+</script>
+@endpush
