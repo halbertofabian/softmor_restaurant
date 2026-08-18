@@ -1081,6 +1081,11 @@
                 }
             });
         }
+
+        // Auto-open payment modal when arriving from the "Cobrar" button of a table card
+        if (paymentModal && new URLSearchParams(window.location.search).get('open_payment') === '1') {
+            new bootstrap.Modal(paymentModal).show();
+        }
     </script>
 </body>
 </html>

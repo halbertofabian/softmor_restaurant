@@ -2,6 +2,10 @@
 $isActive = $table->is_active;
 $status = $table->status;
 
+// Only allow "Desocupar" when the table is occupied and its order has no products
+$activeOrder = $table->orders->where('status', 'open')->first();
+$canDesocupar = $status === 'occupied' && $activeOrder && $activeOrder->details->count() === 0;
+
 // Define colors based on status using our custom variables
 $statusColor = 'var(--text-secondary)';
 $statusText = 'Inactiva';
@@ -51,6 +55,15 @@ if ($isActive) {
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" style="background: var(--card-bg); border-color: var(--border-subtle);">
                     <li><a class="dropdown-item text-white hover-primary" href="{{ route('tables.edit', $table) }}"><i class="ti tabler-edit me-2"></i>Editar</a></li>
+                    @if($canDesocupar)
+                    <li>
+                        <form action="{{ route('tables.release', $table) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="dropdown-item text-white hover-primary"><i class="ti tabler-logout me-2"></i>Desocupar</button>
+                        </form>
+                    </li>
+                    @endif
                     @if($status !== 'occupied')
                     <li>
                         <form action="{{ route('tables.destroy', $table) }}" method="POST">
@@ -119,7 +132,7 @@ if ($isActive) {
                                                 </a>
                                             </div>
                                             <div class="col-6">
-                                                <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold" style="border: 1px solid var(--primary); color: var(--primary);">
+                                                <a href="{{ route('pos.checkout', $activeOrder) }}?open_payment=1" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold" style="border: 1px solid var(--primary); color: var(--primary);">
                                                     <i class="ti tabler-cash me-1"></i> Cobrar
                                                 </a>
                                             </div>
