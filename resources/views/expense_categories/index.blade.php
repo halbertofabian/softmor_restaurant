@@ -10,14 +10,14 @@
                     <h5 class="mb-0">
                         <i class="ti tabler-tags me-2 text-primary"></i> Categorías de Gastos
                     </h5>
-                    <a href="{{ route('cash-registers.report', ['cash_register' => 'current']) }}" class="btn btn-label-secondary">
+                    <a href="{{ request('cash_register') ? route('cash-registers.show', request('cash_register')) : route('cash-registers.index') }}" class="btn btn-label-secondary">
                         <i class="ti tabler-arrow-left me-1"></i> Volver al Corte
                     </a>
                 </div>
                 
                 <div class="card-body">
                     <!-- Formulario de Creación con Estilo del Tema -->
-                    <form action="{{ route('expense-categories.store') }}" method="POST" class="row g-3">
+                    <form action="{{ route('expense-categories.store', ['cash_register' => request('cash_register')]) }}" method="POST" class="row g-3">
                         @csrf
                         <div class="col-md-5">
                             <label class="form-label" for="name">Nombre de la Categoría</label>
@@ -63,7 +63,7 @@
                                     {{ $category->description ?? '-' }}
                                 </td>
                                 <td class="text-end">
-                                    <form action="{{ route('expense-categories.destroy', $category) }}" method="POST" class="d-inline-block" onsubmit="return confirm('¿Seguro que deseas eliminar esta categoría?');">
+                                    <form action="{{ route('expense-categories.destroy', [$category, 'cash_register' => request('cash_register')]) }}" method="POST" class="d-inline-block" onsubmit="return confirm('¿Seguro que deseas eliminar esta categoría?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-icon btn-label-danger" data-bs-toggle="tooltip" title="Eliminar">

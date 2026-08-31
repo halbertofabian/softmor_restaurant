@@ -230,7 +230,7 @@
                         <div class="mb-3" id="category-selector">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <label class="form-label small fw-bold text-muted mb-0">Categoría</label>
-                                <a href="{{ route('expense-categories.index') }}" class="small text-decoration-none">Gestionar <i class="ti tabler-settings"></i></a>
+                                <a href="{{ route('expense-categories.index', ['cash_register' => $cashRegister->id]) }}" class="small text-decoration-none">Gestionar <i class="ti tabler-settings"></i></a>
                             </div>
                             <select name="expense_category_id" class="form-select">
                                 <option value="">Selecciona una categoría</option>
