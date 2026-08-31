@@ -281,19 +281,31 @@ class OrderController extends Controller
         $flavorDelta = $flavor ? (float) $flavor->additional_price : 0;
         $unitPrice = (float) $product->price + $flavorDelta;
 
-        OrderDetail::create([
-            'order_id' => $order->id,
-            'product_id' => $product->id,
-            'product_flavor_id' => $flavor?->id,
-            'product_name' => $product->name,
-            'flavor_name' => $flavor?->name,
-            'price' => $unitPrice,
-            'flavor_price_delta' => $flavorDelta,
-            'quantity' => $request->quantity,
-            'preparation_area_id' => $product->preparation_area_id,
-            'notes' => $request->notes,
-            'status' => 'pending',
-        ]);
+        $existingDetail = $order->details()
+            ->where('product_id', $product->id)
+            ->where('product_flavor_id', $flavor?->id)
+            ->where('notes', $request->notes)
+            ->where('status', 'pending')
+            ->where('is_combo_component', false)
+            ->first();
+
+        if ($existingDetail) {
+            $existingDetail->increment('quantity', (int) $request->quantity);
+        } else {
+            OrderDetail::create([
+                'order_id' => $order->id,
+                'product_id' => $product->id,
+                'product_flavor_id' => $flavor?->id,
+                'product_name' => $product->name,
+                'flavor_name' => $flavor?->name,
+                'price' => $unitPrice,
+                'flavor_price_delta' => $flavorDelta,
+                'quantity' => $request->quantity,
+                'preparation_area_id' => $product->preparation_area_id,
+                'notes' => $request->notes,
+                'status' => 'pending',
+            ]);
+        }
 
         $order->calculateTotal();
 
@@ -306,6 +318,32 @@ class OrderController extends Controller
         }
 
         return redirect()->route('orders.show', $order);
+    }
+
+    public function updateItemQuantity(Request $request, Order $order, OrderDetail $detail)
+    {
+        abort_unless((int) $detail->order_id === (int) $order->id, 404);
+        abort_unless($detail->status === 'pending' && !$detail->is_combo_component, 422);
+
+        $request->validate([
+            'operation' => 'required|in:increment,decrement',
+        ]);
+
+        if ($request->operation === 'increment') {
+            $detail->increment('quantity');
+        } elseif ($detail->quantity > 1) {
+            $detail->decrement('quantity');
+        } else {
+            $detail->delete();
+        }
+
+        $order->calculateTotal();
+
+        if ($request->has('is_mobile')) {
+            return redirect()->route('orders.mobile', $order);
+        }
+
+        return redirect()->route('pos.checkout', $order);
     }
 
     public function removeItem(Request $request, Order $order, OrderDetail $detail)

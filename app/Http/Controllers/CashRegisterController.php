@@ -241,7 +241,13 @@ class CashRegisterController extends Controller
 
     public function print(CashRegister $cashRegister)
     {
-        $cashRegister->load(['movements.user', 'movements.expenseCategory', 'payments.order', 'user']);
+        $cashRegister->load([
+            'movements.user',
+            'movements.expenseCategory',
+            'payments.order.user',
+            'user',
+            'branch',
+        ]);
         
         // Cash calculations
         $sales = $cashRegister->payments->where('method', 'cash')->sum('amount');
@@ -259,11 +265,35 @@ class CashRegisterController extends Controller
         ];
         
         $totalSales = array_sum($paymentsByMethod);
+        $orders = $cashRegister->payments->pluck('order')->filter()->unique('id')->values();
+        $salesCount = $orders->count();
+
+        $waiterSales = $cashRegister->payments->groupBy(function ($payment) {
+            return $payment->order?->user_id ?? 'unassigned';
+        })->map(function ($payments) {
+            return [
+                'name' => $payments->first()->order?->user?->name ?? 'Sin asignar',
+                'amount' => $payments->sum('amount'),
+                'orders' => $payments->pluck('order_id')->filter()->unique()->count(),
+            ];
+        })->sortByDesc('amount')->values();
         
         $settings = \App\Models\Setting::where('branch_id', session('branch_id'))
             ->pluck('value', 'key')->toArray();
 
-        return view('cash_registers.print', compact('cashRegister', 'sales', 'in', 'out', 'expenses', 'expected', 'settings', 'paymentsByMethod', 'totalSales'));
+        return view('cash_registers.print', compact(
+            'cashRegister',
+            'sales',
+            'in',
+            'out',
+            'expenses',
+            'expected',
+            'settings',
+            'paymentsByMethod',
+            'totalSales',
+            'salesCount',
+            'waiterSales'
+        ));
     }
 
     public function report(CashRegister $cashRegister)

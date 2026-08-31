@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -63,20 +63,6 @@ class SalesReportController extends Controller
         $totalAmount = (clone $query)->sum('amount');
         $sales = $query->get();
 
-        $waiterTotals = $sales->groupBy(function ($payment) {
-            return $payment->order?->user_id ?? 'unassigned';
-        })->map(function ($payments) {
-            $waiter = $payments->first()->order?->user;
-
-            return [
-                'name' => $waiter?->name ?? 'Sin asignar',
-                'orders' => $payments->pluck('order_id')->unique()->count(),
-                'amount' => number_format($payments->sum('amount'), 2, '.', ''),
-            ];
-        })->sortByDesc(function ($waiter) {
-            return (float) $waiter['amount'];
-        })->values();
-
         $data = $sales->map(function ($payment) {
             $folio = '<span class="fw-bold text-primary">#' . e($payment->order_id) . '</span>';
             $date = '<div class="d-flex flex-column"><span class="fw-medium">' . $payment->created_at->format('d/m/Y') . '</span><small class="text-muted">' . $payment->created_at->format('g:i A') . '</small></div>';
@@ -116,7 +102,84 @@ class SalesReportController extends Controller
         return response()->json([
             'data' => $data,
             'totalAmount' => number_format($totalAmount, 2, '.', ''),
-            'waiterTotals' => $waiterTotals,
         ]);
+    }
+
+    public function byWaiter(Request $request)
+    {
+        $paymentQuery = $this->applyFilters($request);
+        $orderIds = (clone $paymentQuery)
+            ->whereNotNull('order_id')
+            ->pluck('order_id')
+            ->unique()
+            ->values();
+
+        $details = OrderDetail::with(['order.user', 'preparationArea'])
+            ->whereIn('order_id', $orderIds)
+            ->where('is_combo_component', false)
+            ->get();
+
+        $waiters = $details->map(function ($detail) {
+            return [
+                'key' => (string) ($detail->order?->user_id ?? 'unassigned'),
+                'name' => $detail->order?->user?->name ?? 'Sin asignar',
+            ];
+        })->unique('key')->sortBy('name')->values();
+
+        $areas = $details->groupBy(function ($detail) {
+            return (string) ($detail->preparation_area_id ?? 'unassigned');
+        })->map(function ($areaDetails) use ($waiters) {
+            $rows = $areaDetails->groupBy(function ($detail) {
+                return implode('|', [
+                    $detail->product_id ?? 'deleted',
+                    $detail->product_flavor_id ?? 'none',
+                    $detail->product_name,
+                    $detail->flavor_name,
+                ]);
+            })->map(function ($productDetails) use ($waiters) {
+                $quantities = $waiters->mapWithKeys(function ($waiter) {
+                    return [$waiter['key'] => 0];
+                })->all();
+
+                foreach ($productDetails as $detail) {
+                    $waiterKey = (string) ($detail->order?->user_id ?? 'unassigned');
+                    $quantities[$waiterKey] += (int) $detail->quantity;
+                }
+
+                $firstDetail = $productDetails->first();
+                $name = $firstDetail->product_name;
+                if ($firstDetail->flavor_name) {
+                    $name .= ' - ' . $firstDetail->flavor_name;
+                }
+
+                return [
+                    'name' => $name,
+                    'quantities' => $quantities,
+                    'total' => array_sum($quantities),
+                ];
+            })->sortBy('name')->values();
+
+            $waiterTotals = $waiters->mapWithKeys(function ($waiter) use ($areaDetails) {
+                $total = $areaDetails->filter(function ($detail) use ($waiter) {
+                    return (string) ($detail->order?->user_id ?? 'unassigned') === $waiter['key'];
+                })->sum('quantity');
+
+                return [$waiter['key'] => $total];
+            });
+
+            return [
+                'name' => $areaDetails->first()->preparationArea?->name ?? 'Otras',
+                'rows' => $rows,
+                'waiterTotals' => $waiterTotals,
+            ];
+        })->sortBy('name')->values();
+
+        $branch = \App\Models\Branch::find(session('branch_id'));
+
+        return view('reports.sales.by-waiter', compact(
+            'waiters',
+            'areas',
+            'branch'
+        ));
     }
 }

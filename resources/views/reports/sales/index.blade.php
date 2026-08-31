@@ -9,14 +9,10 @@
             <h4 class="mb-0 fw-bold py-3">
                 <span class="text-muted fw-light">Reportes /</span> Ventas
             </h4>
-            <div class="card bg-label-success shadow-none border-0">
-                <div class="card-body py-2 px-3">
-                    <small class="d-block text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total
-                        Filtrado</small>
-                    <span class="fs-4 fw-bold text-success"
-                        id="sales-total-amount">${{ number_format($totalAmount, 2) }}</span>
-                </div>
-            </div>
+            <a href="{{ route('reports.sales.by-waiter') }}" data-report-url="{{ route('reports.sales.by-waiter') }}"
+                id="sales-waiter-report" target="_blank" class="btn btn-label-primary">
+                <i class="ti tabler-report-analytics me-1"></i> Ventas por mesero
+            </a>
         </div>
         <div class="card-body">
             <form id="sales-filter-form" action="{{ route('reports.sales.index') }}" method="GET"
@@ -68,13 +64,6 @@
         </div>
     </div>
 
-    <div class="card mb-4" id="sales-waiter-summary">
-        <div class="card-header">
-            <h5 class="mb-0 fw-bold">Ventas por Mesero</h5>
-        </div>
-        <div class="card-body" id="sales-waiter-summary-body"></div>
-    </div>
-
     <!-- Table -->
     <div class="card">
         <div class="table-responsive text-nowrap">
@@ -97,6 +86,14 @@
             @if (isset($sales))
                 {{ $sales->links() }}
             @endif
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Total Filtrado</span>
+            <span class="fs-4 fw-bold text-success"
+                id="sales-total-amount">${{ number_format($totalAmount, 2) }}</span>
         </div>
     </div>
 @endsection
@@ -172,56 +169,30 @@
             salesTable.ajax.reload();
         });
 
+        $('#start_date, #end_date, #method, #waiter_id').on('change', function() {
+            salesTable.ajax.reload();
+        });
+
+        $('#sales-waiter-report').on('click', function() {
+            var params = new URLSearchParams({
+                start_date: $('#start_date').val(),
+                end_date: $('#end_date').val(),
+                method: $('#method').val()
+            });
+            var waiterId = $('#waiter_id').val();
+
+            if (waiterId) {
+                params.set('waiter_id', waiterId);
+            }
+
+            this.href = this.dataset.reportUrl + '?' + params.toString();
+        });
+
         $('#sales-table').on('xhr.dt', function(e, settings, json) {
             if (!json || typeof json.totalAmount === 'undefined') {
                 return;
             }
             $('#sales-total-amount').text('$' + json.totalAmount);
-            renderWaiterTotals(json.waiterTotals || []);
         });
-
-        function renderWaiterTotals(waiters) {
-            var body = $('#sales-waiter-summary-body').empty();
-
-            if (!waiters.length) {
-                body.append($('<span>', {
-                    class: 'text-muted',
-                    text: 'Sin ventas para los filtros seleccionados.'
-                }));
-                return;
-            }
-
-            var row = $('<div>', {
-                class: 'row g-3'
-            });
-
-            waiters.forEach(function(waiter) {
-                var column = $('<div>', {
-                    class: 'col-md-4'
-                });
-                var item = $('<div>', {
-                    class: 'border rounded p-3 d-flex justify-content-between align-items-center h-100'
-                });
-                var details = $('<div>');
-
-                details.append($('<div>', {
-                    class: 'fw-bold',
-                    text: waiter.name
-                }));
-                details.append($('<small>', {
-                    class: 'text-muted',
-                    text: waiter.orders + ' comandas cobradas'
-                }));
-                item.append(details);
-                item.append($('<span>', {
-                    class: 'fw-bold text-success fs-5',
-                    text: '$' + Number(waiter.amount).toFixed(2)
-                }));
-                column.append(item);
-                row.append(column);
-            });
-
-            body.append(row);
-        }
     </script>
 @endpush

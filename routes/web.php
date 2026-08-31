@@ -116,6 +116,7 @@ Route::middleware('auth')->group(function () {
 
             // Sales Report
             Route::get('reports/sales/datatable', [\App\Http\Controllers\SalesReportController::class, 'datatable'])->name('reports.sales.datatable');
+            Route::get('reports/sales/by-waiter', [\App\Http\Controllers\SalesReportController::class, 'byWaiter'])->name('reports.sales.by-waiter');
             Route::get('reports/sales', [\App\Http\Controllers\SalesReportController::class, 'index'])->name('reports.sales.index');
         });
 
@@ -129,6 +130,7 @@ Route::middleware('auth')->group(function () {
             // Mobile Order View (No cash register required for waiters)
             Route::get('orders/{order}/mobile', [\App\Http\Controllers\OrderController::class, 'mobile'])->name('orders.mobile');
             Route::post('orders/{order}/add-item', [\App\Http\Controllers\OrderController::class, 'addItem'])->name('orders.add-item');
+            Route::patch('orders/{order}/details/{detail}/quantity', [\App\Http\Controllers\OrderController::class, 'updateItemQuantity'])->name('orders.update-item-quantity');
             Route::delete('orders/{order}/details/{detail}', [\App\Http\Controllers\OrderController::class, 'removeItem'])->name('orders.remove-item');
             Route::post('orders/{order}/send', [\App\Http\Controllers\OrderController::class, 'sendToKitchen'])->name('orders.send');
 

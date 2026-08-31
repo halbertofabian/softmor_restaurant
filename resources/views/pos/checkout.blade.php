@@ -454,7 +454,7 @@
             </div>
 
             <!-- Lado Derecho: Checkout -->
-            <div class="col-lg-4 checkout-sidebar p-0">
+            <div class="col-lg-4 checkout-sidebar p-0" data-order-total="{{ $order->total }}">
                 <!-- Header de la Orden -->
                 <div class="p-4 border-bottom-custom d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-3">
@@ -463,7 +463,7 @@
                         </button>
                         <h5 class="mb-0 fw-bold text-white">Cuenta</h5>
                     </div>
-                    <span class="badge-custom">{{ $order->details->count() }} ítems</span>
+                    <span class="badge-custom">{{ $order->details->where('is_combo_component', false)->sum('quantity') }} ítems</span>
                 </div>
 
                 <!-- Lista de Ítems en la Orden -->
@@ -490,11 +490,29 @@
                                 @if($detail->notes)
                                 <small class="text-secondary d-block mb-2"><i data-lucide="message-circle" size="12" class="me-1"></i>{{ $detail->notes }}</small>
                                 @endif
+                                @if($detail->status === 'pending' && $detail->product?->type !== 'combo')
+                                <div class="d-flex align-items-center gap-2 mt-2">
+                                    <form action="{{ route('orders.update-item-quantity', [$order, $detail]) }}" method="POST" data-checkout-async>
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="operation" value="decrement">
+                                        <button type="submit" class="btn btn-sm btn-outline-light rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 1.8rem; height: 1.8rem;">−</button>
+                                    </form>
+                                    <span class="fw-bold text-white">{{ $detail->quantity }}</span>
+                                    <form action="{{ route('orders.update-item-quantity', [$order, $detail]) }}" method="POST" data-checkout-async>
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="operation" value="increment">
+                                        <button type="submit" class="btn btn-sm btn-outline-light rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 1.8rem; height: 1.8rem;">+</button>
+                                    </form>
+                                </div>
+                                @else
                                 <div class="text-secondary small">Cantidad: {{ $detail->quantity }}</div>
+                                @endif
                             </div>
                             <div class="text-end ms-3">
                                 <span class="fw-bold d-block text-white mb-2" style="font-size: 1.1rem;">${{ number_format($detail->price * $detail->quantity, 2) }}</span>
-                                <form action="{{ route('orders.remove-item', [$order, $detail]) }}" method="POST" class="d-inline">
+                                <form action="{{ route('orders.remove-item', [$order, $detail]) }}" method="POST" class="d-inline" data-checkout-async>
                                     @csrf
                                     @method('DELETE')
                                     <input type="hidden" name="from_checkout" value="1">
@@ -536,7 +554,7 @@
                     </div>
 
                     @php
-                        $pendingCount = $order->details->where('status', 'pending')->count();
+                        $pendingCount = $order->details->where('status', 'pending')->where('is_combo_component', false)->sum('quantity');
                     @endphp
 
                     <div class="row g-3 mt-3">
@@ -582,7 +600,7 @@
             <div class="bg-black bg-opacity-25 p-2 rounded-circle">
                 <i data-lucide="shopping-cart" size="20" color="#000"></i>
             </div>
-            <span class="fw-bold" style="font-size: 1.1rem">{{ $order->details->count() }} ítems</span>
+            <span class="fw-bold" style="font-size: 1.1rem">{{ $order->details->where('is_combo_component', false)->sum('quantity') }} ítems</span>
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="small opacity-75">Total:</span>
@@ -772,12 +790,85 @@
                 sidebar.classList.remove('active');
             }
         }
+
+        let checkoutRequestPending = false;
+
+        function showCheckoutError() {
+            const summary = document.querySelector('.checkout-sidebar .border-top');
+            if (!summary || summary.querySelector('.checkout-async-error')) return;
+
+            summary.insertAdjacentHTML('afterbegin', '<div class="alert alert-danger py-2 px-3 mb-3 checkout-async-error">No se pudo actualizar la cuenta.</div>');
+        }
+
+        async function submitCheckoutForm(form) {
+            if (checkoutRequestPending) return false;
+
+            checkoutRequestPending = true;
+            form.querySelectorAll('button').forEach(button => button.disabled = true);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: (form.method || 'POST').toUpperCase(),
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Checkout request failed');
+
+                const documentResponse = new DOMParser().parseFromString(await response.text(), 'text/html');
+                const nextSidebar = documentResponse.querySelector('.checkout-sidebar');
+                const currentSidebar = document.querySelector('.checkout-sidebar');
+
+                if (!nextSidebar || !currentSidebar) throw new Error('Checkout response is incomplete');
+
+                currentSidebar.innerHTML = nextSidebar.innerHTML;
+                currentSidebar.dataset.orderTotal = nextSidebar.dataset.orderTotal;
+
+                const nextMobileCart = documentResponse.querySelector('.mobile-cart-toggle');
+                const currentMobileCart = document.querySelector('.mobile-cart-toggle');
+                if (nextMobileCart && currentMobileCart) {
+                    currentMobileCart.innerHTML = nextMobileCart.innerHTML;
+                }
+
+                const nextPaymentModal = documentResponse.getElementById('paymentModal');
+                const currentPaymentModal = document.getElementById('paymentModal');
+                if (nextPaymentModal && currentPaymentModal) {
+                    bootstrap.Modal.getInstance(currentPaymentModal)?.dispose();
+                    currentPaymentModal.replaceWith(nextPaymentModal);
+                }
+
+                total = Number(currentSidebar.dataset.orderTotal || 0);
+                lucide.createIcons();
+
+                return true;
+            } catch (error) {
+                console.error(error);
+                showCheckoutError();
+                return false;
+            } finally {
+                checkoutRequestPending = false;
+                form.querySelectorAll('button').forEach(button => button.disabled = false);
+            }
+        }
+
+        document.addEventListener('submit', function (event) {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement) || !form.matches('[data-checkout-async]')) return;
+
+            event.preventDefault();
+            submitCheckoutForm(form);
+        });
         
-        const total = {{ $order->total }};
-        const modalAmountInput = document.getElementById('modal-amount-input');
-        const modalChangeDisplay = document.getElementById('modal-change-display');
+        let total = Number(document.querySelector('.checkout-sidebar').dataset.orderTotal || 0);
         
         function calculateModalChange() {
+            const modalAmountInput = document.getElementById('modal-amount-input');
+            const modalChangeDisplay = document.getElementById('modal-change-display');
+            if (!modalAmountInput || !modalChangeDisplay) return;
+
             const amountReceived = parseFloat(modalAmountInput.value) || 0;
             const change = amountReceived - total;
             modalChangeDisplay.textContent = '$' + change.toFixed(2);
@@ -830,6 +921,7 @@
         function toggleModalReference(show) {
             const refGroup = document.getElementById('modal-reference-group');
             const cashGroup = document.getElementById('modal-cash-input-group');
+            const modalAmountInput = document.getElementById('modal-amount-input');
             
             if (show) {
                 refGroup.classList.remove('d-none');
@@ -1051,9 +1143,17 @@
                 fromCheckout.value = '1';
                 form.appendChild(fromCheckout);
                 
-                // Append to body and submit
-                document.body.appendChild(form);
-                form.submit();
+                submitCheckoutForm(form).then(success => {
+                    if (success) {
+                        bootstrap.Modal.getInstance(document.getElementById('productModal'))?.hide();
+                    }
+                }).finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i data-lucide="plus-circle" size="20"></i> Agregar al Pedido';
+                        lucide.createIcons();
+                    }
+                });
             }, 450); // Slight delay to let animation start
         }
 
@@ -1071,16 +1171,17 @@
             });
         }
 
-        if (paymentModal) {
-            paymentModal.addEventListener('shown.bs.modal', function () {
+        document.addEventListener('shown.bs.modal', function (event) {
+            if (event.target.id === 'paymentModal') {
                 lucide.createIcons();
                 calculateModalChange();
+                const modalAmountInput = document.getElementById('modal-amount-input');
                 if (modalAmountInput) {
                     modalAmountInput.focus();
                     modalAmountInput.select();
                 }
-            });
-        }
+            }
+        });
 
         // Auto-open payment modal when arriving from the "Cobrar" button of a table card
         if (paymentModal && new URLSearchParams(window.location.search).get('open_payment') === '1') {

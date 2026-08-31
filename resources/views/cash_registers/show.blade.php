@@ -215,15 +215,15 @@
                         @csrf
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-muted">Tipo de Movimiento</label>
-                            <div class="btn-group w-100" role="group">
+                            <div class="btn-group w-100 movement-type-selector" role="group">
                                 <input type="radio" class="btn-check" name="type" id="type-expense" value="expense" checked onchange="toggleCategory(true)">
-                                <label class="btn btn-outline-danger" for="type-expense">Gasto</label>
+                                <label class="btn btn-outline-danger movement-option" for="type-expense"><i class="ti tabler-check movement-check me-1"></i>Gasto</label>
                                 
                                 <input type="radio" class="btn-check" name="type" id="type-out" value="out" onchange="toggleCategory(false)">
-                                <label class="btn btn-outline-warning" for="type-out">Retiro</label>
+                                <label class="btn btn-outline-warning movement-option" for="type-out"><i class="ti tabler-check movement-check me-1"></i>Retiro</label>
                                 
                                 <input type="radio" class="btn-check" name="type" id="type-in" value="in" onchange="toggleCategory(false)">
-                                <label class="btn btn-outline-success" for="type-in">Ingreso</label>
+                                <label class="btn btn-outline-success movement-option" for="type-in"><i class="ti tabler-check movement-check me-1"></i>Ingreso</label>
                             </div>
                         </div>
 
@@ -297,6 +297,46 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    .movement-type-selector .movement-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+
+    .movement-type-selector .movement-check {
+        display: none;
+    }
+
+    .movement-type-selector .btn-check:checked + .movement-option .movement-check {
+        display: inline-block;
+    }
+
+    .movement-type-selector #type-expense:checked + .movement-option {
+        color: #fff;
+        background-color: var(--bs-danger);
+        border-color: var(--bs-danger);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-danger-rgb), 0.2);
+    }
+
+    .movement-type-selector #type-out:checked + .movement-option {
+        color: #212529;
+        background-color: var(--bs-warning);
+        border-color: var(--bs-warning);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-warning-rgb), 0.2);
+    }
+
+    .movement-type-selector #type-in:checked + .movement-option {
+        color: #fff;
+        background-color: var(--bs-success);
+        border-color: var(--bs-success);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-success-rgb), 0.2);
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>

@@ -150,7 +150,7 @@
     </div>
 
     <!-- Glassmorphism Bottom Bar -->
-    <div class="fixed-bottom p-3">
+    <div class="fixed-bottom p-3" id="mobileOrderBar">
         <div class="card border-0 shadow-lg rounded-4 overflow-hidden" 
              style="background: linear-gradient(135deg, rgba(24, 24, 27, 0.95) 0%, rgba(39, 39, 42, 0.95) 100%); 
                     backdrop-filter: blur(10px); 
@@ -160,7 +160,7 @@
                     <small class="fw-bold text-uppercase" style="font-size: 0.65rem; color: var(--text-secondary);">Total</small>
                     <span class="h5 mb-0 fw-bold" style="color: var(--primary);">${{ number_format($order->total, 2) }}</span>
                     <small class="fw-bold" style="font-size: 0.75rem; color: var(--text-secondary);">
-                        {{ $order->details->where('status', 'pending')->count() }} pendientes
+                        {{ $order->details->where('status', 'pending')->where('is_combo_component', false)->sum('quantity') }} pendientes
                         <i class="ti tabler-chevron-up ms-1"></i>
                     </small>
                 </div>
@@ -179,7 +179,7 @@
 </div>
 
 <!-- Order Summary Offcanvas -->
-<div class="offcanvas offcanvas-bottom h-75 rounded-top-4" tabindex="-1" id="orderSummary" 
+<div class="offcanvas offcanvas-bottom h-75 rounded-top-4" tabindex="-1" id="orderSummary" data-mobile-order-summary
      style="background: var(--card-bg); border-top: 2px solid var(--border-subtle);">
     <div class="offcanvas-header border-bottom" style="background: var(--dark-bg); border-bottom: 1px solid var(--border-subtle) !important;">
         <h5 class="offcanvas-title fw-bold" style="color: var(--text-primary);">Tu Pedido</h5>
@@ -198,8 +198,6 @@
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="me-3">
                         <div class="d-flex align-items-center mb-1">
-                            <span class="badge rounded-circle p-1 me-2" 
-                                  style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000;">{{ $detail->quantity }}</span>
                             <span class="fw-bold" style="color: var(--text-primary);">{{ $detail->product_name }}</span>
                         </div>
                         @if($detail->flavor_name)
@@ -219,11 +217,32 @@
                                 <span class="badge px-2 py-1 rounded-pill" style="font-size: 0.65rem; background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">Enviado</span>
                             @endif
                         </div>
+                        @if($detail->status === 'pending' && $detail->product?->type !== 'combo')
+                        <div class="d-flex align-items-center gap-2 ms-4 mt-2">
+                            <form action="{{ route('orders.update-item-quantity', [$order, $detail]) }}" method="POST" data-mobile-order-async>
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="operation" value="decrement">
+                                <input type="hidden" name="is_mobile" value="1">
+                                <button type="submit" class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 1.8rem; height: 1.8rem; color: var(--text-primary); border: 1px solid var(--border-subtle);">−</button>
+                            </form>
+                            <span class="fw-bold" style="color: var(--text-primary);">{{ $detail->quantity }}</span>
+                            <form action="{{ route('orders.update-item-quantity', [$order, $detail]) }}" method="POST" data-mobile-order-async>
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="operation" value="increment">
+                                <input type="hidden" name="is_mobile" value="1">
+                                <button type="submit" class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 1.8rem; height: 1.8rem; color: #000; background: var(--primary);">+</button>
+                            </form>
+                        </div>
+                        @else
+                        <div class="small ms-4 mt-2" style="color: var(--text-secondary);">Cantidad: {{ $detail->quantity }}</div>
+                        @endif
                     </div>
                     <div class="text-end">
                         <div class="fw-bold mb-2" style="color: var(--primary);">${{ number_format($detail->price * $detail->quantity, 2) }}</div>
                         @if($detail->status == 'pending')
-                        <form action="{{ route('orders.remove-item', [$order, $detail]) }}" method="POST">
+                        <form action="{{ route('orders.remove-item', [$order, $detail]) }}" method="POST" data-mobile-order-async>
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="is_mobile" value="1">
@@ -243,7 +262,7 @@
 <!-- Product Modal -->
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <form id="addProductForm" action="{{ route('orders.add-item', $order) }}" method="POST" 
+        <form id="addProductForm" action="{{ route('orders.add-item', $order) }}" method="POST" data-mobile-order-async
               class="modal-content rounded-4 border-0 shadow" 
               style="background: var(--card-bg); border: 1px solid var(--border-subtle) !important;">
             @csrf
@@ -317,6 +336,60 @@
 <script>
 const productFlavorsMap = @json($productFlavorsMap ?? []);
 const productCombosMap = @json($productCombosMap ?? []);
+let mobileOrderRequestPending = false;
+
+async function submitMobileOrderForm(form) {
+    if (mobileOrderRequestPending) return false;
+
+    mobileOrderRequestPending = true;
+    form.querySelectorAll('button').forEach(button => button.disabled = true);
+
+    try {
+        const response = await fetch(form.action, {
+            method: (form.method || 'POST').toUpperCase(),
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            }
+        });
+
+        if (!response.ok) throw new Error('Mobile order request failed');
+
+        const documentResponse = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const nextBar = documentResponse.getElementById('mobileOrderBar');
+        const currentBar = document.getElementById('mobileOrderBar');
+        const nextSummary = documentResponse.querySelector('[data-mobile-order-summary]');
+        const currentSummary = document.querySelector('[data-mobile-order-summary]');
+
+        if (!nextBar || !currentBar || !nextSummary || !currentSummary) {
+            throw new Error('Mobile order response is incomplete');
+        }
+
+        currentBar.innerHTML = nextBar.innerHTML;
+        currentSummary.querySelector('.offcanvas-body').innerHTML = nextSummary.querySelector('.offcanvas-body').innerHTML;
+
+        if (form.id === 'addProductForm') {
+            bootstrap.Modal.getInstance(document.getElementById('addProductModal'))?.hide();
+        }
+
+        return true;
+    } catch (error) {
+        console.error(error);
+        return false;
+    } finally {
+        mobileOrderRequestPending = false;
+        form.querySelectorAll('button').forEach(button => button.disabled = false);
+    }
+}
+
+document.addEventListener('submit', function (event) {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches('[data-mobile-order-async]')) return;
+
+    event.preventDefault();
+    submitMobileOrderForm(form);
+});
 
 function addProduct(id, name) {
     document.getElementById('input_product_id').value = id;

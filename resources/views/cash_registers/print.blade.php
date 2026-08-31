@@ -12,10 +12,8 @@
         body {
             font-family: 'Courier New', Courier, monospace;
             font-size: {{ $settings['ticket_font_size'] ?? '12' }}px;
-            margin-top: {{ $settings['ticket_margin_top'] ?? '0' }}mm;
-            margin-left: {{ $settings['ticket_margin_left'] ?? '0' }}mm;
-            margin-right: {{ $settings['ticket_margin_right'] ?? '0' }}mm;
-            padding: 10px;
+            margin: 0;
+            padding: 0;
             width: {{ $settings['ticket_printer_width'] ?? '80mm' }};
             background: #fff;
             color: #000 !important;
@@ -24,6 +22,18 @@
             print-color-adjust: exact;
             -webkit-print-color-adjust: exact;
             -webkit-font-smoothing: none;
+        }
+        .ticket {
+            box-sizing: border-box;
+            margin-top: {{ $settings['ticket_margin_top'] ?? '0' }}mm;
+            margin-left: {{ $settings['ticket_margin_left'] ?? '0' }}mm;
+            margin-right: {{ $settings['ticket_margin_right'] ?? '0' }}mm;
+            padding: 10px;
+            width: calc(
+                {{ $settings['ticket_printer_width'] ?? '80mm' }}
+                - {{ $settings['ticket_margin_left'] ?? '0' }}mm
+                - {{ $settings['ticket_margin_right'] ?? '0' }}mm
+            );
         }
         .header {
             text-align: center;
@@ -38,7 +48,12 @@
         .info-row {
             display: flex;
             justify-content: space-between;
+            gap: 8px;
             margin-bottom: 5px;
+        }
+        .info-row span:last-child {
+            text-align: right;
+            overflow-wrap: anywhere;
         }
         .divider {
             border-top: 1px dashed #000;
@@ -56,6 +71,23 @@
         strong {
             font-weight: 700;
         }
+        .section-title {
+            margin: 12px 0 8px;
+            padding: 4px 0;
+            text-align: center;
+            font-weight: 700;
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+        }
+        .detail-item {
+            margin-bottom: 7px;
+        }
+        .detail-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 0.9em;
+        }
         .footer {
             text-align: center;
             margin-top: 20px;
@@ -64,11 +96,12 @@
     </style>
 </head>
 <body onload="window.print()">
+    <div class="ticket">
 
     <div class="header">
-        <h2>Gestional Food</h2>
-        <p>Corte de Caja #{{ $cashRegister->id }}</p>
-        <p>{{ $cashRegister->branch->name ?? 'Sucursal Principal' }}</p>
+        <h2>{{ $cashRegister->status == 'closed' ? 'CORTE DE CAJA' : 'PRE CORTE DE CAJA' }}</h2>
+        <p><strong>{{ $cashRegister->branch->name ?? 'Sucursal Principal' }}</strong></p>
+        <p>Folio #{{ $cashRegister->id }}</p>
     </div>
 
     <div class="info-row">
@@ -82,6 +115,10 @@
     <div class="info-row">
         <span>Cierre:</span>
         <span>{{ $cashRegister->closed_at ? $cashRegister->closed_at->format('d/m/Y H:i') : 'En Curso' }}</span>
+    </div>
+    <div class="info-row">
+        <span>Ventas cobradas:</span>
+        <span>{{ $salesCount }}</span>
     </div>
 
     <div class="divider"></div>
@@ -110,7 +147,7 @@
     <div class="divider"></div>
 
     <div class="total-row">
-        <span>Total Esperado:</span>
+        <span>Total en Caja:</span>
         <span>${{ number_format($expected, 2) }}</span>
     </div>
 
@@ -173,6 +210,41 @@
         <span>${{ number_format($totalSales, 2) }}</span>
     </div>
 
+    @foreach([
+        'in' => 'ENTRADAS DE EFECTIVO',
+        'out' => 'RETIROS DE EFECTIVO',
+        'expense' => 'GASTOS DE EFECTIVO'
+    ] as $movementType => $movementTitle)
+        @php($movementItems = $cashRegister->movements->where('type', $movementType))
+        @if($movementItems->isNotEmpty())
+            <div class="section-title">{{ $movementTitle }}</div>
+            @foreach($movementItems as $movement)
+                <div class="detail-item">
+                    <div>{{ $movement->description }}</div>
+                    <div class="detail-meta">
+                        <span>{{ $movement->created_at->format('H:i') }} - {{ $movement->user->name ?? 'Sin usuario' }}</span>
+                        <strong>${{ number_format($movement->amount, 2) }}</strong>
+                    </div>
+                </div>
+            @endforeach
+        @endif
+    @endforeach
+
+    @if($waiterSales->isNotEmpty())
+        <div class="section-title">VENTAS POR MESERO</div>
+        @foreach($waiterSales as $waiter)
+            <div class="detail-item">
+                <div class="info-row">
+                    <span>{{ $waiter['name'] }}</span>
+                    <strong>${{ number_format($waiter['amount'], 2) }}</strong>
+                </div>
+                <div class="detail-meta">
+                    <span>Comandas: {{ $waiter['orders'] }}</span>
+                </div>
+            </div>
+        @endforeach
+    @endif
+
     <div class="divider"></div>
         
     <div style="text-align: left;">
@@ -183,6 +255,7 @@
     <div class="footer">
         <p>Generado el {{ now()->format('d/m/Y H:i') }}</p>
         <p>*** Fin del Reporte ***</p>
+    </div>
     </div>
 
     <script>
