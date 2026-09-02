@@ -917,6 +917,24 @@
                 });
             }
         }
+
+        // Clear the search box and show all products again (after adding an item)
+        function resetProductView() {
+            const searchInput = document.getElementById('product-search');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('category-active');
+            });
+            const allBtn = document.getElementById('cat-btn-all');
+            if (allBtn) {
+                allBtn.classList.add('category-active');
+            }
+            document.querySelectorAll('.product-item').forEach(item => {
+                item.style.display = 'block';
+            });
+        }
         
         function toggleModalReference(show) {
             const refGroup = document.getElementById('modal-reference-group');
@@ -1145,6 +1163,7 @@
                 
                 submitCheckoutForm(form).then(success => {
                     if (success) {
+                        resetProductView();
                         bootstrap.Modal.getInstance(document.getElementById('productModal'))?.hide();
                     }
                 }).finally(() => {
