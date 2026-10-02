@@ -7,6 +7,9 @@
         <form action="{{ route('products.update', $product) }}" method="POST">
             @csrf
             @method('PUT')
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-info-circle me-2"></i>Información general</h6></div>
+                <div class="card-body pt-4">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label" for="name">Nombre</label>
@@ -56,6 +59,12 @@
                 </div>
             </div>
 
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-adjustments me-2"></i>Variantes y componentes</h6></div>
+                <div class="card-body pt-4">
             <div class="mb-3 {{ $product->type === 'combo' ? 'd-none' : '' }}" id="flavors-wrapper">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <label class="form-label mb-0">Sabores (opcional)</label>
@@ -71,11 +80,25 @@
                 </div>
                 <div id="combo-components-container"></div>
             </div>
+                </div>
+            </div>
+
+            <div class="card border shadow-none mb-4" id="recipe-inventory-card">
+                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-receipt me-2"></i>Receta e inventario</h6></div>
+                <div class="card-body pt-4">
+            <div class="mb-3 {{ $product->type === 'combo' ? 'd-none' : '' }}" id="recipe-wrapper">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Receta de materias primas</label>
+                    <button type="button" class="btn btn-sm btn-label-primary" onclick="addRecipeRow()">Agregar ingrediente</button>
+                </div>
+                <div id="recipe-container"></div>
+                <div class="form-text">La cantidad es por cada unidad vendida y se descuenta al enviar a cocina.</div>
+            </div>
 
             <div class="mb-3 {{ $product->type === 'combo' ? 'd-none' : '' }}" id="inventory-wrapper">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="controls_inventory" name="controls_inventory" {{ $product->controls_inventory ? 'checked' : '' }} onchange="toggleStockFields()">
-                    <label class="form-check-label" for="controls_inventory">Controlar Inventario</label>
+                    <label class="form-check-label" for="controls_inventory">Controlar inventario de producto terminado</label>
                 </div>
             </div>
 
@@ -90,16 +113,23 @@
                     <input type="number" class="form-control" id="min_stock" name="min_stock" value="{{ $product->min_stock }}">
                 </div>
             </div>
-
-            <div class="mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="status" name="status" {{ $product->status ? 'checked' : '' }}>
-                    <label class="form-check-label" for="status">Activo</label>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Actualizar</button>
-            <a href="{{ route('products.index') }}" class="btn btn-label-secondary">Cancelar</a>
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-toggle-right me-2"></i>Disponibilidad</h6></div>
+                <div class="card-body pt-4">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="status" name="status" {{ $product->status ? 'checked' : '' }}>
+                    <label class="form-check-label" for="status">Producto activo</label>
+                </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ route('products.index') }}" class="btn btn-label-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Actualizar</button>
+            </div>
         </form>
     </div>
 </div>
@@ -169,6 +199,29 @@ if (existingFlavors.length) {
 }
 
 const comboProductsData = @json($comboProductsData ?? []);
+const inventoryItemsData = @json(($inventoryItems ?? collect())->map(fn($item) => ['id' => $item->id, 'name' => $item->name, 'unit' => $item->base_unit])->values());
+const existingRecipeItems = @json($existingRecipeItemsData ?? []);
+
+function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = value ?? '';
+    return element.innerHTML;
+}
+
+function addRecipeRow(itemId = '', quantity = '') {
+    const container = document.getElementById('recipe-container');
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 recipe-row';
+    const options = inventoryItemsData.map(item => `<option value="${item.id}" ${String(itemId) === String(item.id) ? 'selected' : ''}>${escapeHtml(item.name)} (${item.unit})</option>`).join('');
+    row.innerHTML = `<div class="col-md-7"><select class="form-select" name="recipe_inventory_item_id[]" required><option value="">Materia prima</option>${options}</select></div>
+        <div class="col-md-3"><input type="number" min="0.001" step="0.001" class="form-control" name="recipe_quantity[]" value="${quantity}" placeholder="Cantidad" required></div>
+        <div class="col-md-2"><button type="button" class="btn btn-label-danger w-100" onclick="this.closest('.recipe-row').remove()">X</button></div>`;
+    container.appendChild(row);
+    document.getElementById('controls_inventory').checked = false;
+    toggleStockFields();
+}
+
+existingRecipeItems.forEach(item => addRecipeRow(item.inventory_item_id, item.quantity));
 
 const existingComboItems = @json($existingComboItemsData ?? []);
 
@@ -178,6 +231,8 @@ function toggleComboFields() {
     document.getElementById('flavors-wrapper').classList.toggle('d-none', type === 'combo');
     document.getElementById('inventory-wrapper').classList.toggle('d-none', type === 'combo');
     document.getElementById('classification-wrapper').classList.toggle('d-none', type === 'combo');
+    document.getElementById('recipe-wrapper').classList.toggle('d-none', type === 'combo');
+    document.getElementById('recipe-inventory-card').classList.toggle('d-none', type === 'combo');
     if (type === 'combo') {
         document.getElementById('controls_inventory').checked = false;
         toggleStockFields();

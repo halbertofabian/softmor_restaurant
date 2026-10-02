@@ -39,7 +39,7 @@ class Order extends Model
 
     public function calculateTotal()
     {
-        $total = $this->details->sum(function ($detail) {
+        $total = $this->details()->where('status', '!=', 'canceled')->get()->sum(function ($detail) {
             return $detail->price * $detail->quantity;
         });
         $this->update(['total' => $total]);

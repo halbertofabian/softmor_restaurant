@@ -81,6 +81,9 @@ Route::middleware('auth')->group(function () {
             Route::get('products/datatable', [\App\Http\Controllers\ProductController::class, 'datatable'])->name('products.datatable');
             Route::resource('products', \App\Http\Controllers\ProductController::class);
             Route::post('products/{product}/duplicate', [\App\Http\Controllers\ProductController::class, 'duplicate'])->name('products.duplicate');
+            Route::get('inventory-items-report', [\App\Http\Controllers\InventoryItemController::class, 'report'])->name('inventory-items.report');
+            Route::get('inventory-items-report/pdf', [\App\Http\Controllers\InventoryItemController::class, 'reportPdf'])->name('inventory-items.report.pdf');
+            Route::resource('inventory-items', \App\Http\Controllers\InventoryItemController::class);
 
             // POS
             Route::middleware(['cash.register'])->group(function () {

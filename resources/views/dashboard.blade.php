@@ -113,6 +113,16 @@
                         </thead>
                         <tbody class="table-border-bottom-0">
                             @foreach ($latestOrders as $order)
+                                @php
+                                    $statusLabel = match($order->status) {
+                                        'open' => 'Abierto',
+                                        'sent' => 'Enviado',
+                                        'in_preparation' => 'En preparación',
+                                        'closed' => 'Cerrado',
+                                        'canceled' => 'Cancelado',
+                                        default => ucfirst($order->status),
+                                    };
+                                @endphp
                                 <tr>
                                     <td>#{{ $order->id }}</td>
                                     <td>{{ $order->created_at->format('d/m/Y') }}</td>
@@ -123,7 +133,7 @@
                                     <td>
                                         <span
                                             class="badge {{ $order->status == 'closed' ? 'bg-label-success' : 'bg-label-primary' }}">
-                                            {{ ucfirst($order->status) }}
+                                            {{ $statusLabel }}
                                         </span>
                                     </td>
                                 </tr>

@@ -84,7 +84,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($order->details->where('is_combo_component', false) as $detail)
+                        @foreach($order->details->where('status', '!=', 'canceled')->where('is_combo_component', false) as $detail)
                         <tr>
                             <td>{{ $detail->quantity }}</td>
                             <td>

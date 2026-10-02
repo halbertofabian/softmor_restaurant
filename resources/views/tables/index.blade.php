@@ -117,6 +117,31 @@
         .stat-info small {
             font-size: 0.9rem;
         }
+        .order-summary-meta {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0.4rem;
+            padding: 0 !important;
+            background: transparent !important;
+            border: 0 !important;
+        }
+        .order-summary-time,
+        .order-summary-total {
+            width: 100%;
+            min-height: 32px;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-subtle);
+            border-radius: 0.4rem;
+        }
+        .order-summary-time {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .order-summary-total {
+            margin: 0;
+            background: var(--primary) !important;
+        }
     }
 </style>
 

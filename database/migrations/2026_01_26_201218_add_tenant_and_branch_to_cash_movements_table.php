@@ -22,13 +22,19 @@ return new class extends Migration
         }
 
         // Populate existing records from their cash_register
-        DB::statement('
-            UPDATE cash_movements cm
-            JOIN cash_registers cr ON cm.cash_register_id = cr.id
-            SET cm.tenant_id = COALESCE(cm.tenant_id, cr.tenant_id),
-                cm.branch_id = COALESCE(cm.branch_id, cr.branch_id)
-            WHERE cm.tenant_id IS NULL OR cm.branch_id IS NULL
-        ');
+        DB::table('cash_movements')
+            ->whereNull('tenant_id')
+            ->orWhereNull('branch_id')
+            ->orderBy('id')
+            ->each(function ($movement) {
+                $register = DB::table('cash_registers')->where('id', $movement->cash_register_id)->first();
+                if ($register) {
+                    DB::table('cash_movements')->where('id', $movement->id)->update([
+                        'tenant_id' => $movement->tenant_id ?? $register->tenant_id,
+                        'branch_id' => $movement->branch_id ?? $register->branch_id,
+                    ]);
+                }
+            });
 
         // Now make them NOT NULL
         Schema::table('cash_movements', function (Blueprint $table) {

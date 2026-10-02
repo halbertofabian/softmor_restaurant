@@ -184,6 +184,13 @@
               </a>
             </li>
 
+            <li class="menu-item {{ request()->routeIs('inventory-items.*') ? 'active' : '' }}">
+              <a href="{{ route('inventory-items.index') }}" class="menu-link">
+                <i class="menu-icon icon-base ti tabler-package"></i>
+                <div data-i18n="Materias primas">Materias primas</div>
+              </a>
+            </li>
+
             <li class="menu-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
               <a href="{{ route('categories.index') }}" class="menu-link">
                 <i class="menu-icon icon-base ti tabler-category"></i>
@@ -205,6 +212,10 @@
               </a>
             </li>
             @endunless
+
+            <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">Operación</span>
+            </li>
 
             <li class="menu-item {{ request()->routeIs('tables.*') ? 'active' : '' }}">
               <a href="{{ route('tables.index') }}" class="menu-link">
@@ -486,6 +497,21 @@
 
     <script src="{{ asset('assets/js/main.js') }}"></script>
     <script src="{{ asset('assets/js/global.js') }}"></script>
+
+    @if(session('success') || session('error') || $errors->any())
+    <script>
+      $(function () {
+        const errorMessage = @json(session('error') ?? ($errors->first() ?: null));
+        const successMessage = @json(session('success'));
+
+        if (errorMessage) {
+          GF.showModalError('No se pudo completar', errorMessage);
+        } else if (successMessage) {
+          GF.showModalSuccess('Operación exitosa', successMessage);
+        }
+      });
+    </script>
+    @endif
 
     <!-- Page JS -->
     <!-- Page JS -->

@@ -85,7 +85,7 @@
     </div>
     <div class="divider"></div>
 
-    @foreach($order->details as $detail)
+    @foreach($order->details->where('status', '!=', 'canceled')->where('is_combo_component', false) as $detail)
     <div class="item-row">
         <div class="item-name">{{ $detail->quantity }} x {{ $detail->product->name ?? 'Producto' }}</div>
         <div class="item-total">${{ number_format($detail->price * $detail->quantity, 2) }}</div>

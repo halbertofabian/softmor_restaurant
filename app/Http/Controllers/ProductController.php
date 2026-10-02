@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\InventoryMovement;
+use App\Models\InventoryItem;
 use App\Models\PreparationArea;
 use App\Models\Product;
 use App\Models\ProductComboItem;
 use App\Models\ProductFlavor;
+use App\Models\ProductRecipeItem;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -22,7 +25,13 @@ class ProductController extends Controller
 
     public function datatable()
     {
-        $products = Product::with(['category', 'flavors'])
+        $products = Product::with([
+            'category',
+            'preparationArea',
+            'flavors',
+            'recipeItems.inventoryItem',
+            'comboItems.componentProduct',
+        ])
         ->orderBy('id', 'desc')
         ->get();
 
@@ -53,6 +62,44 @@ class ProductController extends Controller
                 ? '<span class="badge bg-label-success">Activo</span>'
                 : '<span class="badge bg-label-secondary">Inactivo</span>';
 
+            $details = [
+                'name' => $product->name,
+                'description' => $product->description ?: 'Sin descripción',
+                'type' => match ($product->type) {
+                    'dish' => 'Platillo',
+                    'drink' => 'Bebida',
+                    'finished' => 'Producto terminado',
+                    'extra' => 'Extra',
+                    'combo' => 'Combo',
+                    default => $product->type,
+                },
+                'price' => number_format((float) $product->price, 2),
+                'category' => $product->category->name ?? 'N/A',
+                'preparation_area' => $product->preparationArea->name ?? 'N/A',
+                'status' => $product->status ? 'Activo' : 'Inactivo',
+                'controls_inventory' => (bool) $product->controls_inventory,
+                'stock' => $product->stock,
+                'min_stock' => $product->min_stock,
+                'flavors' => $product->flavors->map(fn ($flavor) => [
+                    'name' => $flavor->name,
+                    'additional_price' => number_format((float) $flavor->additional_price, 2),
+                ])->values(),
+                'recipe' => $product->recipeItems->map(fn ($item) => [
+                    'name' => $item->inventoryItem->name ?? 'Materia prima eliminada',
+                    'quantity' => number_format((float) $item->quantity, 3),
+                    'unit' => $item->inventoryItem->base_unit ?? '',
+                ])->values(),
+                'combo_items' => $product->comboItems->map(fn ($item) => [
+                    'name' => $item->componentProduct->name ?? 'Producto eliminado',
+                    'quantity' => $item->quantity,
+                ])->values(),
+            ];
+
+            $name = '<a href="#" class="text-primary fw-medium text-decoration-none product-details-link"'
+                . ' data-bs-toggle="modal" data-bs-target="#productDetailsModal"'
+                . ' data-product="' . e(json_encode($details, JSON_UNESCAPED_UNICODE)) . '">'
+                . e($product->name) . '</a>';
+
             $actions = '<a href="' . $editUrl . '" class="btn btn-sm btn-icon btn-text-secondary" title="Editar"><i class="ti tabler-edit"></i></a>'
                 . '<form action="' . $duplicateUrl . '" method="POST" class="d-inline">'
                 . '<input type="hidden" name="_token" value="' . $token . '">'
@@ -65,7 +112,7 @@ class ProductController extends Controller
                 . '</form>';
 
             return [
-                'name' => e($product->name),
+                'name' => $name,
                 'type' => $typeBadge,
                 'category' => e($product->category->name ?? 'N/A'),
                 'price' => '$' . number_format($product->price, 2),
@@ -93,7 +140,8 @@ class ProductController extends Controller
                 })->values(),
             ];
         })->values();
-        return view('products.create', compact('categories', 'preparationAreas', 'comboProducts', 'comboProductsData'));
+        $inventoryItems = InventoryItem::where('status', true)->orderBy('name')->get();
+        return view('products.create', compact('categories', 'preparationAreas', 'comboProducts', 'comboProductsData', 'inventoryItems'));
     }
 
     public function store(Request $request)
@@ -110,12 +158,19 @@ class ProductController extends Controller
             'flavor_price.*' => 'nullable|numeric|min:0',
             'combo_component_product_id.*' => 'nullable|exists:products,id',
             'combo_component_quantity.*' => 'nullable|integer|min:1',
+            'recipe_inventory_item_id.*' => ['nullable', Rule::exists('inventory_items', 'id')->where(fn ($query) => $query
+                ->where('tenant_id', auth()->user()->tenant_id)->where('branch_id', session('branch_id')))],
+            'recipe_quantity.*' => 'required_with:recipe_inventory_item_id.*|numeric|min:0.001|decimal:0,3',
         ]);
 
         $data = $request->all();
         $data['status'] = $request->has('status');
         $data['controls_inventory'] = $request->has('controls_inventory');
         $data['stock'] = $data['stock'] ?? 0;
+        $hasRecipe = collect($request->input('recipe_inventory_item_id', []))->filter()->isNotEmpty();
+        if ($hasRecipe) {
+            $data['controls_inventory'] = false;
+        }
         if (($data['type'] ?? null) === 'combo') {
             $componentIds = array_values(array_filter($request->input('combo_component_product_id', [])));
             if (empty($componentIds)) {
@@ -139,6 +194,7 @@ class ProductController extends Controller
             $product = Product::create($data);
             $this->syncFlavors($product, $request);
             $this->syncComboItems($product, $request);
+            $this->syncRecipeItems($product, $request);
 
             if ($product->controls_inventory && $product->stock > 0) {
                 InventoryMovement::create([
@@ -158,7 +214,7 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $product->load(['flavors', 'comboItems']);
+        $product->load(['flavors', 'comboItems', 'recipeItems.inventoryItem']);
         $comboProducts = Product::where('status', true)
             ->where('type', '!=', 'combo')
             ->where('id', '!=', $product->id)
@@ -185,7 +241,14 @@ class ProductController extends Controller
                 'default_flavor_id' => $item->default_flavor_id,
             ];
         })->values();
-        return view('products.edit', compact('product', 'categories', 'preparationAreas', 'comboProducts', 'comboProductsData', 'existingFlavorsData', 'existingComboItemsData'));
+        $inventoryItems = InventoryItem::where(function ($query) use ($product) {
+            $query->where('status', true)->orWhereIn('id', $product->recipeItems->pluck('inventory_item_id'));
+        })->orderBy('name')->get();
+        $existingRecipeItemsData = $product->recipeItems->map(fn ($item) => [
+            'inventory_item_id' => $item->inventory_item_id,
+            'quantity' => (float) $item->quantity,
+        ])->values();
+        return view('products.edit', compact('product', 'categories', 'preparationAreas', 'comboProducts', 'comboProductsData', 'existingFlavorsData', 'existingComboItemsData', 'inventoryItems', 'existingRecipeItemsData'));
     }
 
     public function update(Request $request, Product $product)
@@ -202,12 +265,19 @@ class ProductController extends Controller
             'flavor_price.*' => 'nullable|numeric|min:0',
             'combo_component_product_id.*' => 'nullable|exists:products,id',
             'combo_component_quantity.*' => 'nullable|integer|min:1',
+            'recipe_inventory_item_id.*' => ['nullable', Rule::exists('inventory_items', 'id')->where(fn ($query) => $query
+                ->where('tenant_id', auth()->user()->tenant_id)->where('branch_id', session('branch_id')))],
+            'recipe_quantity.*' => 'required_with:recipe_inventory_item_id.*|numeric|min:0.001|decimal:0,3',
         ]);
 
         $data = $request->all();
         $data['status'] = $request->has('status');
         $data['controls_inventory'] = $request->has('controls_inventory');
         $data['stock'] = $data['stock'] ?? 0;
+        $hasRecipe = collect($request->input('recipe_inventory_item_id', []))->filter()->isNotEmpty();
+        if ($hasRecipe) {
+            $data['controls_inventory'] = false;
+        }
         if (($data['type'] ?? null) === 'combo') {
             $componentIds = array_values(array_filter($request->input('combo_component_product_id', [])));
             if (empty($componentIds)) {
@@ -247,6 +317,7 @@ class ProductController extends Controller
             $product->update($data);
             $this->syncFlavors($product, $request);
             $this->syncComboItems($product, $request);
+            $this->syncRecipeItems($product, $request);
         });
 
         return redirect()->route('products.index')->with('success', 'Producto actualizado con éxito.');
@@ -290,7 +361,7 @@ class ProductController extends Controller
 
             $newProduct = Product::create($newData);
 
-            $product->loadMissing(['flavors', 'comboItems']);
+            $product->loadMissing(['flavors', 'comboItems', 'recipeItems']);
 
             $flavorMap = [];
             foreach ($product->flavors as $flavor) {
@@ -320,6 +391,14 @@ class ProductController extends Controller
                     'default_flavor_id' => $defaultFlavorId,
                     'quantity' => $item->quantity,
                     'sort_order' => $item->sort_order,
+                ]);
+            }
+
+            foreach ($product->recipeItems as $item) {
+                ProductRecipeItem::create([
+                    'product_id' => $newProduct->id,
+                    'inventory_item_id' => $item->inventory_item_id,
+                    'quantity' => $item->quantity,
                 ]);
             }
         });
@@ -385,6 +464,29 @@ class ProductController extends Controller
                 'default_flavor_id' => null,
                 'quantity' => max(1, (int) ($quantities[$index] ?? 1)),
                 'sort_order' => $index,
+            ]);
+        }
+    }
+
+    private function syncRecipeItems(Product $product, Request $request): void
+    {
+        ProductRecipeItem::where('product_id', $product->id)->delete();
+        if ($product->type === 'combo') {
+            return;
+        }
+
+        $itemIds = $request->input('recipe_inventory_item_id', []);
+        $quantities = $request->input('recipe_quantity', []);
+        $seen = [];
+        foreach ($itemIds as $index => $itemId) {
+            if (!$itemId || isset($seen[$itemId])) {
+                continue;
+            }
+            $seen[$itemId] = true;
+            ProductRecipeItem::create([
+                'product_id' => $product->id,
+                'inventory_item_id' => (int) $itemId,
+                'quantity' => round((float) ($quantities[$index] ?? 0), 3),
             ]);
         }
     }

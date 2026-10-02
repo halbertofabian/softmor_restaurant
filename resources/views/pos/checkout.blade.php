@@ -453,6 +453,14 @@
                 </div>
             </div>
 
+            @php
+                $activeDetails = $order->details
+                    ->where('status', '!=', 'canceled')
+                    ->where('is_combo_component', false)
+                    ->values();
+                $activeItemCount = $activeDetails->sum('quantity');
+            @endphp
+
             <!-- Lado Derecho: Checkout -->
             <div class="col-lg-4 checkout-sidebar p-0" data-order-total="{{ $order->total }}">
                 <!-- Header de la Orden -->
@@ -463,12 +471,12 @@
                         </button>
                         <h5 class="mb-0 fw-bold text-white">Cuenta</h5>
                     </div>
-                    <span class="badge-custom">{{ $order->details->where('is_combo_component', false)->sum('quantity') }} ítems</span>
+                    <span class="badge-custom">{{ $activeItemCount }} ítems</span>
                 </div>
 
                 <!-- Lista de Ítems en la Orden -->
                 <div class="order-list">
-                    @foreach($order->details->where('is_combo_component', false)->reverse() as $detail)
+                    @foreach($activeDetails->reverse() as $detail)
                     <div class="order-item">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
@@ -479,7 +487,7 @@
                                 
                                 @if(in_array($detail->status, ['sent', 'preparing', 'ready']))
                                     <span class="badge mb-1" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.65rem; padding: 0.15rem 0.5rem; border: 1px solid rgba(16, 185, 129, 0.3);">
-                                        ✓ Cocina
+                                        ✓ {{ $detail->preparationArea->name ?? 'Cocina' }}
                                     </span>
                                 @else
                                     <span class="badge mb-1" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.65rem; padding: 0.15rem 0.5rem; border: 1px solid rgba(245, 158, 11, 0.3);">
@@ -523,7 +531,7 @@
                     </div>
                     @endforeach
                     
-                    @if($order->details->isEmpty())
+                    @if($activeDetails->isEmpty())
                     <div class="empty-state">
                         <i data-lucide="shopping-cart" size="48" class="mb-3 opacity-25"></i>
                         <p class="mb-0">La orden está vacía</p>
@@ -535,6 +543,7 @@
                 <!-- Resumen de Totales y Botón de Pago -->
                 <div class="py-4 px-5 px-lg-4 border-top" style="border-top: 1px solid var(--border-subtle) !important; background: var(--sidebar-bg);">
                      <!-- Success/Error Messages -->
+                     @include('partials.inventory-warning')
                      @if(session('success'))
                      <div class="alert alert-success py-2 px-3 mb-3">{{ session('success') }}</div>
                      @endif
@@ -571,9 +580,9 @@
                         @endif
                         <div class="col-6">
                             <a href="{{ route('orders.pre-check.print-direct', $order) }}"
-                               class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2 {{ $order->details->count() === 0 ? 'disabled' : '' }}"
-                               {{ $order->details->count() === 0 ? 'aria-disabled="true" tabindex="-1"' : '' }}
-                               title="{{ $order->details->count() === 0 ? 'Agrega productos a la orden' : '' }}">
+                               class="btn btn-outline-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2 {{ $activeDetails->isEmpty() ? 'disabled' : '' }}"
+                               {{ $activeDetails->isEmpty() ? 'aria-disabled="true" tabindex="-1"' : '' }}
+                               title="{{ $activeDetails->isEmpty() ? 'Agrega productos a la orden' : '' }}">
                                 <i data-lucide="printer" size="20"></i>
                                 <span style="font-size: 0.9rem;">Imprimir</span>
                             </a>
@@ -582,8 +591,8 @@
                             <button type="button"
                                 class="btn btn-primary-custom w-100 fw-bold d-flex flex-column align-items-center justify-content-center py-3 gap-2"
                                 data-bs-toggle="modal" data-bs-target="#paymentModal"
-                                {{ $order->details->count() === 0 ? 'disabled' : '' }}
-                                title="{{ $order->details->count() === 0 ? 'Agrega productos a la orden' : '' }}">
+                                {{ $activeDetails->isEmpty() ? 'disabled' : '' }}
+                                title="{{ $activeDetails->isEmpty() ? 'Agrega productos a la orden' : '' }}">
                                 <i data-lucide="check-circle" size="20"></i>
                                 <span style="font-size: 0.9rem;">Cobrar</span>
                             </button>
@@ -600,7 +609,7 @@
             <div class="bg-black bg-opacity-25 p-2 rounded-circle">
                 <i data-lucide="shopping-cart" size="20" color="#000"></i>
             </div>
-            <span class="fw-bold" style="font-size: 1.1rem">{{ $order->details->where('is_combo_component', false)->sum('quantity') }} ítems</span>
+            <span class="fw-bold" style="font-size: 1.1rem">{{ $activeItemCount }} ítems</span>
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="small opacity-75">Total:</span>

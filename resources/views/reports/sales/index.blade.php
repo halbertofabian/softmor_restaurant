@@ -96,6 +96,34 @@
                 id="sales-total-amount">${{ number_format($totalAmount, 2) }}</span>
         </div>
     </div>
+
+    <div class="modal fade" id="saleDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div><h5 class="modal-title">Detalle de venta <span class="text-primary" id="sale-detail-folio"></span></h5><small class="text-muted" id="sale-detail-date"></small></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="card border shadow-none mb-3">
+                        <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-receipt me-2"></i>Información de la venta</h6></div>
+                        <div class="card-body pt-3"><div class="row g-3">
+                            <div class="col-md-4"><small class="text-muted d-block">Cliente</small><span id="sale-detail-customer"></span></div>
+                            <div class="col-md-4"><small class="text-muted d-block">Atendió</small><span id="sale-detail-waiter"></span></div>
+                            <div class="col-md-4"><small class="text-muted d-block">Mesa</small><span id="sale-detail-table"></span></div>
+                            <div class="col-md-4"><small class="text-muted d-block">Método</small><span id="sale-detail-method"></span></div>
+                            <div class="col-md-8"><small class="text-muted d-block">Referencia</small><span id="sale-detail-reference"></span></div>
+                        </div></div>
+                    </div>
+                    <div class="card border shadow-none">
+                        <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-basket me-2"></i>Productos</h6></div>
+                        <div class="table-responsive"><table class="table mb-0"><thead><tr><th>Producto</th><th class="text-center">Cantidad</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th></tr></thead><tbody id="sale-detail-items"></tbody><tfoot><tr><th colspan="3" class="text-end">Total</th><th class="text-end text-success fs-5" id="sale-detail-total"></th></tr></tfoot></table></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('styles')
@@ -107,6 +135,42 @@
     <script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.min.js') }}"></script>
     <script>
+        document.getElementById('saleDetailsModal').addEventListener('show.bs.modal', function(event) {
+            const sale = JSON.parse(event.relatedTarget.dataset.sale);
+            document.getElementById('sale-detail-folio').textContent = `#${sale.folio}`;
+            document.getElementById('sale-detail-date').textContent = sale.date;
+            document.getElementById('sale-detail-customer').textContent = sale.customer;
+            document.getElementById('sale-detail-waiter').textContent = sale.waiter;
+            document.getElementById('sale-detail-table').textContent = sale.table;
+            document.getElementById('sale-detail-method').textContent = sale.method;
+            document.getElementById('sale-detail-reference').textContent = sale.reference;
+            document.getElementById('sale-detail-total').textContent = `$${sale.total}`;
+
+            const tbody = document.getElementById('sale-detail-items');
+            tbody.replaceChildren(...sale.items.map(item => {
+                const row = document.createElement('tr');
+                const name = document.createElement('td');
+                const quantity = document.createElement('td');
+                const price = document.createElement('td');
+                const subtotal = document.createElement('td');
+                name.textContent = item.name;
+                if (item.notes) {
+                    const notes = document.createElement('small');
+                    notes.className = 'd-block text-muted';
+                    notes.textContent = item.notes;
+                    name.appendChild(notes);
+                }
+                quantity.className = 'text-center';
+                quantity.textContent = item.quantity;
+                price.className = 'text-end';
+                price.textContent = `$${item.price}`;
+                subtotal.className = 'text-end fw-medium';
+                subtotal.textContent = `$${item.subtotal}`;
+                row.append(name, quantity, price, subtotal);
+                return row;
+            }));
+        });
+
         var salesTable = GF.createAjaxDataTable('#sales-table', {
             ajax: "{{ route('reports.sales.datatable') }}",
             ajaxData: function() {

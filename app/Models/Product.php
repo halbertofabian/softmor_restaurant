@@ -52,4 +52,9 @@ class Product extends Model
             ->orderBy('sort_order')
             ->with(['componentProduct.flavors', 'defaultFlavor']);
     }
+
+    public function recipeItems()
+    {
+        return $this->hasMany(ProductRecipeItem::class)->with('inventoryItem');
+    }
 }

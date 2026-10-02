@@ -16,10 +16,4 @@
         <h6 class="mb-2 fw-bold small text-truncate w-100" style="color: #fafafa;">{{ $product->name }}</h6>
         <p class="mb-0 fw-bold" style="color: #FFAB1D; font-size: 1.1rem;">${{ number_format($product->price, 2) }}</p>
     </div>
-    <div class="position-absolute bottom-0 end-0 p-2">
-        <div class="rounded-circle d-flex align-items-center justify-content-center shadow-lg" 
-             style="width: 32px; height: 32px; background: linear-gradient(135deg, #FFAB1D 0%, #E59A1A 100%);">
-            <i class="ti tabler-plus text-dark" style="font-size: 16px; font-weight: bold;"></i>
-        </div>
-    </div>
 </div>

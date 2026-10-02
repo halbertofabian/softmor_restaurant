@@ -12,7 +12,7 @@ class SalesReportController extends Controller
 {
     private function applyFilters(Request $request)
     {
-        $query = Payment::with(['order', 'order.branch', 'order.user'])->latest();
+        $query = Payment::with(['order', 'order.branch', 'order.user', 'order.table', 'order.details'])->latest();
 
         if ($request->filled('start_date')) {
             $query->whereDate('created_at', '>=', $request->start_date);
@@ -83,8 +83,35 @@ class SalesReportController extends Controller
 
             $actions = '';
             if ($payment->order) {
+                $saleDetails = [
+                    'folio' => $payment->order_id,
+                    'date' => $payment->created_at->format('d/m/Y g:i A'),
+                    'customer' => $payment->order->name ?? 'Público General',
+                    'waiter' => $payment->order->user->name ?? 'Sin asignar',
+                    'table' => $payment->order->table->name ?? 'Sin mesa',
+                    'method' => match ($payment->method) {
+                        'cash' => 'Efectivo',
+                        'card' => 'Tarjeta',
+                        'transfer' => 'Transferencia',
+                        default => ucfirst($payment->method),
+                    },
+                    'reference' => $payment->reference ?: 'Sin referencia',
+                    'total' => number_format((float) $payment->amount, 2),
+                    'items' => $payment->order->details
+                        ->where('status', '!=', 'canceled')
+                        ->where('is_combo_component', false)
+                        ->map(fn ($detail) => [
+                            'name' => $detail->product_name . ($detail->flavor_name ? ' - ' . $detail->flavor_name : ''),
+                            'quantity' => $detail->quantity,
+                            'price' => number_format((float) $detail->price, 2),
+                            'subtotal' => number_format((float) $detail->price * $detail->quantity, 2),
+                            'notes' => $detail->notes,
+                        ])->values(),
+                ];
                 $actions .= '<a href="' . route('pos.ticket', $payment->order) . '" target="_blank" class="btn btn-sm btn-icon btn-text-secondary rounded-pill" title="Reimprimir Ticket"><i class="ti tabler-printer"></i></a>';
-                $actions .= '<a href="' . route('orders.show', $payment->order) . '" class="btn btn-sm btn-icon btn-text-primary rounded-pill" title="Ver Comanda"><i class="ti tabler-eye"></i></a>';
+                $actions .= '<button type="button" class="btn btn-sm btn-icon btn-text-primary rounded-pill" title="Ver detalle de venta"'
+                    . ' data-bs-toggle="modal" data-bs-target="#saleDetailsModal"'
+                    . ' data-sale="' . e(json_encode($saleDetails, JSON_UNESCAPED_UNICODE)) . '"><i class="ti tabler-eye"></i></button>';
             }
 
             return [
@@ -101,7 +128,7 @@ class SalesReportController extends Controller
 
         return response()->json([
             'data' => $data,
-            'totalAmount' => number_format($totalAmount, 2, '.', ''),
+            'totalAmount' => number_format($totalAmount, 2),
         ]);
     }
 

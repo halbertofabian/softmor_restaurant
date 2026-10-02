@@ -11,6 +11,8 @@ use App\Models\ProductFlavor;
 use App\Models\Table;
 use App\Models\Setting;
 use App\Services\PrintJobService;
+use App\Services\RecipeInventoryService;
+use App\Exceptions\InsufficientRecipeInventory;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -94,7 +96,11 @@ class OrderController extends Controller
             return redirect()->route('orders.index')->with('warning', 'La orden ya está cerrada.');
         }
 
-        $order->load(['details', 'table']);
+        if ($redirect = $this->blockForeignWaiter($order)) {
+            return $redirect;
+        }
+
+        $order->load(['details.preparationArea', 'table']);
         $categories = Category::where('status', true)->get();
         $products = Product::where('status', true)->with(['flavors' => function ($query) {
             $query->where('is_active', true);
@@ -140,6 +146,10 @@ class OrderController extends Controller
     {
         if ($order->status == 'closed' || $order->status == 'canceled') {
             return redirect()->back()->with('error', 'La comanda está cerrada.');
+        }
+
+        if ($redirect = $this->blockForeignWaiter($order)) {
+            return $redirect;
         }
 
         $request->validate([
@@ -237,7 +247,7 @@ class OrderController extends Controller
             }
             $comboNotes = implode(' | ', $notesParts);
 
-            OrderDetail::create([
+            $parentDetail = OrderDetail::create([
                 'order_id' => $order->id,
                 'product_id' => $product->id,
                 'product_name' => $product->name,
@@ -251,6 +261,7 @@ class OrderController extends Controller
 
             foreach ($componentLines as $line) {
                 $line['notes'] = $comboNotes;
+                $line['parent_order_detail_id'] = $parentDetail->id;
                 OrderDetail::create($line);
             }
 
@@ -323,7 +334,12 @@ class OrderController extends Controller
     public function updateItemQuantity(Request $request, Order $order, OrderDetail $detail)
     {
         abort_unless((int) $detail->order_id === (int) $order->id, 404);
+        abort_if($detail->is_combo_component, 404);
         abort_unless($detail->status === 'pending' && !$detail->is_combo_component, 422);
+
+        if ($redirect = $this->blockForeignWaiter($order)) {
+            return $redirect;
+        }
 
         $request->validate([
             'operation' => 'required|in:increment,decrement',
@@ -352,7 +368,22 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'La comanda está cerrada.');
         }
 
-        $detail->delete();
+        if ($redirect = $this->blockForeignWaiter($order)) {
+            return $redirect;
+        }
+
+        abort_unless((int) $detail->order_id === (int) $order->id, 404);
+
+        if ($detail->status === 'sent') {
+            foreach ($detail->componentDetails()->where('status', 'sent')->get() as $component) {
+                app(RecipeInventoryService::class)->cancel($component, auth()->id());
+            }
+            app(RecipeInventoryService::class)->cancel($detail, auth()->id());
+        } elseif ($detail->status === 'pending') {
+            $detail->delete();
+        } else {
+            return back()->with('error', 'El producto ya fue cancelado.');
+        }
         $order->calculateTotal();
 
         if ($request->has('from_checkout')) {
@@ -371,8 +402,14 @@ class OrderController extends Controller
         if ($order->status == 'closed') {
             return redirect()->back()->with('error', 'Ya está cerrada.');
         }
+        if ($order->details()->where('status', 'pending')->exists()) {
+            return back()->with('error', 'Envía los productos pendientes a cocina antes de cerrar la comanda.');
+        }
 
         foreach ($order->details as $detail) {
+            if ($detail->status === 'canceled') {
+                continue;
+            }
             $product = $detail->product;
             if ($product->controls_inventory) {
                 $newStock = $product->stock - $detail->quantity;
@@ -401,18 +438,25 @@ class OrderController extends Controller
         return redirect()->route('tables.index')->with('success', 'Comanda cerrada y mesa liberada.');
     }
 
-    public function sendToKitchen(Order $order)
+    public function sendToKitchen(Request $request, Order $order)
     {
-        $pendingDetails = $order->details()->where('status', 'pending')->get();
+        if ($redirect = $this->blockForeignWaiter($order)) {
+            return $redirect;
+        }
 
-        $order->details()->where('status', 'pending')->update([
-            'status' => 'sent',
-            'updated_at' => now(),
-        ]);
+        $inventory = app(RecipeInventoryService::class);
+        try {
+            $pendingDetails = $inventory->sendPending($order, auth()->id(), $request->boolean('allow_negative_inventory'));
+        } catch (InsufficientRecipeInventory $exception) {
+            return back()->with('inventory_shortages', $exception->shortages)
+                ->with('inventory_confirm_action', route('orders.send', $order));
+        }
 
-        if ($pendingDetails->isNotEmpty()) {
+        $printableDetails = $pendingDetails->filter(fn ($detail) => $detail->product?->type !== 'combo');
+
+        if ($printableDetails->isNotEmpty()) {
             $settings = Setting::where('branch_id', $order->branch_id)->pluck('value', 'key')->toArray();
-            app(PrintJobService::class)->enqueueKitchen($order, $pendingDetails, $settings);
+            app(PrintJobService::class)->enqueueKitchen($order, $printableDetails, $settings);
         }
 
         return redirect()->route('orders.mobile', $order)->with('success', '¡Pedido enviado a cocina exitosamente!');
@@ -420,7 +464,11 @@ class OrderController extends Controller
 
     public function mobile(Order $order)
     {
-        $order->load(['details', 'table']);
+        if ($redirect = $this->blockForeignWaiter($order)) {
+            return $redirect;
+        }
+
+        $order->load(['details.preparationArea', 'table']);
         $categories = Category::where('status', true)->get();
         $products = Product::where('status', true)->with(['flavors' => function ($query) {
             $query->where('is_active', true);
@@ -460,5 +508,16 @@ class OrderController extends Controller
         });
 
         return view('orders.mobile', compact('order', 'categories', 'products', 'productFlavorsMap', 'productCombosMap'));
+    }
+
+    private function blockForeignWaiter(Order $order)
+    {
+        $user = auth()->user();
+
+        if ($user && $user->hasRole('mesero') && (int) $order->user_id !== (int) $user->id) {
+            return redirect()->route('tables.index')->with('error', 'Esta comanda está siendo atendida por otro mesero.');
+        }
+
+        return null;
     }
 }

@@ -8,7 +8,7 @@
         <a href="{{ route('tables.index') }}" class="text-body ms-2" style="color: #FFAB1D !important;">
             <i class="ti tabler-arrow-left fs-3"></i>
         </a>
-        <h5 class="mb-0 fw-bold ms-3" style="color: #fafafa;">Mesa {{ $order->table->name }}</h5>
+        <h5 class="mb-0 fw-bold ms-3" style="color: #fafafa;">{{ $order->table->name }}</h5>
     </div>
     <div class="navbar-nav-right d-flex align-items-center justify-content-end ms-auto" id="navbar-collapse">
         <div class="navbar-nav align-items-center">
@@ -67,6 +67,8 @@
 
 <div class="d-flex flex-column h-100" style="background-color: var(--dark-bg);">
     
+    <div data-mobile-alerts>
+    @include('partials.inventory-warning')
     @if(session('success'))
     <div class="alert alert-dismissible fade show m-3 mb-0" role="alert" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80;">
         <i class="ti tabler-check me-2"></i>{{ session('success') }}
@@ -80,6 +82,7 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
     </div>
     @endif
+    </div>
     
     <!-- Search Bar & Category Tabs (Sticky) -->
     <div class="border-bottom sticky-top z-1" style="top: 0px; background: var(--dark-bg); border-bottom: 1px solid var(--border-subtle) !important;">
@@ -149,6 +152,14 @@
         @endforeach
     </div>
 
+    @php
+        $activeDetails = $order->details
+            ->where('status', '!=', 'canceled')
+            ->where('is_combo_component', false)
+            ->values();
+        $pendingItemCount = $activeDetails->where('status', 'pending')->sum('quantity');
+    @endphp
+
     <!-- Glassmorphism Bottom Bar -->
     <div class="fixed-bottom p-3" id="mobileOrderBar">
         <div class="card border-0 shadow-lg rounded-4 overflow-hidden" 
@@ -160,15 +171,17 @@
                     <small class="fw-bold text-uppercase" style="font-size: 0.65rem; color: var(--text-secondary);">Total</small>
                     <span class="h5 mb-0 fw-bold" style="color: var(--primary);">${{ number_format($order->total, 2) }}</span>
                     <small class="fw-bold" style="font-size: 0.75rem; color: var(--text-secondary);">
-                        {{ $order->details->where('status', 'pending')->where('is_combo_component', false)->sum('quantity') }} pendientes
+                        {{ $pendingItemCount }} pendientes
                         <i class="ti tabler-chevron-up ms-1"></i>
                     </small>
                 </div>
                 
-                <form action="{{ route('orders.send', $order) }}" method="POST" class="ms-3 flex-grow-1">
+                <form action="{{ route('orders.send', $order) }}" method="POST" class="ms-3 flex-grow-1" data-mobile-order-async>
                     @csrf
                     <button type="submit" class="btn w-100 rounded-pill py-2 fw-bold shadow-sm d-flex justify-content-center align-items-center"
-                            style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000;">
+                            style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000; {{ $pendingItemCount === 0 ? 'opacity: 0.45; cursor: not-allowed;' : '' }}"
+                            {{ $pendingItemCount === 0 ? 'disabled' : '' }}
+                            title="{{ $pendingItemCount === 0 ? 'No hay productos nuevos para enviar' : 'Enviar productos pendientes a cocina' }}">
                         <span>Enviar</span>
                         <i class="ti tabler-send ms-2"></i>
                     </button>
@@ -186,14 +199,14 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-0">
-        @if($order->details->isEmpty())
+        @if($activeDetails->isEmpty())
         <div class="d-flex flex-column align-items-center justify-content-center h-100" style="color: var(--text-secondary);">
             <i class="ti tabler-basket display-4 mb-3 opacity-25"></i>
             <p>La comanda está vacía</p>
         </div>
         @else
         <div class="list-group list-group-flush">
-            @foreach($order->details->where('is_combo_component', false) as $detail)
+            @foreach($activeDetails->reverse() as $detail)
             <div class="list-group-item py-3" style="background: var(--card-bg); border-color: var(--border-subtle) !important;">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="me-3">
@@ -214,7 +227,7 @@
                             @if($detail->status == 'pending')
                                 <span class="badge px-2 py-1 rounded-pill" style="font-size: 0.65rem; background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3);">Pendiente</span>
                             @else
-                                <span class="badge px-2 py-1 rounded-pill" style="font-size: 0.65rem; background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">Enviado</span>
+                                <span class="badge px-2 py-1 rounded-pill" style="font-size: 0.65rem; background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">{{ $detail->preparationArea->name ?? 'Enviado' }}</span>
                             @endif
                         </div>
                         @if($detail->status === 'pending' && $detail->product?->type !== 'combo')
@@ -241,13 +254,13 @@
                     </div>
                     <div class="text-end">
                         <div class="fw-bold mb-2" style="color: var(--primary);">${{ number_format($detail->price * $detail->quantity, 2) }}</div>
-                        @if($detail->status == 'pending')
+                        @if(in_array($detail->status, ['pending', 'sent'], true))
                         <form action="{{ route('orders.remove-item', [$order, $detail]) }}" method="POST" data-mobile-order-async>
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="is_mobile" value="1">
                             <button type="submit" class="btn btn-xs rounded-pill px-2" 
-                                    style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">Eliminar</button>
+                                     style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">{{ $detail->status === 'sent' ? 'Cancelar' : 'Eliminar' }}</button>
                         </form>
                         @endif
                     </div>
@@ -357,6 +370,12 @@ async function submitMobileOrderForm(form) {
         if (!response.ok) throw new Error('Mobile order request failed');
 
         const documentResponse = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const nextAlerts = documentResponse.querySelector('[data-mobile-alerts]');
+        const currentAlerts = document.querySelector('[data-mobile-alerts]');
+        if (nextAlerts && currentAlerts) {
+            currentAlerts.innerHTML = nextAlerts.innerHTML;
+        }
+
         const nextBar = documentResponse.getElementById('mobileOrderBar');
         const currentBar = document.getElementById('mobileOrderBar');
         const nextSummary = documentResponse.querySelector('[data-mobile-order-summary]');

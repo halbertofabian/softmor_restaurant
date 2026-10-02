@@ -67,13 +67,18 @@ class PosController extends Controller
             ];
         });
 
+        $order->load(['details.preparationArea']);
+
         return view('pos.checkout', compact('order', 'categories', 'products', 'productFlavorsMap', 'productCombosMap'));
     }
 
     public function pay(Request $request, Order $order)
     {
-        if ($order->details()->count() === 0) {
+        if ($order->details()->where('status', '!=', 'canceled')->count() === 0) {
             return back()->with('error', 'No se puede cobrar una orden sin productos.');
+        }
+        if ($order->details()->where('status', 'pending')->exists()) {
+            return back()->with('error', 'Envía los productos pendientes a cocina antes de cobrar.');
         }
 
         $request->validate([
@@ -102,6 +107,9 @@ class PosController extends Controller
 
             // 2. Deduct Inventory (Logic from OrderController)
             foreach ($order->details as $detail) {
+                if ($detail->status === 'canceled') {
+                    continue;
+                }
                 $product = $detail->product;
                 if ($product && $product->controls_inventory) {
                     $newStock = $product->stock - $detail->quantity;
@@ -144,7 +152,7 @@ class PosController extends Controller
                 'waiter_name' => $order->user->name ?? 'Mesero',
                 'date' => now()->format('d/m/Y H:i A'),
                 'total' => $order->total,
-                'items' => $order->details->map(function($detail) {
+                'items' => $order->details->where('status', '!=', 'canceled')->where('is_combo_component', false)->values()->map(function($detail) {
                     return [
                         'quantity' => $detail->quantity,
                         'name' => $detail->product->name ?? 'Producto',
@@ -169,19 +177,21 @@ class PosController extends Controller
         }
     }
 
-    public function sendToKitchen(Order $order)
+    public function sendToKitchen(Request $request, Order $order)
     {
-        // Get pending items
-        $pendingDetails = $order->details()->where('status', 'pending')->get();
+        $inventory = app(\App\Services\RecipeInventoryService::class);
+        try {
+            $pendingDetails = $inventory->sendPending($order, auth()->id(), $request->boolean('allow_negative_inventory'));
+        } catch (\App\Exceptions\InsufficientRecipeInventory $exception) {
+            return back()->with('inventory_shortages', $exception->shortages)
+                ->with('inventory_confirm_action', route('pos.send-to-kitchen', $order));
+        }
         
         if ($pendingDetails->isEmpty()) {
             return back()->with('warning', 'No hay items pendientes para enviar.');
         }
         
-        // Update status to 'sent'
-        foreach ($pendingDetails as $detail) {
-            $detail->update(['status' => 'sent']);
-        }
+        $pendingDetails = $pendingDetails->filter(fn ($detail) => $detail->product?->type !== 'combo');
 
         // Direct local print by preparation area (no monitor tab required)
         try {
@@ -244,7 +254,7 @@ class PosController extends Controller
 
     public function ticket(Order $order)
     {
-        if ($order->details()->count() === 0) {
+        if ($order->details()->where('status', '!=', 'canceled')->where('is_combo_component', false)->count() === 0) {
             return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
         }
 
@@ -256,7 +266,7 @@ class PosController extends Controller
 
     public function preCheck(Order $order)
     {
-        if ($order->details()->count() === 0) {
+        if ($order->details()->where('status', '!=', 'canceled')->where('is_combo_component', false)->count() === 0) {
             return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
         }
 
@@ -268,7 +278,7 @@ class PosController extends Controller
 
     public function preCheckPrintDirect(Order $order)
     {
-        if ($order->details()->count() === 0) {
+        if ($order->details()->where('status', '!=', 'canceled')->where('is_combo_component', false)->count() === 0) {
             return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
         }
 
@@ -289,7 +299,7 @@ class PosController extends Controller
             'ticket_id' => $order->id,
             'date' => now()->format('d/m/Y H:i A'),
             'total' => $order->total,
-            'items' => $order->details->where('is_combo_component', false)->values()->map(function ($detail) {
+            'items' => $order->details->where('status', '!=', 'canceled')->where('is_combo_component', false)->values()->map(function ($detail) {
                 return [
                     'quantity' => $detail->quantity,
                     'name' => $detail->product->name ?? 'Producto',
@@ -329,7 +339,7 @@ class PosController extends Controller
 
     public function printDirect(Order $order)
     {
-        if ($order->details()->count() === 0) {
+        if ($order->details()->where('status', '!=', 'canceled')->where('is_combo_component', false)->count() === 0) {
             return back()->with('error', 'No se puede imprimir una cuenta sin productos.');
         }
 
@@ -352,7 +362,7 @@ class PosController extends Controller
 
             // Items
             $printer->setJustification(Printer::JUSTIFY_LEFT);
-            foreach ($order->details as $detail) {
+            foreach ($order->details->where('status', '!=', 'canceled')->where('is_combo_component', false) as $detail) {
                 $printer->text($detail->quantity . " x " . ($detail->product->name ?? 'Producto') . "\n");
                 $printer->setJustification(Printer::JUSTIFY_RIGHT);
                 $printer->text("$" . number_format($detail->price * $detail->quantity, 2) . "\n");

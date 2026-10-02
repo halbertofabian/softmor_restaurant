@@ -10,6 +10,8 @@ use App\Models\Product;
 use App\Models\ProductFlavor;
 use App\Models\Table;
 use App\Services\PrintJobService;
+use App\Services\RecipeInventoryService;
+use App\Exceptions\InsufficientRecipeInventory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -54,7 +56,7 @@ class ApiOrderController extends Controller
 
         $order = Order::where('table_id', $table->id)
             ->where('status', 'open')
-            ->with(['details'])
+            ->with(['details' => fn ($query) => $query->where('is_combo_component', false)->where('status', '!=', 'canceled')])
             ->first();
 
         if (!$order) {
@@ -75,12 +77,13 @@ class ApiOrderController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'order' => $order->load('details')
+            'order' => $order->load(['details' => fn ($query) => $query->where('is_combo_component', false)->where('status', '!=', 'canceled')])
         ]);
     }
 
     public function addItem(Request $request, Order $order)
     {
+        $this->authorizeOrder($request, $order);
         \Log::info('API: addItem called', ['order_id' => $order->id, 'request' => $request->all()]);
         
         $request->validate([
@@ -94,8 +97,56 @@ class ApiOrderController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Orden cerrada'], 400);
         }
 
-        $product = Product::find($request->product_id);
+        $product = Product::whereKey($request->product_id)
+            ->where('tenant_id', $order->tenant_id)->where('branch_id', $order->branch_id)->firstOrFail();
         $flavor = null;
+
+        if ($product->type === 'combo') {
+            $comboItems = $product->comboItems()->with('componentProduct')->get();
+            if ($comboItems->isEmpty()) {
+                return response()->json(['status' => 'error', 'message' => 'El combo no tiene componentes'], 422);
+            }
+
+            $detail = DB::transaction(function () use ($order, $product, $comboItems, $request) {
+                $parent = OrderDetail::create([
+                    'order_id' => $order->id,
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'price' => $product->price,
+                    'quantity' => $request->quantity,
+                    'preparation_area_id' => $product->preparation_area_id,
+                    'notes' => $request->notes,
+                    'status' => 'pending',
+                    'is_combo_component' => false,
+                    'tenant_id' => $order->tenant_id,
+                    'branch_id' => $order->branch_id,
+                ]);
+                foreach ($comboItems as $comboItem) {
+                    $component = $comboItem->componentProduct;
+                    if (!$component) {
+                        continue;
+                    }
+                    OrderDetail::create([
+                        'order_id' => $order->id,
+                        'parent_order_detail_id' => $parent->id,
+                        'product_id' => $component->id,
+                        'product_name' => $component->name,
+                        'price' => 0,
+                        'quantity' => $request->quantity * $comboItem->quantity,
+                        'preparation_area_id' => $component->preparation_area_id,
+                        'notes' => 'Combo: '.$product->name,
+                        'status' => 'pending',
+                        'is_combo_component' => true,
+                        'tenant_id' => $order->tenant_id,
+                        'branch_id' => $order->branch_id,
+                    ]);
+                }
+                $order->calculateTotal();
+                return $parent;
+            });
+
+            return response()->json(['status' => 'success', 'detail' => $detail, 'order_total' => $order->fresh()->total]);
+        }
 
         if ($request->filled('product_flavor_id')) {
             $flavor = ProductFlavor::where('id', $request->product_flavor_id)
@@ -142,19 +193,25 @@ class ApiOrderController extends Controller
 
     public function removeItem(Request $request, Order $order, OrderDetail $detail)
     {
+        $this->authorizeOrder($request, $order);
         if($detail->order_id !== $order->id) {
              return response()->json(['status' => 'error', 'message' => 'Item no pertenece a esta orden'], 400);
         }
+        abort_if($detail->is_combo_component, 404);
         
-        // Only allow deleting pending items
-        if ($detail->status !== 'pending') {
+        if ($detail->status === 'sent') {
+            foreach ($detail->componentDetails()->where('status', 'sent')->get() as $component) {
+                app(RecipeInventoryService::class)->cancel($component, $request->user()->id);
+            }
+            app(RecipeInventoryService::class)->cancel($detail, $request->user()->id);
+        } elseif ($detail->status === 'pending') {
+            $detail->delete();
+        } else {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Solo se pueden eliminar items pendientes'
+                'message' => 'El producto ya fue cancelado'
             ], 400);
         }
-        
-        $detail->delete();
         $order->calculateTotal();
 
         return response()->json([
@@ -165,7 +222,17 @@ class ApiOrderController extends Controller
 
     public function sendToKitchen(Request $request, Order $order)
     {
-        $pendingDetails = $order->details()->where('status', 'pending')->get();
+        $this->authorizeOrder($request, $order);
+        $inventory = app(RecipeInventoryService::class);
+        try {
+            $pendingDetails = $inventory->sendPending($order, $request->user()->id, $request->boolean('allow_negative_inventory'));
+        } catch (InsufficientRecipeInventory $exception) {
+            return response()->json([
+                'status' => 'inventory_warning',
+                'message' => 'Existencia insuficiente. Confirma para enviar de todos modos.',
+                'shortages' => $exception->shortages,
+            ], 409);
+        }
         if ($pendingDetails->isEmpty()) {
             return response()->json([
                 'status' => 'success',
@@ -174,13 +241,8 @@ class ApiOrderController extends Controller
             ]);
         }
 
-        // Mark all 'pending' items as 'sent'
-        $updatedCount = $order->details()
-            ->where('status', 'pending')
-            ->update([
-                'status' => 'sent',
-                'updated_at' => now() // Touch updated_at to help kitchen monitor sort/detect
-            ]);
+        $updatedCount = $pendingDetails->count();
+        $pendingDetails = $pendingDetails->filter(fn ($detail) => $detail->product?->type !== 'combo');
 
         // Direct local print by preparation area (no monitor tab required)
         try {
@@ -251,10 +313,17 @@ class ApiOrderController extends Controller
         ]);
     }
     
-    public function show(Order $order) {
+    public function show(Request $request, Order $order) {
+        $this->authorizeOrder($request, $order);
         return response()->json([
             'status' => 'success',
-            'order' => $order->load(['details', 'table'])
+            'order' => $order->load(['details' => fn ($query) => $query->where('is_combo_component', false)->where('status', '!=', 'canceled'), 'table'])
         ]);
+    }
+
+    private function authorizeOrder(Request $request, Order $order): void
+    {
+        abort_unless($order->tenant_id === $request->user()->tenant_id
+            && $request->user()->branches()->where('branches.id', $order->branch_id)->exists(), 403);
     }
 }

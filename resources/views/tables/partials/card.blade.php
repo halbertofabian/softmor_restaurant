@@ -2,9 +2,15 @@
 $isActive = $table->is_active;
 $status = $table->status;
 
-// Only allow "Desocupar" when the table is occupied and its order has no products
+// Only allow "Desocupar" when the table is occupied and its order has no active products
 $activeOrder = $table->orders->where('status', 'open')->first();
-$canDesocupar = $status === 'occupied' && $activeOrder && $activeOrder->details->count() === 0;
+$canDesocupar = $status === 'occupied'
+    && $activeOrder
+    && (!auth()->user()->hasRole('mesero') || (int) $activeOrder->user_id === (int) auth()->id())
+    && $activeOrder->details
+        ->where('status', '!=', 'canceled')
+        ->where('is_combo_component', false)
+        ->isEmpty();
 
 // Define colors based on status using our custom variables
 $statusColor = 'var(--text-secondary)';
@@ -48,7 +54,17 @@ if ($isActive) {
                 </small>
             </div>
             
-            @unless(auth()->user()->hasRole('mesero'))
+            @if(auth()->user()->hasRole('mesero'))
+                @if($canDesocupar)
+                <form action="{{ route('tables.release', $table) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-icon rounded-pill p-0" style="color: var(--text-secondary); width: 2.25rem; height: 2.25rem;" title="Desocupar mesa" data-gf-confirm="¿Deseas desocupar esta mesa?">
+                        <i class="ti tabler-logout" style="font-size: 1.2rem;"></i>
+                    </button>
+                </form>
+                @endif
+            @else
             <div class="dropdown">
                 <button class="btn btn-icon rounded-pill p-0" type="button" data-bs-toggle="dropdown" style="color: var(--text-secondary); width: 2.25rem; height: 2.25rem;">
                     <i class="ti tabler-dots-vertical" style="font-size: 1.2rem;"></i>
@@ -75,7 +91,7 @@ if ($isActive) {
                     @endif
                 </ul>
             </div>
-            @endunless
+            @endif
         </div>
 
         <div class="mt-auto d-flex flex-column gap-2">
@@ -104,35 +120,47 @@ if ($isActive) {
                     @case('occupied')
                         <div class="w-100">
                             @if($activeOrder = $table->orders->where('status', 'open')->first())
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle);">
-                                    <div class="d-flex align-items-center" style="color: var(--status-occupied);">
+                                @php
+                                    $hasActiveItems = $activeOrder->details
+                                        ->where('status', '!=', 'canceled')
+                                        ->where('is_combo_component', false)
+                                        ->isNotEmpty();
+                                @endphp
+                                <div class="order-summary-meta d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle);">
+                                    <div class="order-summary-time d-flex align-items-center" style="color: var(--status-occupied);">
                                         <i class="ti tabler-clock me-1"></i>
                                         <small class="fw-bold">{{ $activeOrder->created_at->format('H:i') }}</small>
                                     </div>
-                                    <div class="badge text-black fw-bold" style="background: var(--primary);">
+                                    <div class="order-summary-total badge text-black fw-bold" style="background: var(--primary);">
                                         ${{ number_format($activeOrder->total, 2) }}
                                     </div>
                                 </div>
 
                                 @if(auth()->user()->hasRole('mesero'))
-                                    {{-- Mesero: Solo Ve Comanda --}}
-                                    <a href="{{ route('orders.mobile', $activeOrder) }}" class="btn w-100 fw-bold mb-2" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000; border: none;">
-                                        <i class="ti tabler-clipboard-list me-1"></i> Ver Orden
-                                    </a>
+                                    @if((int) $activeOrder->user_id === (int) auth()->id())
+                                        {{-- Mesero dueño: Solo Ve Comanda --}}
+                                        <a href="{{ route('orders.mobile', $activeOrder) }}" class="btn w-100 fw-bold mb-2" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000; border: none;">
+                                            <i class="ti tabler-clipboard-list me-1"></i><span class="d-none d-sm-inline">Ver Orden</span><span class="d-sm-none">Ver</span>
+                                        </a>
+                                    @else
+                                        <button type="button" class="btn w-100 fw-bold mb-2" disabled style="background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-subtle); cursor: not-allowed;" title="Esta mesa está siendo atendida por otro mesero">
+                                            <i class="ti tabler-lock me-1"></i> Ocupada
+                                        </button>
+                                    @endif
                                 @else
                                     {{-- Cajero/Admin --}}
                                     <div class="d-grid gap-2">
                                         <a href="{{ route('pos.checkout', $activeOrder) }}" class="btn fw-bold" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000; border: none;">
-                                            <i class="ti tabler-clipboard-list me-1"></i> Ver Orden
+                                            <i class="ti tabler-clipboard-list me-1"></i><span class="d-none d-sm-inline">Ver Orden</span><span class="d-sm-none">Ver</span>
                                         </a>
                                         <div class="row g-2 align-items-stretch flex-nowrap">
                                             <div class="col-6">
-                                                <a href="{{ route('orders.pre-check.print-direct', $activeOrder) }}" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold" style="border: 1px solid var(--border-subtle); color: var(--text-secondary);">
+                                                <a href="{{ $hasActiveItems ? route('orders.pre-check.print-direct', $activeOrder) : '#' }}" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold {{ $hasActiveItems ? '' : 'disabled' }}" style="border: 1px solid var(--border-subtle); color: var(--text-secondary);" {{ $hasActiveItems ? '' : 'aria-disabled=true tabindex=-1' }} title="{{ $hasActiveItems ? 'Imprimir pre-cuenta' : 'Agrega productos a la orden' }}">
                                                     <i class="ti tabler-printer me-1"></i> Pre-Cuenta
                                                 </a>
                                             </div>
                                             <div class="col-6">
-                                                <a href="{{ route('pos.checkout', $activeOrder) }}?open_payment=1" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold" style="border: 1px solid var(--primary); color: var(--primary);">
+                                                <a href="{{ $hasActiveItems ? route('pos.checkout', $activeOrder) . '?open_payment=1' : '#' }}" class="btn w-100 h-100 d-flex align-items-center justify-content-center fw-bold {{ $hasActiveItems ? '' : 'disabled' }}" style="border: 1px solid var(--primary); color: var(--primary);" {{ $hasActiveItems ? '' : 'aria-disabled=true tabindex=-1' }} title="{{ $hasActiveItems ? 'Cobrar orden' : 'Agrega productos a la orden' }}">
                                                     <i class="ti tabler-cash me-1"></i> Cobrar
                                                 </a>
                                             </div>

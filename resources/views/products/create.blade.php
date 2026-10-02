@@ -6,100 +6,42 @@
     <div class="card-body">
         <form action="{{ route('products.store') }}" method="POST">
             @csrf
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="name">Nombre</label>
-                    <input type="text" class="form-control" id="name" name="name" required autofocus>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="type">Tipo</label>
-                    <select class="form-select" id="type" name="type" required onchange="toggleInventory()">
-                        <option value="dish">Platillo</option>
-                        <option value="drink">Bebida</option>
-                        <option value="finished">Producto Terminado</option>
-                        <option value="extra">Extra</option>
-                        <option value="combo">Combo</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label" for="description">Descripción</label>
-                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-            </div>
-            
-            <div class="row" id="classification-wrapper">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="category_id">Categoría</label>
-                    <select class="form-select" id="category_id" name="category_id" required>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}" data-preparation-area-id="{{ $category->preparation_area_id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="preparation_area_id">Área de Preparación</label>
-                    <select class="form-select" id="preparation_area_id" name="preparation_area_id" required>
-                        @foreach($preparationAreas as $area)
-                            <option value="{{ $area->id }}">{{ $area->name }}</option>
-                        @endforeach
-                    </select>
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-info-circle me-2"></i>Información general</h6></div>
+                <div class="card-body pt-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="form-label" for="name">Nombre</label><input type="text" class="form-control" id="name" name="name" required autofocus></div>
+                        <div class="col-md-6 mb-3"><label class="form-label" for="type">Tipo</label><select class="form-select" id="type" name="type" required onchange="toggleInventory()"><option value="dish">Platillo</option><option value="drink">Bebida</option><option value="finished">Producto Terminado</option><option value="extra">Extra</option><option value="combo">Combo</option></select></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label" for="description">Descripción</label><textarea class="form-control" id="description" name="description" rows="3"></textarea></div>
+                    <div class="row" id="classification-wrapper">
+                        <div class="col-md-6 mb-3"><label class="form-label" for="category_id">Categoría</label><select class="form-select" id="category_id" name="category_id" required>@foreach($categories as $category)<option value="{{ $category->id }}" data-preparation-area-id="{{ $category->preparation_area_id }}">{{ $category->name }}</option>@endforeach</select></div>
+                        <div class="col-md-6 mb-3"><label class="form-label" for="preparation_area_id">Área de Preparación</label><select class="form-select" id="preparation_area_id" name="preparation_area_id" required>@foreach($preparationAreas as $area)<option value="{{ $area->id }}">{{ $area->name }}</option>@endforeach</select></div>
+                    </div>
+                    <div><label class="form-label" for="price">Precio</label><div class="input-group"><span class="input-group-text">$</span><input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required></div></div>
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label" for="price">Precio</label>
-                <div class="input-group">
-                    <span class="input-group-text">$</span>
-                    <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+            <div class="card border shadow-none mb-4">
+                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-adjustments me-2"></i>Variantes y componentes</h6></div>
+                <div class="card-body pt-4">
+                    <div id="flavors-wrapper"><div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Sabores (opcional)</label><button type="button" class="btn btn-sm btn-label-primary" onclick="addFlavorRow()">Agregar sabor</button></div><div id="flavors-container"></div><div class="form-text">Ejemplo: A la diabla (+$0), Al mojo de ajo (+$10), Empanizados (+$15).</div></div>
+                    <div class="d-none" id="combo-components-wrapper"><div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Componentes del combo</label><button type="button" class="btn btn-sm btn-label-primary" onclick="addComboComponentRow()">Agregar componente</button></div><div id="combo-components-container"></div><div class="form-text">Cada componente se agrega una sola vez con cantidad. Los sabores se eligen en caja por cada unidad.</div></div>
                 </div>
             </div>
 
-            <div class="mb-3" id="flavors-wrapper">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label class="form-label mb-0">Sabores (opcional)</label>
-                    <button type="button" class="btn btn-sm btn-label-primary" onclick="addFlavorRow()">Agregar sabor</button>
-                </div>
-                <div id="flavors-container"></div>
-                <div class="form-text">Ejemplo: A la diabla (+$0), Al mojo de ajo (+$10), Empanizados (+$15).</div>
-            </div>
-
-            <div class="mb-3 d-none" id="combo-components-wrapper">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label class="form-label mb-0">Componentes del combo (sin duplicar variantes)</label>
-                    <button type="button" class="btn btn-sm btn-label-primary" onclick="addComboComponentRow()">Agregar componente</button>
-                </div>
-                <div id="combo-components-container"></div>
-                <div class="form-text">Cada componente se agrega una sola vez con cantidad. Los sabores se eligen en caja por cada unidad.</div>
-            </div>
-
-            <div class="mb-3" id="inventory-wrapper">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="controls_inventory" name="controls_inventory" onchange="toggleStockFields()">
-                    <label class="form-check-label" for="controls_inventory">Controlar Inventario</label>
+            <div class="card border shadow-none mb-4" id="recipe-inventory-card">
+                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-receipt me-2"></i>Receta e inventario</h6></div>
+                <div class="card-body pt-4">
+                    <div class="mb-4" id="recipe-wrapper"><div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Receta de materias primas</label><button type="button" class="btn btn-sm btn-label-primary" onclick="addRecipeRow()">Agregar ingrediente</button></div><div id="recipe-container"></div><div class="form-text">La cantidad es por cada unidad vendida y se descuenta al enviar a cocina.</div></div>
+                    <div class="mb-3" id="inventory-wrapper"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="controls_inventory" name="controls_inventory" onchange="toggleStockFields()"><label class="form-check-label" for="controls_inventory">Controlar inventario de producto terminado</label></div></div>
+                    <div class="row d-none" id="stock-fields"><div class="col-md-6 mb-3"><label class="form-label" for="stock">Stock actual</label><input type="number" class="form-control" id="stock" name="stock" value="0"></div><div class="col-md-6 mb-3"><label class="form-label" for="min_stock">Stock mínimo</label><input type="number" class="form-control" id="min_stock" name="min_stock" value="0"></div></div>
                 </div>
             </div>
 
-            <div class="row d-none" id="stock-fields">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="stock">Stock Actual</label>
-                    <input type="number" class="form-control" id="stock" name="stock" value="0">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label" for="min_stock">Stock Mínimo</label>
-                    <input type="number" class="form-control" id="min_stock" name="min_stock" value="0">
-                </div>
-            </div>
+            <div class="card border shadow-none mb-4"><div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-toggle-right me-2"></i>Disponibilidad</h6></div><div class="card-body pt-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="status" name="status" checked><label class="form-check-label" for="status">Producto activo</label></div></div></div>
 
-            <div class="mb-3">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="status" name="status" checked>
-                    <label class="form-check-label" for="status">Activo</label>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Guardar</button>
-            <a href="{{ route('products.index') }}" class="btn btn-label-secondary">Cancelar</a>
+            <div class="d-flex justify-content-end gap-2"><a href="{{ route('products.index') }}" class="btn btn-label-secondary">Cancelar</a><button type="submit" class="btn btn-primary">Guardar</button></div>
         </form>
     </div>
 </div>
@@ -155,6 +97,26 @@ function toggleStockFields() {
 }
 
 const comboProductsData = @json($comboProductsData ?? []);
+const inventoryItemsData = @json(($inventoryItems ?? collect())->map(fn($item) => ['id' => $item->id, 'name' => $item->name, 'unit' => $item->base_unit])->values());
+
+function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = value ?? '';
+    return element.innerHTML;
+}
+
+function addRecipeRow(itemId = '', quantity = '') {
+    const container = document.getElementById('recipe-container');
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 recipe-row';
+    const options = inventoryItemsData.map(item => `<option value="${item.id}" ${String(itemId) === String(item.id) ? 'selected' : ''}>${escapeHtml(item.name)} (${item.unit})</option>`).join('');
+    row.innerHTML = `<div class="col-md-7"><select class="form-select" name="recipe_inventory_item_id[]" required><option value="">Materia prima</option>${options}</select></div>
+        <div class="col-md-3"><input type="number" min="0.001" step="0.001" class="form-control" name="recipe_quantity[]" value="${quantity}" placeholder="Cantidad" required></div>
+        <div class="col-md-2"><button type="button" class="btn btn-label-danger w-100" onclick="this.closest('.recipe-row').remove()">X</button></div>`;
+    container.appendChild(row);
+    document.getElementById('controls_inventory').checked = false;
+    toggleStockFields();
+}
 
 function toggleComboFields() {
     const type = document.getElementById('type').value;
@@ -163,10 +125,14 @@ function toggleComboFields() {
     const inventoryWrapper = document.getElementById('inventory-wrapper');
     const classificationWrapper = document.getElementById('classification-wrapper');
     const inventoryCheck = document.getElementById('controls_inventory');
+    const recipeWrapper = document.getElementById('recipe-wrapper');
+    const recipeInventoryCard = document.getElementById('recipe-inventory-card');
     wrapper.classList.toggle('d-none', type !== 'combo');
     flavorsWrapper.classList.toggle('d-none', type === 'combo');
     inventoryWrapper.classList.toggle('d-none', type === 'combo');
     classificationWrapper.classList.toggle('d-none', type === 'combo');
+    recipeWrapper.classList.toggle('d-none', type === 'combo');
+    recipeInventoryCard.classList.toggle('d-none', type === 'combo');
     if (type === 'combo') {
         inventoryCheck.checked = false;
         toggleStockFields();

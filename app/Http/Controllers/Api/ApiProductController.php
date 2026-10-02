@@ -46,19 +46,24 @@ class ApiProductController extends Controller
                               ->where('branch_id', $branchId)
                               ->where('status', true)
                               ->with(['flavors' => function ($query) {
-                                  $query->where('is_active', true)->orderBy('sort_order')->orderBy('name');
-                              }])
+                                   $query->where('is_active', true)->orderBy('sort_order')->orderBy('name');
+                              }, 'comboItems'])
                               ->get()
                               ->map(function($product) {
                                   return [
-                                      'id' => $product->id,
-                                      'name' => $product->name,
+                                       'id' => $product->id,
+                                       'name' => $product->name,
+                                       'type' => $product->type,
                                       'price' => $product->price,
                                       'image' => $product->image,
                                       'description' => $product->description,
                                       'controls_inventory' => $product->controls_inventory,
                                       'stock' => $product->stock,
-                                      'preparation_area_id' => $product->preparation_area_id,
+                                       'preparation_area_id' => $product->preparation_area_id,
+                                       'combo_items' => $product->comboItems->map(fn ($item) => [
+                                           'product_id' => $item->component_product_id,
+                                           'quantity' => $item->quantity,
+                                       ])->values(),
                                       'flavors' => $product->flavors->map(function ($flavor) {
                                           return [
                                               'id' => $flavor->id,
