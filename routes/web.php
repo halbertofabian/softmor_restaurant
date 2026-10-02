@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
             Route::post('products/{product}/duplicate', [\App\Http\Controllers\ProductController::class, 'duplicate'])->name('products.duplicate');
             Route::get('inventory-items-report', [\App\Http\Controllers\InventoryItemController::class, 'report'])->name('inventory-items.report');
             Route::get('inventory-items-report/pdf', [\App\Http\Controllers\InventoryItemController::class, 'reportPdf'])->name('inventory-items.report.pdf');
+            Route::post('inventory-items/{inventory_item}/movements', [\App\Http\Controllers\InventoryItemController::class, 'storeMovement'])->name('inventory-items.movements.store');
             Route::resource('inventory-items', \App\Http\Controllers\InventoryItemController::class);
 
             // POS

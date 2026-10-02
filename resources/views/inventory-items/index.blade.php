@@ -39,7 +39,7 @@
                     <td>{{ $item->recipe_items_count }}</td>
                     <td><span class="badge bg-label-{{ $item->status ? 'success' : 'secondary' }}">{{ $item->status ? 'Activo' : 'Inactivo' }}</span></td>
                     <td>
-                        <a href="{{ route('inventory-items.show', $item) }}" class="btn btn-sm btn-icon btn-text-primary" title="Ver movimientos"><i class="ti tabler-history"></i></a>
+                        <a href="{{ route('inventory-items.show', $item) }}" class="btn btn-sm btn-icon btn-text-primary" title="Inventario y ajustes"><i class="ti tabler-arrows-exchange"></i></a>
                         <a href="{{ route('inventory-items.edit', $item) }}" class="btn btn-sm btn-icon btn-text-secondary"><i class="ti tabler-edit"></i></a>
                         <form action="{{ route('inventory-items.destroy', $item) }}" method="POST" class="d-inline">@csrf @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-icon btn-text-danger" data-gf-confirm="auto" data-gf-entity="la materia prima" data-gf-name="{{ $item->name }}"><i class="ti tabler-trash"></i></button>

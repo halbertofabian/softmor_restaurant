@@ -32,6 +32,57 @@ class InventoryItemController extends Controller
         return view('inventory-items.movements', compact('inventoryItem', 'movements'));
     }
 
+    public function storeMovement(Request $request, InventoryItem $inventoryItem)
+    {
+        $data = $request->validate([
+            'type' => ['required', Rule::in(['receipt', 'waste', 'adjustment'])],
+            'quantity' => ['required', 'numeric', 'min:0'],
+            'quantity_unit' => ['required', Rule::in(['g', 'kg', 'ml', 'l', 'unit'])],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($data['type'] !== 'adjustment' && (float) $data['quantity'] <= 0) {
+            throw ValidationException::withMessages(['quantity' => 'La cantidad debe ser mayor a cero.']);
+        }
+
+        $quantity = $this->toBaseUnit((float) $data['quantity'], $data['quantity_unit'], $inventoryItem->base_unit);
+
+        DB::transaction(function () use ($inventoryItem, $data, $quantity) {
+            $item = InventoryItem::whereKey($inventoryItem->id)->lockForUpdate()->firstOrFail();
+            $previous = (float) $item->stock;
+
+            $new = round(match ($data['type']) {
+                'receipt' => $previous + $quantity,
+                'waste' => $previous - $quantity,
+                'adjustment' => $quantity,
+            }, 3);
+
+            $signed = round(match ($data['type']) {
+                'receipt' => $quantity,
+                'waste' => -$quantity,
+                'adjustment' => $new - $previous,
+            }, 3);
+
+            $item->update(['stock' => $new]);
+
+            InventoryItemMovement::create([
+                'inventory_item_id' => $item->id,
+                'type' => $data['type'],
+                'quantity' => $signed,
+                'previous_stock' => $previous,
+                'new_stock' => $new,
+                'notes' => $data['notes'] ?: match ($data['type']) {
+                    'receipt' => 'Entrada manual',
+                    'waste' => 'Salida manual',
+                    'adjustment' => 'Ajuste de inventario',
+                },
+                'user_id' => auth()->id(),
+            ]);
+        });
+
+        return redirect()->route('inventory-items.show', $inventoryItem)->with('success', 'Movimiento registrado con éxito.');
+    }
+
     public function report()
     {
         return view('inventory-items.report', $this->reportData());
