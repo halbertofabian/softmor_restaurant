@@ -8,7 +8,7 @@
             @csrf
             @method('PUT')
             <div class="card border shadow-none mb-4">
-                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-info-circle me-2"></i>Información general</h6></div>
+                <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-info-circle me-2"></i>Información general</h6></div>
                 <div class="card-body pt-4">
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -63,7 +63,7 @@
             </div>
 
             <div class="card border shadow-none mb-4">
-                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-adjustments me-2"></i>Variantes y componentes</h6></div>
+                <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-adjustments me-2"></i>Variantes y componentes</h6></div>
                 <div class="card-body pt-4">
             <div class="mb-3 {{ $product->type === 'combo' ? 'd-none' : '' }}" id="flavors-wrapper">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -84,7 +84,7 @@
             </div>
 
             <div class="card border shadow-none mb-4" id="recipe-inventory-card">
-                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-receipt me-2"></i>Receta e inventario</h6></div>
+                <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-receipt me-2"></i>Receta e inventario</h6></div>
                 <div class="card-body pt-4">
             <div class="mb-3 {{ $product->type === 'combo' ? 'd-none' : '' }}" id="recipe-wrapper">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -117,7 +117,7 @@
             </div>
 
             <div class="card border shadow-none mb-4">
-                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-toggle-right me-2"></i>Disponibilidad</h6></div>
+                <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-toggle-right me-2"></i>Disponibilidad</h6></div>
                 <div class="card-body pt-4">
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="status" name="status" {{ $product->status ? 'checked' : '' }}>

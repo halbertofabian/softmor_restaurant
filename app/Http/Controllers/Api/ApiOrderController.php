@@ -236,7 +236,7 @@ class ApiOrderController extends Controller
         if ($pendingDetails->isEmpty()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "0 items enviados a cocina",
+                'message' => "0 ítems enviados",
                 'updated_count' => 0
             ]);
         }
@@ -257,7 +257,7 @@ class ApiOrderController extends Controller
             if (app(PrintJobService::class)->enqueueKitchen($order, $pendingDetails, $settings)) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => "$updatedCount items enviados a cocina",
+                    'message' => "$updatedCount ítems enviados",
                     'updated_count' => $updatedCount
                 ]);
             }
@@ -308,7 +308,7 @@ class ApiOrderController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => "$updatedCount items enviados a cocina",
+            'message' => "$updatedCount ítems enviados",
             'updated_count' => $updatedCount
         ]);
     }

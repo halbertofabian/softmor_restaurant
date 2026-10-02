@@ -3,7 +3,7 @@ $isActive = $table->is_active;
 $status = $table->status;
 
 // Only allow "Desocupar" when the table is occupied and its order has no active products
-$activeOrder = $table->orders->where('status', 'open')->first();
+$activeOrder = $table->orders->where('status', 'open')->sortByDesc('id')->first();
 $canDesocupar = $status === 'occupied'
     && $activeOrder
     && (!auth()->user()->hasRole('mesero') || (int) $activeOrder->user_id === (int) auth()->id())
@@ -119,7 +119,7 @@ if ($isActive) {
                         @break
                     @case('occupied')
                         <div class="w-100">
-                            @if($activeOrder = $table->orders->where('status', 'open')->first())
+                            @if($activeOrder = $table->orders->where('status', 'open')->sortByDesc('id')->first())
                                 @php
                                     $hasActiveItems = $activeOrder->details
                                         ->where('status', '!=', 'canceled')

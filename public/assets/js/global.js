@@ -76,7 +76,7 @@ window.GF.initSelect2 = function (root) {
   var $root = root ? $(root) : $(document);
   $root.find('select').each(function () {
     var $select = $(this);
-    if ($select.hasClass('select2-hidden-accessible') || $select.closest('.dt-container').length) {
+    if ($select.hasClass('select2-hidden-accessible') || $select.closest('.dt-container').length || $select.is('[data-no-select2]')) {
       return;
     }
 

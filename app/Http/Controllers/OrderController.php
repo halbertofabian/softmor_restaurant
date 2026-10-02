@@ -459,7 +459,7 @@ class OrderController extends Controller
             app(PrintJobService::class)->enqueueKitchen($order, $printableDetails, $settings);
         }
 
-        return redirect()->route('orders.mobile', $order)->with('success', '¡Pedido enviado a cocina exitosamente!');
+        return redirect()->route('orders.mobile', $order)->with('success', '¡Pedido enviado exitosamente!');
     }
 
     public function mobile(Order $order)

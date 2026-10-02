@@ -203,7 +203,7 @@ class PosController extends Controller
             $defaultPrinter = $settings['ticket_printer_name'] ?? 'POS-80';
 
             if (app(PrintJobService::class)->enqueueKitchen($order, $pendingDetails, $settings)) {
-                return back()->with('success', count($pendingDetails) . ' items enviados a cocina.');
+                return back()->with('success', count($pendingDetails) . ' ítems enviados.');
             }
 
             $order->loadMissing(['table', 'user']);
@@ -249,7 +249,7 @@ class PosController extends Controller
             // Keep order flow running even if local printer is unavailable
         }
         
-        return back()->with('success', count($pendingDetails) . ' items enviados a cocina.');
+        return back()->with('success', count($pendingDetails) . ' ítems enviados.');
     }
 
     public function ticket(Order $order)

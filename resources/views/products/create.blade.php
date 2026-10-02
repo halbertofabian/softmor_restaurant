@@ -7,7 +7,7 @@
         <form action="{{ route('products.store') }}" method="POST">
             @csrf
             <div class="card border shadow-none mb-4">
-                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-info-circle me-2"></i>Información general</h6></div>
+                <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-info-circle me-2"></i>Información general</h6></div>
                 <div class="card-body pt-4">
                     <div class="row">
                         <div class="col-md-6 mb-3"><label class="form-label" for="name">Nombre</label><input type="text" class="form-control" id="name" name="name" required autofocus></div>
@@ -23,7 +23,7 @@
             </div>
 
             <div class="card border shadow-none mb-4">
-                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-adjustments me-2"></i>Variantes y componentes</h6></div>
+                <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-adjustments me-2"></i>Variantes y componentes</h6></div>
                 <div class="card-body pt-4">
                     <div id="flavors-wrapper"><div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Sabores (opcional)</label><button type="button" class="btn btn-sm btn-label-primary" onclick="addFlavorRow()">Agregar sabor</button></div><div id="flavors-container"></div><div class="form-text">Ejemplo: A la diabla (+$0), Al mojo de ajo (+$10), Empanizados (+$15).</div></div>
                     <div class="d-none" id="combo-components-wrapper"><div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Componentes del combo</label><button type="button" class="btn btn-sm btn-label-primary" onclick="addComboComponentRow()">Agregar componente</button></div><div id="combo-components-container"></div><div class="form-text">Cada componente se agrega una sola vez con cantidad. Los sabores se eligen en caja por cada unidad.</div></div>
@@ -31,7 +31,7 @@
             </div>
 
             <div class="card border shadow-none mb-4" id="recipe-inventory-card">
-                <div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-receipt me-2"></i>Receta e inventario</h6></div>
+                <div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-receipt me-2"></i>Receta e inventario</h6></div>
                 <div class="card-body pt-4">
                     <div class="mb-4" id="recipe-wrapper"><div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Receta de materias primas</label><button type="button" class="btn btn-sm btn-label-primary" onclick="addRecipeRow()">Agregar ingrediente</button></div><div id="recipe-container"></div><div class="form-text">La cantidad es por cada unidad vendida y se descuenta al enviar a cocina.</div></div>
                     <div class="mb-3" id="inventory-wrapper"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="controls_inventory" name="controls_inventory" onchange="toggleStockFields()"><label class="form-check-label" for="controls_inventory">Controlar inventario de producto terminado</label></div></div>
@@ -39,7 +39,7 @@
                 </div>
             </div>
 
-            <div class="card border shadow-none mb-4"><div class="card-header border-bottom py-3"><h6 class="mb-0"><i class="ti tabler-toggle-right me-2"></i>Disponibilidad</h6></div><div class="card-body pt-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="status" name="status" checked><label class="form-check-label" for="status">Producto activo</label></div></div></div>
+            <div class="card border shadow-none mb-4"><div class="card-header border-bottom py-3 bg-label-primary"><h6 class="mb-0 text-primary"><i class="ti tabler-toggle-right me-2"></i>Disponibilidad</h6></div><div class="card-body pt-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="status" name="status" checked><label class="form-check-label" for="status">Producto activo</label></div></div></div>
 
             <div class="d-flex justify-content-end gap-2"><a href="{{ route('products.index') }}" class="btn btn-label-secondary">Cancelar</a><button type="submit" class="btn btn-primary">Guardar</button></div>
         </form>

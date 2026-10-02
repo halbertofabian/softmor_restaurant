@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Table;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -122,6 +123,11 @@ class TableController extends Controller
             $waiterId = $waiter->id;
         }
 
+        // A free table always starts fresh: close any leftover open orders to avoid duplicates
+        Order::where('table_id', $table->id)
+            ->whereNotIn('status', ['closed', 'canceled'])
+            ->update(['status' => 'closed', 'closed_at' => now()]);
+
         $table->update(['status' => 'occupied']);
 
         // Auto-create order
@@ -141,6 +147,23 @@ class TableController extends Controller
 
     public function release(Table $table)
     {
+        $openOrders = Order::where('table_id', $table->id)
+            ->whereNotIn('status', ['closed', 'canceled'])
+            ->get();
+
+        foreach ($openOrders as $openOrder) {
+            $hasActiveItems = $openOrder->details()
+                ->where('status', '!=', 'canceled')
+                ->where('is_combo_component', false)
+                ->exists();
+
+            if ($hasActiveItems) {
+                return redirect()->back()->with('error', 'La comanda tiene productos activos. Cóbrala o cancélalos antes de desocupar.');
+            }
+
+            $openOrder->update(['status' => 'closed', 'closed_at' => now()]);
+        }
+
         $table->update(['status' => 'free']);
 
         return redirect()->back()->with('success', 'Mesa liberada.');
