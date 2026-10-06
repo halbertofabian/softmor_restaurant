@@ -20,7 +20,7 @@ import {
 } from '../../lib/db/printers'
 import type { LocalPrinter, PrintLogKind } from '../../lib/db/db'
 import { formatDateTime } from '../../lib/format'
-import { printTestTicket, rePairPrinter, reconnectPrinter } from '../../lib/printing/printService'
+import { printTestTicket, rePairPrinter } from '../../lib/printing/printService'
 import { isGetDevicesSupported, isWebBluetoothSupported } from '../../lib/printing/transport'
 import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -47,7 +47,6 @@ export function PrintersPage() {
 
   const [addOpen, setAddOpen] = useState(false)
   const [testingId, setTestingId] = useState<string | null>(null)
-  const [reconnectingId, setReconnectingId] = useState<string | null>(null)
   const [reconnectTarget, setReconnectTarget] = useState<LocalPrinter | null>(null)
   const [repairing, setRepairing] = useState(false)
 
@@ -123,24 +122,6 @@ export function PrintersPage() {
       }
     } finally {
       setTestingId(null)
-    }
-  }
-
-  async function handleReconnect(printer: LocalPrinter) {
-    setReconnectingId(printer.id)
-
-    try {
-      await reconnectPrinter(printer)
-      pushToast(`Impresora "${printer.alias}" conectada.`, 'success')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo conectar la impresora'
-      pushToast(message, 'error')
-
-      if (/no está disponible|vuelve a emparejarla|not found/i.test(message)) {
-        setReconnectTarget(printer)
-      }
-    } finally {
-      setReconnectingId(null)
     }
   }
 
@@ -307,16 +288,6 @@ export function PrintersPage() {
                 </div>
 
                 <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                  {printer.transport === 'bluetooth' && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleReconnect(printer)}
-                      disabled={reconnectingId === printer.id}
-                    >
-                      {reconnectingId === printer.id ? 'Conectando…' : 'Reconectar'}
-                    </Button>
-                  )}
                   <Button
                     size="sm"
                     variant="secondary"

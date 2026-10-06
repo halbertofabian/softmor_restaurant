@@ -37,7 +37,9 @@ export function ReprintSheet({ orderId, title, onClose }: ReprintSheetProps) {
         ? { ...payload, areas: payload.areas.filter((area) => area.area_id === areaId) }
         : payload
 
-      const outcome = await printAndMark(tenantId, branchId, orderId, filtered, 'reprint')
+      const outcome = await printAndMark(tenantId, branchId, orderId, filtered, 'reprint', {
+        allowPairing: true,
+      })
       reportPrintOutcome(outcome)
 
       if (outcome.printed.length > 0 && outcome.failed.length === 0) {

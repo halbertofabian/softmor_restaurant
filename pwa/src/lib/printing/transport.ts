@@ -293,9 +293,60 @@ export class BluetoothTransport implements PrinterTransport {
       return devices[0]
     }
 
+    // Con varios dispositivos autorizados (u otros equipos), comprobar cuál
+    // expone el servicio/característica guardados.
+    const probed = await this.findDeviceByGatt(devices)
+
+    if (probed) {
+      return probed
+    }
+
     throw new Error(
       `La impresora "${this.printer.alias}" no está disponible. Vuelve a emparejarla.`,
     )
+  }
+
+  private async findDeviceByGatt(devices: BluetoothDevice[]): Promise<BluetoothDevice | null> {
+    const gatt = this.printer.gatt
+
+    if (!gatt) {
+      return null
+    }
+
+    for (const device of devices.slice(0, 5)) {
+      if (!device.gatt) {
+        continue
+      }
+
+      let connected = false
+
+      try {
+        const server = await Promise.race([
+          device.gatt.connect(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Bluetooth timeout')), 4000),
+          ),
+        ])
+
+        connected = true
+
+        const service = await server.getPrimaryService(gatt.service)
+        await service.getCharacteristic(gatt.characteristic)
+
+        await this.adoptDevice(device)
+        return device
+      } catch {
+        if (connected) {
+          try {
+            device.gatt.disconnect()
+          } catch {
+            // Ignorar errores al desconectar.
+          }
+        }
+      }
+    }
+
+    return null
   }
 
   private async getGrantedDevices(): Promise<BluetoothDevice[]> {
@@ -304,8 +355,16 @@ export class BluetoothTransport implements PrinterTransport {
     }
 
     try {
-      return await navigator.bluetooth.getDevices()
-    } catch {
+      const devices = await navigator.bluetooth.getDevices()
+
+      console.debug(
+        '[bluetooth] dispositivos autorizados:',
+        devices.map((device) => ({ id: device.id, name: device.name })),
+      )
+
+      return devices
+    } catch (error) {
+      console.warn('[bluetooth] getDevices falló:', error)
       return []
     }
   }
@@ -341,7 +400,7 @@ export class BluetoothTransport implements PrinterTransport {
       throw new Error('La impresora no tiene configuración GATT guardada.')
     }
 
-    let device: BluetoothDevice
+    let device: BluetoothDevice | null = null
 
     try {
       device = await this.resolveDevice()
@@ -352,24 +411,50 @@ export class BluetoothTransport implements PrinterTransport {
         throw error
       }
 
-      const paired = await pairBluetoothPrinter(this.printer.bluetoothServices ?? [])
+      // Tras recargar la página el permiso/adaptador puede tardar unos
+      // segundos en estar listo: reintentar recuperar antes del selector.
+      for (const wait of [500, 800, 1000, 1200]) {
+        await delay(wait)
 
-      this.printer.bluetoothDeviceId = paired.deviceId
-      this.printer.bluetoothDeviceName = paired.deviceName
-      this.printer.gatt = paired.gatt
-      gatt = paired.gatt
-
-      try {
-        await updatePrinter(this.printer.id, {
-          bluetoothDeviceId: paired.deviceId,
-          bluetoothDeviceName: paired.deviceName,
-          gatt: paired.gatt,
-        })
-      } catch {
-        // Si no se puede persistir, la sesión actual sigue funcionando.
+        try {
+          device = await this.resolveDevice()
+          break
+        } catch {
+          // Se reintenta hasta agotar las esperas.
+        }
       }
 
-      device = await this.resolveDevice()
+      if (!device) {
+        try {
+          const paired = await pairBluetoothPrinter(this.printer.bluetoothServices ?? [])
+
+          this.printer.bluetoothDeviceId = paired.deviceId
+          this.printer.bluetoothDeviceName = paired.deviceName
+          this.printer.gatt = paired.gatt
+          gatt = paired.gatt
+
+          try {
+            await updatePrinter(this.printer.id, {
+              bluetoothDeviceId: paired.deviceId,
+              bluetoothDeviceName: paired.deviceName,
+              gatt: paired.gatt,
+            })
+          } catch {
+            // Si no se puede persistir, la sesión actual sigue funcionando.
+          }
+
+          device = await this.resolveDevice()
+        } catch (pairingError) {
+          // Al abrir el selector, Chrome descubre/refresca los dispositivos
+          // autorizados: si el usuario canceló pero la impresora ya estaba
+          // autorizada, recuperarla y continuar sin obligarlo a reintentar.
+          try {
+            device = await this.resolveDevice()
+          } catch {
+            throw pairingError
+          }
+        }
+      }
     }
 
     this.device = device
@@ -516,8 +601,17 @@ export function startConnectionKeepAlive(intervalMs = 60_000): () => void {
   window.addEventListener('online', onOnline)
   void keepSynced()
 
+  // Tras recargar, Chrome puede tardar unos segundos en exponer los
+  // dispositivos autorizados: insistir al inicio para reconectar solo.
+  const warmUps = [1000, 2500, 4500, 7000, 10000].map((wait) =>
+    window.setTimeout(() => {
+      void keepSynced()
+    }, wait),
+  )
+
   return () => {
     stopped = true
+    warmUps.forEach((timer) => window.clearTimeout(timer))
     window.clearInterval(interval)
     document.removeEventListener('visibilitychange', onVisibility)
     window.removeEventListener('online', onOnline)

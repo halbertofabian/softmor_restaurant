@@ -166,7 +166,9 @@ export function OrderPage() {
     setPrinting(true)
 
     try {
-      const outcome = await printAndMark(tenantId, branchId, orderId, payload, 'send')
+      const outcome = await printAndMark(tenantId, branchId, orderId, payload, 'send', {
+        allowPairing: true,
+      })
       reportPrintOutcome(outcome)
     } finally {
       setPrinting(false)

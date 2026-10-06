@@ -43,9 +43,35 @@ export async function rePairPrinter(printer: LocalPrinter): Promise<LocalPrinter
   }
 }
 
-export async function reconnectPrinter(printer: LocalPrinter): Promise<void> {
-  const transport = new BluetoothTransport(printer)
-  await transport.connect({ allowPairing: true })
+async function connectBluetooth(
+  transport: BluetoothTransport,
+  allowPairing: boolean,
+): Promise<void> {
+  const delays = [0, 1500, 3000]
+  let lastError: unknown
+
+  for (let attempt = 0; attempt < delays.length; attempt += 1) {
+    if (delays[attempt] > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
+    }
+
+    try {
+      await transport.connect({ allowPairing })
+      return
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+
+      // Si el usuario canceló el selector, no reintentar.
+      if (/no se seleccionó|no device selected|cancel/i.test(message)) {
+        throw error
+      }
+
+      // Reintento: la impresora pudo estar despertando o reconectando.
+      lastError = error
+    }
+  }
+
+  throw lastError
 }
 
 export async function printTestTicket(
@@ -69,7 +95,7 @@ export async function printTestTicket(
   const transport = new BluetoothTransport(printer)
 
   try {
-    await transport.connect(options)
+    await connectBluetooth(transport, options.allowPairing ?? false)
     await transport.writeBytes(buildTestTicket(printer))
   } finally {
     await transport.disconnect()
@@ -80,6 +106,7 @@ async function sendAreaTicket(
   printer: LocalPrinter,
   area: PrintArea,
   payload: PrintPayload,
+  allowPairing: boolean,
 ): Promise<void> {
   const copies = Math.max(1, printer.copies || 1)
 
@@ -104,7 +131,7 @@ async function sendAreaTicket(
   const transport = new BluetoothTransport(printer)
 
   try {
-    await transport.connect()
+    await connectBluetooth(transport, allowPairing)
 
     for (let copy = 0; copy < copies; copy += 1) {
       await transport.writeBytes(buildKitchenTicket(printer, area, payload))
@@ -160,7 +187,7 @@ export async function printPreCheck(
       const copies = Math.max(1, printer.copies || 1)
 
       try {
-        await transport.connect()
+        await connectBluetooth(transport, true)
 
         for (let copy = 0; copy < copies; copy += 1) {
           await transport.writeBytes(buildPreCheckTicket(printer, data))
@@ -207,7 +234,7 @@ export async function printKitchenPayload(
   tenantId: string,
   branchId: number,
   payload: PrintPayload,
-  options: { kind?: PrintLogKind; orderId?: number | null } = {},
+  options: { kind?: PrintLogKind; orderId?: number | null; allowPairing?: boolean } = {},
 ): Promise<AreaPrintOutcome> {
   const outcome: AreaPrintOutcome = { printed: [], missing: [], failed: [] }
 
@@ -239,7 +266,7 @@ export async function printKitchenPayload(
     }
 
     try {
-      await sendAreaTicket(printer, area, payload)
+      await sendAreaTicket(printer, area, payload, options.allowPairing ?? false)
       outcome.printed.push({
         areaId: area.area_id,
         areaName: area.area_name,
@@ -288,8 +315,13 @@ export async function printAndMark(
   orderId: number,
   payload: PrintPayload,
   kind: PrintLogKind = 'send',
+  options: { allowPairing?: boolean } = {},
 ): Promise<AreaPrintOutcome> {
-  const outcome = await printKitchenPayload(tenantId, branchId, payload, { kind, orderId })
+  const outcome = await printKitchenPayload(tenantId, branchId, payload, {
+    kind,
+    orderId,
+    allowPairing: options.allowPairing,
+  })
 
   if (outcome.printed.length > 0) {
     const detailIds = outcome.printed.flatMap((area) => area.detailIds)
