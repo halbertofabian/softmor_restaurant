@@ -114,7 +114,7 @@ export function PrintersPage() {
 
       if (
         printer.transport === 'bluetooth' &&
-        /no está disponible|emparej|not found|conectar|conexión|connection/i.test(message)
+        /no está disponible|vuelve a emparejarla|not found/i.test(message)
       ) {
         setReconnectTarget(printer)
       }

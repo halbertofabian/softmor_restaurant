@@ -1,18 +1,26 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { OfflineBanner } from '../components/OfflineBanner'
 import { OutboxBanner } from '../components/OutboxBanner'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { HomeIcon, LogoutIcon, PrinterIcon, TablesIcon } from '../components/ui/icons'
 import { fetchMe, logout } from '../lib/api/auth'
+import { closeTopOverlay, parentPathOf } from '../lib/backNavigation'
 import { startConnectionKeepAlive } from '../lib/printing/transport'
 import { useAuthStore } from '../stores/authStore'
+
+function currentHistoryIndex(): number {
+  const index = window.history.state?.idx
+
+  return typeof index === 'number' ? index : 0
+}
 
 export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
+  const pathRef = useRef(location.pathname)
   const token = useAuthStore((state) => state.token)
   const user = useAuthStore((state) => state.user)
   const branches = useAuthStore((state) => state.branches)
@@ -33,6 +41,47 @@ export function AppLayout() {
   }, [me, applyMe])
 
   useEffect(() => startConnectionKeepAlive(), [])
+
+  useEffect(() => {
+    pathRef.current = location.pathname
+  }, [location.pathname])
+
+  useEffect(() => {
+    function onPopState() {
+      if (closeTopOverlay()) {
+        return
+      }
+
+      const parent = parentPathOf(pathRef.current)
+
+      if (parent) {
+        navigate(parent)
+        return
+      }
+
+      const index = currentHistoryIndex()
+
+      if (index > 0) {
+        window.history.go(-index)
+      }
+    }
+
+    window.addEventListener('popstate', onPopState)
+
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [navigate])
+
+  useEffect(() => {
+    if (location.pathname !== '/') {
+      return
+    }
+
+    const index = currentHistoryIndex()
+
+    if (index > 0) {
+      window.history.go(-index)
+    }
+  }, [location.pathname])
 
   const branch = branches.find((item) => item.id === selectedBranchId)
   const inicioActive = location.pathname === '/'

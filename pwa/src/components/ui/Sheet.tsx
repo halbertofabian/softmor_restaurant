@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useOverlayBack } from '../../lib/backNavigation'
 import { CloseIcon } from './icons'
 
 interface SheetProps {
@@ -26,6 +27,7 @@ function useLockBodyScroll(open: boolean) {
 
 export function Sheet({ open, title, onClose, children }: SheetProps) {
   useLockBodyScroll(open)
+  useOverlayBack(open, onClose)
 
   if (!open) {
     return null

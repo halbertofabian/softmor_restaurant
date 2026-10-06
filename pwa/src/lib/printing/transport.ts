@@ -1,5 +1,5 @@
 import type { LocalPrinter } from '../db/db'
-import { updatePrinter } from '../db/printers'
+import { listPrinters, updatePrinter } from '../db/printers'
 
 const COMMON_BLUETOOTH_SERVICES = [
   '0000ff00-0000-1000-8000-00805f9b34fb',
@@ -409,6 +409,38 @@ export class BluetoothTransport implements PrinterTransport {
   }
 }
 
+export async function restoreSavedConnections(): Promise<void> {
+  if (!isWebBluetoothSupported()) {
+    return
+  }
+
+  let printers: LocalPrinter[]
+
+  try {
+    printers = await listPrinters()
+  } catch {
+    return
+  }
+
+  for (const printer of printers) {
+    if (printer.transport !== 'bluetooth' || !printer.gatt) {
+      continue
+    }
+
+    const deviceId = printer.bluetoothDeviceId
+
+    if (deviceId && activeConnections.get(deviceId)?.server.connected) {
+      continue
+    }
+
+    try {
+      await new BluetoothTransport(printer).connect()
+    } catch {
+      // Sin conexión: se reintentará en el siguiente ciclo.
+    }
+  }
+}
+
 export function startConnectionKeepAlive(intervalMs = 60_000): () => void {
   let stopped = false
 
@@ -437,23 +469,32 @@ export function startConnectionKeepAlive(intervalMs = 60_000): () => void {
     }
   }
 
+  const keepSynced = async () => {
+    if (stopped || !navigator.onLine || document.visibilityState !== 'visible') {
+      return
+    }
+
+    await reconnectStale()
+    await restoreSavedConnections()
+  }
+
   const interval = window.setInterval(() => {
-    void reconnectStale()
+    void keepSynced()
   }, intervalMs)
 
   const onVisibility = () => {
     if (document.visibilityState === 'visible') {
-      void reconnectStale()
+      void keepSynced()
     }
   }
 
   const onOnline = () => {
-    void reconnectStale()
+    void keepSynced()
   }
 
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('online', onOnline)
-  void reconnectStale()
+  void keepSynced()
 
   return () => {
     stopped = true

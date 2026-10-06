@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useOverlayBack } from '../../lib/backNavigation'
 import { AlertIcon } from './icons'
 
 interface ConfirmDialogProps {
@@ -39,6 +40,7 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   useLockBodyScroll(open)
+  useOverlayBack(open, onCancel)
 
   if (!open) {
     return null
