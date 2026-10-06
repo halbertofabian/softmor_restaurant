@@ -53,6 +53,7 @@ export const useAuthStore = create<AuthState>()(
           tenantId: null,
           permissions: null,
           branches: [],
+          selectedBranchId: null,
         }),
     }),
     { name: 'gestionalfood.auth' },

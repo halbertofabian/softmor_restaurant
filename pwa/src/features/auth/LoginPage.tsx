@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
@@ -16,6 +17,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const token = useAuthStore((state) => state.token)
   const setSession = useAuthStore((state) => state.setSession)
 
@@ -36,6 +38,8 @@ export function LoginPage() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       const response = await login({ ...values, device_name: getDeviceName() })
+
+      queryClient.clear()
 
       setSession({
         token: response.token,

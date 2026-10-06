@@ -59,11 +59,11 @@ class AuthApiTest extends TestCase
         ])->assertUnauthorized();
     }
 
-    public function test_login_is_throttled_after_five_attempts(): void
+    public function test_login_is_throttled_after_ten_attempts(): void
     {
         [$user] = $this->createScenario('mesero');
 
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 10; $i++) {
             $this->postJson('/api/login', [
                 'email' => $user->email,
                 'password' => 'password-incorrecto',
@@ -74,6 +74,29 @@ class AuthApiTest extends TestCase
             'email' => $user->email,
             'password' => 'password-incorrecto',
         ])->assertStatus(429);
+    }
+
+    public function test_login_throttle_is_isolated_per_user(): void
+    {
+        [$user, $branch] = $this->createScenario('mesero');
+        $other = $this->makeUser('mesero', $branch);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/api/login', [
+                'email' => $user->email,
+                'password' => 'password-incorrecto',
+            ])->assertUnauthorized();
+        }
+
+        $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'password-incorrecto',
+        ])->assertStatus(429);
+
+        $this->postJson('/api/login', [
+            'email' => $other->email,
+            'password' => 'password',
+        ])->assertOk();
     }
 
     public function test_me_returns_permissions_and_branches(): void

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { OfflineBanner } from '../components/OfflineBanner'
@@ -12,6 +12,7 @@ import { useAuthStore } from '../stores/authStore'
 export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
   const token = useAuthStore((state) => state.token)
   const user = useAuthStore((state) => state.user)
   const branches = useAuthStore((state) => state.branches)
@@ -46,6 +47,7 @@ export function AppLayout() {
     }
 
     clearSession()
+    queryClient.clear()
     navigate('/login', { replace: true })
   }
 

@@ -2,7 +2,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshIcon } from './ui/icons'
 
-const THRESHOLD = 70
+const DEAD_ZONE = 16
+const THRESHOLD = 80
 const MAX_PULL = 120
 const RESISTANCE = 0.5
 const REFRESH_HEIGHT = 52
@@ -79,7 +80,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       const deltaX = Math.abs(touch.clientX - startXRef.current)
 
       if (!draggingRef.current) {
-        if (deltaY <= 4 || deltaX > deltaY) {
+        if (deltaY <= DEAD_ZONE || deltaX > deltaY) {
           return
         }
 

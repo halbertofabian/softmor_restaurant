@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login'])
-    ->middleware('throttle:5,1');
+    ->middleware('throttle:login');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);

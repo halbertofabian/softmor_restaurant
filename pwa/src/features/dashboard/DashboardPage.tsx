@@ -114,6 +114,7 @@ function AdminDashboard() {
     queryKey: ['dashboard', branchId],
     queryFn: () => fetchDashboard(branchId as number),
     enabled: Boolean(branchId),
+    refetchOnMount: 'always',
   })
 
   if (dashboardQuery.isLoading) {
@@ -263,6 +264,7 @@ function WaiterDashboard() {
     queryKey: ['dashboard', 'waiter', branchId],
     queryFn: () => fetchWaiterDashboard(branchId as number),
     enabled: Boolean(branchId),
+    refetchOnMount: 'always',
   })
 
   if (dashboardQuery.isLoading) {

@@ -63,7 +63,7 @@ export function TablesPage() {
     queryKey: ['tables', branchId],
     queryFn: () => fetchTables(branchId as number),
     enabled: Boolean(branchId),
-    refetchInterval: 30_000,
+    refetchOnMount: 'always',
   })
 
   const tables = tablesQuery.data?.data ?? []

@@ -34,6 +34,7 @@ export function HistoryPage() {
       }),
     enabled: Boolean(branchId),
     placeholderData: (previous) => previous,
+    refetchOnMount: 'always',
   })
 
   const orders = ordersQuery.data?.data ?? []

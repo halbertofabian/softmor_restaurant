@@ -6,6 +6,8 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import {
+  AlertIcon,
+  CheckIcon,
   ChevronLeftIcon,
   DotsVerticalIcon,
   HistoryIcon,
@@ -61,6 +63,7 @@ export function OrderPage() {
     queryKey: ['order', orderId],
     queryFn: () => fetchOrder(orderId),
     enabled: Number.isFinite(orderId),
+    refetchOnMount: 'always',
   })
 
   const productsQuery = useQuery({
@@ -228,6 +231,43 @@ export function OrderPage() {
           </Link>
         </div>
       </Card>
+    )
+  }
+
+  if (order.status === 'closed' || order.status === 'canceled') {
+    const wasClosed = order.status === 'closed'
+
+    return (
+      <div className="space-y-4 pb-32">
+        <Card>
+          <div className="flex flex-col items-center py-4 text-center">
+            <span
+              className={`flex h-14 w-14 items-center justify-center rounded-full ${
+                wasClosed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+              }`}
+            >
+              {wasClosed ? <CheckIcon className="h-7 w-7" /> : <AlertIcon className="h-7 w-7" />}
+            </span>
+            <h1 className="mt-3 text-lg font-bold text-white">
+              {wasClosed ? 'Comanda cobrada' : 'Comanda cancelada'}
+            </h1>
+            <p className="mt-1 text-sm text-gray-400">
+              {wasClosed
+                ? 'La mesa fue cobrada y liberada desde el sistema. Ya puedes abrir una nueva comanda.'
+                : 'Esta comanda fue cancelada desde el sistema.'}
+            </p>
+            <p className="mt-3 text-sm font-semibold text-white">
+              {order.table?.name ?? `Comanda #${order.id}`} · {formatMoney(order.total)}
+            </p>
+            <Link
+              to="/mesas"
+              className="mt-5 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-black shadow-lg shadow-primary/20 transition hover:bg-primary-dark"
+            >
+              Volver a mesas
+            </Link>
+          </div>
+        </Card>
+      </div>
     )
   }
 
