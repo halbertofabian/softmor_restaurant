@@ -108,7 +108,7 @@ export function HistoryPage() {
       )}
 
       {orders.length > 0 && (
-        <ul className="space-y-2">
+        <ul className="grid gap-2 @3xl:grid-cols-2">
           {orders.map((order) => (
             <li
               key={order.id}

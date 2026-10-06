@@ -272,3 +272,73 @@ export function ShareIcon(props: IconProps) {
     </Icon>
   )
 }
+
+export function LockOpenIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 7.4-2" />
+    </Icon>
+  )
+}
+
+export function DotsVerticalIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
+export function CurrencyIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v10" />
+      <path d="M15 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1A2.5 2.5 0 0 1 9 14.5" />
+    </Icon>
+  )
+}
+
+export function ReceiptIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+      <path d="M9 8h6" />
+      <path d="M9 12h6" />
+    </Icon>
+  )
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M3 20c0-3.5 2.7-5.5 6-5.5s6 2 6 5.5" />
+      <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8" />
+      <path d="M17.5 14.8c2.1.6 3.5 2.2 3.5 4.4" />
+    </Icon>
+  )
+}
+
+export function TicketIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3.5a2.5 2.5 0 0 0 0-5z" />
+      <path d="M13 5v2" />
+      <path d="M13 11v2" />
+      <path d="M13 17v2" />
+    </Icon>
+  )
+}
+
+export function TrendingUpIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3 17l6-6 4 4 8-8" />
+      <path d="M15 7h6v6" />
+    </Icon>
+  )
+}

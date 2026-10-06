@@ -45,7 +45,7 @@ export function InstallGate({ children }: { children: ReactNode }) {
     setSkipped(true)
   }
 
-  if (installed || skipped) {
+  if (skipped) {
     return <>{children}</>
   }
 
@@ -80,7 +80,26 @@ export function InstallGate({ children }: { children: ReactNode }) {
         </ul>
 
         <div className="mt-7 space-y-3">
-          {canInstall ? (
+          {installed ? (
+            <>
+              <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                  <CheckIcon className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-emerald-300">Aplicación instalada</p>
+                  <p className="mt-1 text-xs text-emerald-200/80">
+                    Ya está instalada en este dispositivo. Ábrela desde el icono GestionalFood en
+                    tu pantalla de inicio para usarla a pantalla completa.
+                  </p>
+                </div>
+              </div>
+
+              <Button variant="secondary" className="w-full" size="lg" onClick={handleSkip}>
+                Continuar aquí
+              </Button>
+            </>
+          ) : canInstall ? (
             <>
               <Button className="w-full" size="lg" onClick={handleInstall}>
                 <DownloadIcon className="h-4 w-4" />
@@ -133,13 +152,15 @@ export function InstallGate({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={handleSkip}
-            className="w-full py-1 text-center text-xs font-medium text-gray-500 transition hover:text-gray-300"
-          >
-            Continuar en el navegador
-          </button>
+          {!installed && (
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="w-full py-1 text-center text-xs font-medium text-gray-500 transition hover:text-gray-300"
+            >
+              Continuar en el navegador
+            </button>
+          )}
         </div>
       </div>
     </div>

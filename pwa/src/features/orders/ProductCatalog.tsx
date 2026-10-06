@@ -141,7 +141,7 @@ export function ProductCatalog({ categories, onSelect }: ProductCatalogProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 @xl:grid-cols-3 @4xl:grid-cols-4">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} onSelect={onSelect} />
           ))}

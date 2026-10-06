@@ -33,7 +33,7 @@ export interface LocalSettings {
   deviceUuid: string
 }
 
-export type PrintLogKind = 'send' | 'reprint' | 'test'
+export type PrintLogKind = 'send' | 'reprint' | 'test' | 'precheck'
 export type PrintLogStatus = 'ok' | 'error'
 
 export interface PrintLog {

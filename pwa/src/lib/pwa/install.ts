@@ -15,6 +15,7 @@ type Listener = () => void
 const listeners = new Set<Listener>()
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null
+let relatedAppInstalled = false
 let initialized = false
 
 function detectStandalone(): boolean {
@@ -34,8 +35,29 @@ let state: PwaInstallState = {
 }
 
 function refreshState() {
-  state = { canInstall: deferredPrompt !== null, installed: detectStandalone() }
+  state = {
+    canInstall: deferredPrompt !== null,
+    installed: relatedAppInstalled || detectStandalone(),
+  }
   listeners.forEach((listener) => listener())
+}
+
+async function checkInstalledRelatedApps(): Promise<boolean> {
+  const nav = navigator as Navigator & {
+    getInstalledRelatedApps?: () => Promise<{ platform?: string }[]>
+  }
+
+  if (!nav.getInstalledRelatedApps) {
+    return false
+  }
+
+  try {
+    const apps = await nav.getInstalledRelatedApps()
+
+    return apps.some((app) => app.platform === 'webapp')
+  } catch {
+    return false
+  }
 }
 
 export function isIosDevice(): boolean {
@@ -66,11 +88,19 @@ export function initPwaInstall(): void {
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null
+    relatedAppInstalled = true
     refreshState()
   })
 
   window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change', refreshState)
   refreshState()
+
+  void checkInstalledRelatedApps().then((found) => {
+    if (found) {
+      relatedAppInstalled = true
+      refreshState()
+    }
+  })
 }
 
 export async function promptInstall(): Promise<'accepted' | 'dismissed' | 'unavailable'> {

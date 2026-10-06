@@ -7,6 +7,11 @@ describe('formatMoney', () => {
     expect(formatMoney('30.00')).toBe('$30.00')
   })
 
+  it('usa separador de miles igual que number_format de PHP', () => {
+    expect(formatMoney(5655)).toBe('$5,655.00')
+    expect(formatMoney(1870, 0)).toBe('$1,870')
+  })
+
   it('trata nulos como cero', () => {
     expect(formatMoney(null)).toBe('$0.00')
     expect(formatMoney(undefined)).toBe('$0.00')

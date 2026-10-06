@@ -56,7 +56,7 @@ class ApiTableController extends Controller
                               'zone' => $table->zone,
                               'status' => $status,
                               'has_active_order' => $hasOrder,
-                              'seats' => $table->capacity ?? 4,
+                              'seats' => $table->capacity !== null ? (int) $table->capacity : null,
                               'active_order_id' => $activeOrder ? $activeOrder->id : null,
                               'active_order_waiter_id' => $activeOrder ? $activeOrder->user_id : null,
                               'active_order_waiter_name' => $activeOrder?->user?->name

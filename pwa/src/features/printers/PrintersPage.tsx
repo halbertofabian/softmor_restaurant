@@ -34,6 +34,7 @@ const kindLabels: Record<PrintLogKind, string> = {
   send: 'Comanda',
   reprint: 'Reimpresión',
   test: 'Prueba',
+  precheck: 'Pre-cuenta',
 }
 
 export function PrintersPage() {
@@ -70,6 +71,17 @@ export function PrintersPage() {
   const branch = branches.find((item) => item.id === branchId)
   const mappingByArea = new Map(mappings.map((mapping) => [mapping.areaId, mapping]))
   const printerById = new Map(printers.map((printer) => [printer.id, printer]))
+
+  const preCheckArea: PreparationArea = {
+    id: 0,
+    name: 'Cuenta (pre-cuenta)',
+    print_ticket: true,
+    sort_order: -1,
+    status: true,
+    system_printer_name: null,
+  }
+
+  const areaRows = [preCheckArea, ...areas]
 
   async function handleAssign(area: PreparationArea, printerId: string) {
     if (!tenantId || !branchId) {
@@ -288,12 +300,14 @@ export function PrintersPage() {
         )}
 
         {!areasQuery.isLoading && !areasQuery.isError && areas.length === 0 && (
-          <p className="text-sm text-gray-400">La sucursal no tiene áreas de preparación activas.</p>
+          <p className="mb-2 text-sm text-gray-400">
+            La sucursal no tiene áreas de preparación activas.
+          </p>
         )}
 
-        {areas.length > 0 && (
+        {!areasQuery.isLoading && !areasQuery.isError && (
           <ul className="divide-y divide-white/5">
-            {areas.map((area) => {
+            {areaRows.map((area) => {
               const mapping = mappingByArea.get(area.id)
               const mappedPrinter = mapping ? printerById.get(mapping.printerId) : undefined
 
@@ -303,7 +317,11 @@ export function PrintersPage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-white">{area.name}</p>
                       <p className="text-[11px] text-gray-500">
-                        {area.print_ticket ? 'Imprime ticket' : 'No imprime ticket'}
+                        {area.id === 0
+                          ? 'Ticket de cuenta'
+                          : area.print_ticket
+                            ? 'Imprime ticket'
+                            : 'No imprime ticket'}
                         {area.system_printer_name
                           ? ` · sistema: ${area.system_printer_name}`
                           : ''}

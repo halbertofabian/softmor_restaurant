@@ -45,7 +45,7 @@ export interface RestaurantTable {
   zone: string | null
   status: TableStatus
   has_active_order: boolean
-  seats: number
+  seats: number | null
   active_order_id: number | null
   active_order_waiter_id: number | null
   active_order_waiter_name: string | null
@@ -176,6 +176,37 @@ export interface OrdersPageMeta {
   total: number
 }
 
+export interface PreCheckItem {
+  detail_id: number
+  quantity: number
+  name: string
+  notes: string
+  price: number
+  line_total: number
+}
+
+export interface PreCheckTip {
+  percent: number
+  amount: number
+}
+
+export interface PreCheckPayload {
+  order_id: number
+  ticket_number: number
+  branch_name: string
+  table_name: string | null
+  table_zone: string | null
+  waiter_name: string | null
+  generated_at: string
+  header: string
+  disclaimer: string
+  footer_message: string | null
+  items: PreCheckItem[]
+  total: number
+  tips_enabled: boolean
+  tip_suggestions: PreCheckTip[]
+}
+
 export interface InventoryShortage {
   inventory_item_id: number
   name: string
@@ -189,4 +220,48 @@ export interface InventoryWarningBody {
   status: 'inventory_warning'
   message: string
   shortages: InventoryShortage[]
+}
+
+export interface DashboardLatestOrder {
+  id: number
+  table_name: string | null
+  status: string
+  total: number
+  created_at: string | null
+}
+
+export interface DashboardTopProduct {
+  product_name: string
+  quantity: number
+  total: number
+}
+
+export interface DashboardStats {
+  sales_today: number
+  orders_today: number
+  occupied_tables: number
+  active_tables: number
+  avg_ticket: number
+  total_orders_value: number
+  sales_year: number
+  sales_by_month: number[]
+  latest_orders: DashboardLatestOrder[]
+  top_products: DashboardTopProduct[]
+}
+
+export interface WaiterOpenOrder {
+  id: number
+  table_name: string | null
+  status: string
+  total: number
+  pending_items: number
+  created_at: string | null
+}
+
+export interface WaiterDashboardStats {
+  active_orders: number
+  orders_today: number
+  pending_items: number
+  sales_today: number
+  open_orders: WaiterOpenOrder[]
 }

@@ -36,8 +36,8 @@ body {
 
 body {
   margin: 0;
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: #09090b;
+  color: #f1f5f9;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   user-select: none;

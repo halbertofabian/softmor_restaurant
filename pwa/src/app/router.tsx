@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, ScrollRestoration } from 'react-router-dom'
 import { BranchSelectPage } from '../features/auth/BranchSelectPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { DashboardPage } from '../features/dashboard/DashboardPage'
@@ -13,9 +13,12 @@ export const router = createBrowserRouter(
   [
     {
       element: (
-        <InstallGate>
-          <Outlet />
-        </InstallGate>
+        <>
+          <ScrollRestoration />
+          <InstallGate>
+            <Outlet />
+          </InstallGate>
+        </>
       ),
       errorElement: <RouteError />,
       children: [

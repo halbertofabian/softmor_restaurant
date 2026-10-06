@@ -18,20 +18,27 @@ const COMMON_BLUETOOTH_SERVICES = [
   'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
 ]
 
-export interface BridgeKitchenPayload {
-  type: 'kitchen'
+export interface BridgePrintPayload {
+  type: 'kitchen' | 'pre_check'
   printer_name?: string
+  header?: string
+  pre_check_disclaimer?: string
+  branch_name?: string
+  ticket_id?: number
+  total?: number
   table_name?: string
   waiter_name?: string
   date?: string
-  items: { quantity: number; name: string; notes: string }[]
+  items: { quantity: number; name: string; notes?: string; price?: number }[]
+  tips_enabled?: boolean
+  tip_suggestions?: { percent: number; amount: number }[]
 }
 
 export interface PrinterTransport {
   connect(options?: { allowPairing?: boolean }): Promise<void>
   disconnect(): Promise<void>
   writeBytes(data: Uint8Array): Promise<void>
-  sendKitchen?(payload: BridgeKitchenPayload): Promise<void>
+  sendPayload?(payload: BridgePrintPayload): Promise<void>
 }
 
 interface ActiveConnection {
@@ -510,7 +517,7 @@ export class BridgeTransport implements PrinterTransport {
     return Promise.reject(new Error('El bridge local no acepta bytes crudos.'))
   }
 
-  async sendKitchen(payload: BridgeKitchenPayload): Promise<void> {
+  async sendPayload(payload: BridgePrintPayload): Promise<void> {
     let response: Response
 
     try {

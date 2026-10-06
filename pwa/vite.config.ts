@@ -29,6 +29,13 @@ export default defineConfig(({ mode }) => {
           scope: '/pwa/',
           display: 'standalone',
           orientation: 'portrait',
+          related_applications: [
+            {
+              platform: 'webapp',
+              url: '/pwa/manifest.webmanifest',
+              id: '/pwa/',
+            },
+          ],
           theme_color: '#E59A1A',
           background_color: '#09090b',
           icons: [

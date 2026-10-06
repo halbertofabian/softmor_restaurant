@@ -5,15 +5,29 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { ChevronLeftIcon, PrinterIcon, SendIcon } from '../../components/ui/icons'
+import {
+  ChevronLeftIcon,
+  DotsVerticalIcon,
+  HistoryIcon,
+  LockOpenIcon,
+  PrinterIcon,
+  SendIcon,
+} from '../../components/ui/icons'
+import { Sheet } from '../../components/ui/Sheet'
 import { ApiError } from '../../lib/api/client'
-import { addOrderItem, fetchOrder, sendOrder, updateOrderItem } from '../../lib/api/orders'
+import {
+  addOrderItem,
+  fetchOrder,
+  fetchPreCheck,
+  sendOrder,
+  updateOrderItem,
+} from '../../lib/api/orders'
 import { fetchProducts } from '../../lib/api/products'
 import { releaseTable } from '../../lib/api/tables'
 import type { InventoryWarningBody, PrintPayload, Product } from '../../lib/api/types'
 import { getSettings } from '../../lib/db/printers'
 import { formatMoney } from '../../lib/format'
-import { printAndMark, reportPrintOutcome } from '../../lib/printing/printService'
+import { printAndMark, printPreCheck, reportPrintOutcome } from '../../lib/printing/printService'
 import { isNetworkError, queueOrderSend } from '../../lib/sync/outbox'
 import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -40,6 +54,8 @@ export function OrderPage() {
   const [pendingPrint, setPendingPrint] = useState<PrintPayload | null>(null)
   const [printing, setPrinting] = useState(false)
   const [reprintOpen, setReprintOpen] = useState(false)
+  const [preCheckPrinting, setPreCheckPrinting] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
 
   const orderQuery = useQuery({
     queryKey: ['order', orderId],
@@ -154,6 +170,27 @@ export function OrderPage() {
     }
   }
 
+  async function handlePreCheck() {
+    if (!tenantId || !branchId) {
+      return
+    }
+
+    setPreCheckPrinting(true)
+
+    try {
+      const response = await fetchPreCheck(orderId)
+      await printPreCheck(tenantId, branchId, orderId, response.pre_check)
+      pushToast('Pre-cuenta impresa.', 'success')
+    } catch (error) {
+      pushToast(
+        error instanceof Error ? error.message : 'No se pudo imprimir la pre-cuenta',
+        'error',
+      )
+    } finally {
+      setPreCheckPrinting(false)
+    }
+  }
+
   const releaseMutation = useMutation({
     mutationFn: () => releaseTable(order?.table_id as number),
     onSuccess: async () => {
@@ -220,18 +257,18 @@ export function OrderPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setReprintOpen(true)}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 text-gray-300 transition hover:bg-white/5"
-          aria-label="Reimprimir comanda"
-        >
-          <PrinterIcon className="h-4 w-4" />
-        </button>
-
         <Badge variant={order.status === 'open' ? 'primary' : 'neutral'}>
           {order.status === 'open' ? 'Abierta' : order.status}
         </Badge>
+
+        <button
+          type="button"
+          onClick={() => setActionsOpen(true)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 text-gray-300 transition hover:bg-white/5"
+          aria-label="Más opciones de la comanda"
+        >
+          <DotsVerticalIcon className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/5 bg-card p-1">
@@ -263,7 +300,7 @@ export function OrderPage() {
           onChanged={invalidateOrder}
         />
       ) : productsQuery.isLoading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 @xl:grid-cols-3 @4xl:grid-cols-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
@@ -290,16 +327,16 @@ export function OrderPage() {
         />
       )}
 
-      <div className="fixed inset-x-0 bottom-[calc(78px+env(safe-area-inset-bottom))] z-30 mx-auto w-full max-w-3xl px-4">
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-card/95 p-3 shadow-2xl shadow-black/50 backdrop-blur">
-          <div className="min-w-0">
+      <div className="fixed inset-x-0 bottom-[calc(78px+env(safe-area-inset-bottom))] z-30 w-full">
+        <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-card/95 p-3 shadow-2xl shadow-black/50 backdrop-blur">
+          <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
               Total
             </p>
-            <p className="text-lg font-bold leading-tight text-white">
+            <p className="truncate text-lg font-bold leading-tight text-white">
               {formatMoney(order.total)}
             </p>
-            <p className="text-[10px] text-gray-500">
+            <p className="truncate text-[10px] text-gray-500">
               {pendingCount > 0
                 ? `${pendingCount} pendiente(s)`
                 : order.details.length > 0
@@ -308,25 +345,13 @@ export function OrderPage() {
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            {canRelease && (
-              <button
-                type="button"
-                onClick={() => setConfirmRelease(true)}
-                className="whitespace-nowrap rounded-xl px-2.5 py-2 text-[11px] font-medium text-gray-400 transition hover:bg-red-500/10 hover:text-red-300"
-              >
-                Desocupar
-              </button>
-            )}
-
-            <Button
-              onClick={() => sendMutation.mutate(false)}
-              disabled={pendingCount === 0 || sendMutation.isPending || printing}
-            >
-              <SendIcon className="h-4 w-4" />
-              {sendMutation.isPending ? 'Enviando…' : printing ? 'Imprimiendo…' : 'Enviar'}
-            </Button>
-          </div>
+          <Button
+            onClick={() => sendMutation.mutate(false)}
+            disabled={pendingCount === 0 || sendMutation.isPending || printing}
+          >
+            <SendIcon className="h-4 w-4" />
+            {sendMutation.isPending ? 'Enviando…' : printing ? 'Imprimiendo…' : 'Enviar'}
+          </Button>
         </div>
       </div>
 
@@ -339,6 +364,78 @@ export function OrderPage() {
           onSubmit={(input) => addMutation.mutate({ product: selectedProduct, input })}
         />
       )}
+
+      <Sheet open={actionsOpen} title="Opciones de la comanda" onClose={() => setActionsOpen(false)}>
+        <ul className="divide-y divide-white/5">
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setActionsOpen(false)
+                void handlePreCheck()
+              }}
+              disabled={order.details.length === 0 || preCheckPrinting || printing}
+              className="flex w-full items-center gap-3 py-3.5 text-left text-sm font-medium text-gray-200 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <PrinterIcon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block">Imprimir pre-cuenta</span>
+                <span className="block text-[11px] font-normal text-gray-500">
+                  {order.details.length === 0
+                    ? 'Agrega productos a la comanda'
+                    : 'Ticket de cuenta para el cliente'}
+                </span>
+              </span>
+            </button>
+          </li>
+
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setActionsOpen(false)
+                setReprintOpen(true)
+              }}
+              className="flex w-full items-center gap-3 py-3.5 text-left text-sm font-medium text-gray-200 transition hover:text-white"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/5 text-gray-400">
+                <HistoryIcon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block">Reimprimir comanda</span>
+                <span className="block text-[11px] font-normal text-gray-500">
+                  Reenvía los tickets a las áreas
+                </span>
+              </span>
+            </button>
+          </li>
+
+          {canRelease && (
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  setActionsOpen(false)
+                  setConfirmRelease(true)
+                }}
+                className="flex w-full items-center gap-3 py-3.5 text-left text-sm font-medium text-red-300 transition hover:text-red-200"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
+                  <LockOpenIcon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block">Desocupar mesa</span>
+                  <span className="block text-[11px] font-normal text-red-400/70">
+                    La comanda no tiene productos activos
+                  </span>
+                </span>
+              </button>
+            </li>
+          )}
+        </ul>
+      </Sheet>
 
       {reprintOpen && (
         <ReprintSheet

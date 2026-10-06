@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\InventoryItem;
 use App\Models\OrderDetail;
 use App\Models\ProductRecipeItem;
+use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\Concerns\CreatesPwaScenario;
@@ -221,11 +222,15 @@ class PwaOrdersApiTest extends TestCase
     {
         [$user, $branch] = $this->createScenario();
         $this->makeTable($branch, ['name' => 'Mesa 1', 'zone' => 'Terraza']);
+        $this->makeTable($branch, ['name' => 'Mesa 2', 'capacity' => 6]);
 
         $this->getJson("/api/tables?branch_id={$branch->id}")
             ->assertOk()
             ->assertJsonPath('data.0.name', 'Mesa 1')
-            ->assertJsonPath('data.0.zone', 'Terraza');
+            ->assertJsonPath('data.0.zone', 'Terraza')
+            ->assertJsonPath('data.0.seats', null)
+            ->assertJsonPath('data.1.name', 'Mesa 2')
+            ->assertJsonPath('data.1.seats', 6);
     }
 
     public function test_update_pending_item_quantity_and_notes(): void
@@ -420,6 +425,71 @@ class PwaOrdersApiTest extends TestCase
         $this->putJson("/api/tables/{$table->id}/release")->assertForbidden();
 
         $this->assertDatabaseHas('tables', ['id' => $table->id, 'status' => 'occupied']);
+    }
+
+    public function test_pre_check_returns_items_and_totals(): void
+    {
+        [$user, $branch] = $this->createScenario();
+        $area = $this->makeArea($branch);
+        $category = $this->makeCategory($branch);
+        $product = $this->makeProduct($branch, $category, $area, ['name' => 'Hamburguesa', 'price' => 10]);
+        $table = $this->makeTable($branch, ['name' => 'M1']);
+        $order = $this->makeOrder($table, $user, ['total' => 25]);
+        $this->makeDetail($order, $product, ['quantity' => 2, 'notes' => 'sin cebolla']);
+
+        $response = $this->getJson("/api/orders/{$order->id}/pre-check")
+            ->assertOk()
+            ->assertJsonPath('pre_check.table_name', 'M1')
+            ->assertJsonPath('pre_check.items.0.name', 'Hamburguesa')
+            ->assertJsonPath('pre_check.items.0.quantity', 2)
+            ->assertJsonPath('pre_check.items.0.notes', 'sin cebolla')
+            ->assertJsonPath('pre_check.tips_enabled', false);
+
+        $this->assertSame(20.0, (float) $response->json('pre_check.items.0.line_total'));
+        $this->assertSame(25.0, (float) $response->json('pre_check.total'));
+        $this->assertCount(4, $response->json('pre_check.tip_suggestions'));
+    }
+
+    public function test_pre_check_requires_items(): void
+    {
+        [$user, $branch] = $this->createScenario();
+        $table = $this->makeTable($branch);
+        $order = $this->makeOrder($table, $user);
+
+        $this->getJson("/api/orders/{$order->id}/pre-check")
+            ->assertStatus(422)
+            ->assertJsonPath('status', 'error');
+    }
+
+    public function test_pre_check_includes_configured_tips(): void
+    {
+        [$user, $branch] = $this->createScenario('administrador');
+        $area = $this->makeArea($branch);
+        $category = $this->makeCategory($branch);
+        $product = $this->makeProduct($branch, $category, $area, ['price' => 100]);
+        $table = $this->makeTable($branch);
+        $order = $this->makeOrder($table, $user, ['total' => 100]);
+        $this->makeDetail($order, $product);
+
+        Setting::create([
+            'tenant_id' => $this->tenantId,
+            'branch_id' => $branch->id,
+            'key' => 'ticket_tips_enabled',
+            'value' => '1',
+        ]);
+        Setting::create([
+            'tenant_id' => $this->tenantId,
+            'branch_id' => $branch->id,
+            'key' => 'ticket_tip_1_percent',
+            'value' => '15',
+        ]);
+
+        $response = $this->getJson("/api/orders/{$order->id}/pre-check")
+            ->assertOk()
+            ->assertJsonPath('pre_check.tips_enabled', true);
+
+        $this->assertSame(15.0, (float) $response->json('pre_check.tip_suggestions.0.percent'));
+        $this->assertSame(15.0, (float) $response->json('pre_check.tip_suggestions.0.amount'));
     }
 
     private function scenarioWithRecipe(int $quantity, float $stock, float $recipeQuantity): array

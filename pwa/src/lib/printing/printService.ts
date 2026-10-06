@@ -1,11 +1,18 @@
 import { useToastStore } from '../../stores/toastStore'
 import { markPrinted } from '../api/orders'
-import type { PrintArea, PrintPayload } from '../api/types'
+import type { PreCheckPayload, PrintArea, PrintPayload } from '../api/types'
 import { logPrint } from '../db/activity'
 import type { LocalPrinter, PrintLogKind } from '../db/db'
 import { getMappings, listPrinters, updatePrinter } from '../db/printers'
-import { buildKitchenTicket, buildTestTicket, formatTicketDate } from './encoder'
+import {
+  buildKitchenTicket,
+  buildPreCheckTicket,
+  buildTestTicket,
+  formatTicketDate,
+} from './encoder'
 import { BridgeTransport, BluetoothTransport, pairBluetoothPrinter } from './transport'
+
+export const PRE_CHECK_AREA_ID = 0
 
 export interface AreaPrintOutcome {
   printed: { areaId: number; areaName: string; detailIds: number[] }[]
@@ -43,7 +50,7 @@ export async function printTestTicket(
   if (printer.transport === 'bridge') {
     const transport = new BridgeTransport(printer)
 
-    await transport.sendKitchen({
+    await transport.sendPayload({
       type: 'kitchen',
       table_name: 'Prueba',
       waiter_name: 'GestionalFood',
@@ -74,7 +81,7 @@ async function sendAreaTicket(
   if (printer.transport === 'bridge') {
     const transport = new BridgeTransport(printer)
 
-    await transport.sendKitchen({
+    await transport.sendPayload({
       type: 'kitchen',
       table_name: payload.table_name ?? '',
       waiter_name: payload.waiter_name ?? '',
@@ -99,6 +106,95 @@ async function sendAreaTicket(
     }
   } finally {
     await transport.disconnect()
+  }
+}
+
+export async function printPreCheck(
+  tenantId: string,
+  branchId: number,
+  orderId: number,
+  data: PreCheckPayload,
+): Promise<void> {
+  const [printers, mappings] = await Promise.all([
+    listPrinters(),
+    getMappings(tenantId, branchId),
+  ])
+
+  const mapping = mappings.find((item) => item.areaId === PRE_CHECK_AREA_ID)
+  const printer = mapping ? printers.find((item) => item.id === mapping.printerId) : undefined
+
+  if (!printer) {
+    throw new Error('No hay una impresora configurada para la cuenta en este dispositivo.')
+  }
+
+  try {
+    if (printer.transport === 'bridge') {
+      const transport = new BridgeTransport(printer)
+
+      await transport.sendPayload({
+        type: 'pre_check',
+        header: data.header,
+        pre_check_disclaimer: data.disclaimer,
+        branch_name: data.branch_name,
+        ticket_id: data.ticket_number,
+        date: formatTicketDate(data.generated_at),
+        total: data.total,
+        table_name: data.table_name ?? '',
+        waiter_name: data.waiter_name ?? '',
+        items: data.items.map((item) => ({
+          quantity: item.quantity,
+          name: item.name,
+          price: item.price,
+          notes: item.notes,
+        })),
+        tips_enabled: data.tips_enabled,
+        tip_suggestions: data.tip_suggestions,
+      })
+    } else {
+      const transport = new BluetoothTransport(printer)
+      const copies = Math.max(1, printer.copies || 1)
+
+      try {
+        await transport.connect()
+
+        for (let copy = 0; copy < copies; copy += 1) {
+          await transport.writeBytes(buildPreCheckTicket(printer, data))
+        }
+      } finally {
+        await transport.disconnect()
+      }
+    }
+
+    await logPrint({
+      tenantId,
+      branchId,
+      orderId,
+      tableName: data.table_name,
+      areaId: PRE_CHECK_AREA_ID,
+      areaName: 'Cuenta (pre-cuenta)',
+      printerId: printer.id,
+      printerAlias: printer.alias,
+      kind: 'precheck',
+      status: 'ok',
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error de impresión'
+
+    await logPrint({
+      tenantId,
+      branchId,
+      orderId,
+      tableName: data.table_name,
+      areaId: PRE_CHECK_AREA_ID,
+      areaName: 'Cuenta (pre-cuenta)',
+      printerId: printer.id,
+      printerAlias: printer.alias,
+      kind: 'precheck',
+      status: 'error',
+      error: message,
+    })
+
+    throw new Error(message)
   }
 }
 

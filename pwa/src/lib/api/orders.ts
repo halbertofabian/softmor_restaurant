@@ -4,6 +4,7 @@ import type {
   OrderDetail,
   OrdersPageMeta,
   OrderSummary,
+  PreCheckPayload,
   PrintPayload,
   SendOrderResponse,
 } from './types'
@@ -105,5 +106,11 @@ export function fetchOrderPrintPayload(orderId: number, areaId?: number) {
 
   return apiFetch<{ status: string; print: PrintPayload }>(
     `/orders/${orderId}/print-payload${suffix}`,
+  )
+}
+
+export function fetchPreCheck(orderId: number) {
+  return apiFetch<{ status: string; pre_check: PreCheckPayload }>(
+    `/orders/${orderId}/pre-check`,
   )
 }

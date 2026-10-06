@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { PreCheckPayload } from '../api/types'
 import type { LocalPrinter } from '../db/db'
 import type { PrintArea, PrintPayload } from '../api/types'
-import { buildKitchenTicket, buildTestTicket, formatTicketDate } from './encoder'
+import { buildKitchenTicket, buildPreCheckTicket, buildTestTicket, formatTicketDate } from './encoder'
 
 const printer: LocalPrinter = {
   id: 'printer-1',
@@ -61,5 +62,47 @@ describe('buildKitchenTicket', () => {
     const wide: LocalPrinter = { ...printer, width: 80 }
     const text = new TextDecoder('latin1').decode(buildKitchenTicket(wide, area, payload))
     expect(text).toContain('-'.repeat(48))
+  })
+})
+
+const preCheck: PreCheckPayload = {
+  order_id: 5,
+  ticket_number: 5,
+  branch_name: 'El Marisquero',
+  table_name: 'M1',
+  table_zone: null,
+  waiter_name: 'Sara',
+  generated_at: '2026-10-05T14:30:00-05:00',
+  header: 'CUENTA DE CONSUMO',
+  disclaimer: 'COMPROBANTE NO FISCAL',
+  footer_message: null,
+  items: [
+    {
+      detail_id: 1,
+      quantity: 2,
+      name: 'Hamburguesa',
+      notes: 'sin cebolla',
+      price: 10,
+      line_total: 20,
+    },
+  ],
+  total: 20,
+  tips_enabled: true,
+  tip_suggestions: [{ percent: 10, amount: 2 }],
+}
+
+describe('buildPreCheckTicket', () => {
+  it('arma la pre-cuenta con total y propinas', () => {
+    const text = new TextDecoder('latin1').decode(buildPreCheckTicket(printer, preCheck))
+
+    expect(text).toContain('CUENTA DE CONSUMO')
+    expect(text).toContain('El Marisquero')
+    expect(text).toContain('2x Hamburguesa')
+    expect(text).toContain('sin cebolla')
+    expect(text).toContain('TOTAL')
+    expect(text).toContain('$20.00')
+    expect(text).toContain('PROPINA SUGERIDA')
+    expect(text).toContain('10%: $2.00')
+    expect(text).toContain('COMPROBANTE NO FISCAL')
   })
 })

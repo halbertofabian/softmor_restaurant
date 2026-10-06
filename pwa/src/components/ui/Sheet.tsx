@@ -32,7 +32,10 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      data-pull-to-refresh-ignore
+    >
       <button
         type="button"
         aria-label="Cerrar"

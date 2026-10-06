@@ -168,7 +168,7 @@ export function TablesPage() {
       </Card>
 
       {tablesQuery.isLoading && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-3 @5xl:grid-cols-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
@@ -206,7 +206,7 @@ export function TablesPage() {
             {zone}
           </h2>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-3 @5xl:grid-cols-4">
             {zoneTables.map((table) => {
               const isOpening = openingTableId === table.id
               const isOwnTable =
@@ -230,7 +230,11 @@ export function TablesPage() {
                   </div>
 
                   <p className="mt-3 text-[11px] text-gray-500">
-                    {isOpening ? 'Abriendo…' : `${statusLabels[table.status]} · ${table.seats} asientos`}
+                    {isOpening
+                      ? 'Abriendo…'
+                      : table.seats !== null
+                        ? `${statusLabels[table.status]} · ${table.seats} asientos`
+                        : statusLabels[table.status]}
                   </p>
 
                   {table.active_order_id && (

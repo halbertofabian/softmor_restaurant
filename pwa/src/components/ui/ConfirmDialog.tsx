@@ -45,7 +45,10 @@ export function ConfirmDialog({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      data-pull-to-refresh-ignore
+    >
       <button
         type="button"
         aria-label="Cerrar"

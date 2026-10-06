@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { OfflineBanner } from '../components/OfflineBanner'
 import { OutboxBanner } from '../components/OutboxBanner'
+import { PullToRefresh } from '../components/PullToRefresh'
 import { HomeIcon, LogoutIcon, PrinterIcon, TablesIcon } from '../components/ui/icons'
 import { fetchMe, logout } from '../lib/api/auth'
 import { startConnectionKeepAlive } from '../lib/printing/transport'
@@ -56,7 +57,7 @@ export function AppLayout() {
       <OutboxBanner />
 
       <header className="sticky top-0 z-20 border-b border-white/5 bg-ink/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3 md:max-w-5xl xl:max-w-6xl">
           <div className="flex min-w-0 items-center gap-3">
             <img
               src="/pwa/gestionalfood.png"
@@ -84,12 +85,14 @@ export function AppLayout() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto w-full max-w-3xl flex-1 px-4 py-5 pb-28">
-        <Outlet />
+      <main className="@container relative z-10 mx-auto w-full max-w-3xl flex-1 px-4 py-5 pb-28 md:max-w-5xl xl:max-w-6xl">
+        <PullToRefresh>
+          <Outlet />
+        </PullToRefresh>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-white/5 bg-ink/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-3">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-3 md:max-w-5xl xl:max-w-6xl">
           <Link
             to="/"
             className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition ${

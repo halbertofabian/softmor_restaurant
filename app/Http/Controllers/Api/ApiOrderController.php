@@ -559,6 +559,69 @@ class ApiOrderController extends Controller
         ]);
     }
 
+    public function preCheck(Request $request, Order $order)
+    {
+        $this->authorizeOrder($request, $order);
+
+        $details = OrderDetail::where('order_id', $order->id)
+            ->where('status', '!=', 'canceled')
+            ->where('is_combo_component', false)
+            ->get();
+
+        if ($details->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No se puede imprimir una cuenta sin productos.',
+            ], 422);
+        }
+
+        $settings = \App\Models\Setting::withoutGlobalScopes()
+            ->where('branch_id', $order->branch_id)
+            ->pluck('value', 'key')
+            ->toArray();
+
+        $tip1 = (float) ($settings['ticket_tip_1_percent'] ?? 10);
+        $tip2 = (float) ($settings['ticket_tip_2_percent'] ?? 12);
+        $tip3 = (float) ($settings['ticket_tip_3_percent'] ?? 15);
+        $tip4 = (float) ($settings['ticket_tip_4_percent'] ?? 18);
+        $tipsEnabled = ! empty($settings['ticket_tips_enabled']);
+        $total = (float) $order->total;
+
+        $order->loadMissing(['table:id,name,zone', 'user:id,name', 'branch']);
+
+        return response()->json([
+            'status' => 'success',
+            'pre_check' => [
+                'order_id' => $order->id,
+                'ticket_number' => $order->id,
+                'branch_name' => $order->branch?->name ?? 'Principal',
+                'table_name' => $order->table?->name,
+                'table_zone' => $order->table?->zone,
+                'waiter_name' => $order->user?->name,
+                'generated_at' => now()->toIso8601String(),
+                'header' => $settings['ticket_pre_check_header'] ?? '*** CUENTA DE CONSUMO ***',
+                'disclaimer' => $settings['ticket_pre_check_disclaimer'] ?? 'No válido como comprobante fiscal',
+                'footer_message' => $settings['ticket_footer_message'] ?? null,
+                'items' => $details->map(fn (OrderDetail $detail) => [
+                    'detail_id' => $detail->id,
+                    'quantity' => (int) $detail->quantity,
+                    'name' => $detail->product_name.($detail->flavor_name ? ' ('.$detail->flavor_name.')' : ''),
+                    'notes' => $detail->notes ?? '',
+                    'price' => (float) $detail->price,
+                    'line_total' => (float) $detail->price * (int) $detail->quantity,
+                ])->values(),
+                'total' => $total,
+                'tips_enabled' => $tipsEnabled,
+                'tip_suggestions' => [
+                    ['percent' => $tip1, 'amount' => round($total * ($tip1 / 100), 2)],
+                    ['percent' => $tip2, 'amount' => round($total * ($tip2 / 100), 2)],
+                    ['percent' => $tip3, 'amount' => round($total * ($tip3 / 100), 2)],
+                    ['percent' => $tip4, 'amount' => round($total * ($tip4 / 100), 2)],
+                ],
+            ],
+        ]);
+    }
+
     public function printPayload(Request $request, Order $order)
     {
         $this->authorizeOrder($request, $order);

@@ -14,6 +14,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/branches', [\App\Http\Controllers\Api\ApiBranchController::class, 'index']);
     Route::get('/branches/{branch}/verify', [\App\Http\Controllers\Api\ApiBranchController::class, 'verifyAccess']);
 
+    // Dashboard (solo administradores)
+    Route::get('/dashboard', [\App\Http\Controllers\Api\ApiDashboardController::class, 'index']);
+    Route::get('/dashboard/waiter', [\App\Http\Controllers\Api\ApiDashboardController::class, 'waiter']);
+
     // Waiters
     Route::get('/waiters', [\App\Http\Controllers\Api\ApiWaiterController::class, 'index']);
 
@@ -34,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders/{order}/send', [\App\Http\Controllers\Api\ApiOrderController::class, 'send']);
     Route::post('/orders/{order}/mark-printed', [\App\Http\Controllers\Api\ApiOrderController::class, 'markPrinted']);
     Route::get('/orders/{order}/print-payload', [\App\Http\Controllers\Api\ApiOrderController::class, 'printPayload']);
+    Route::get('/orders/{order}/pre-check', [\App\Http\Controllers\Api\ApiOrderController::class, 'preCheck']);
     Route::get('/orders/{order}', [\App\Http\Controllers\Api\ApiOrderController::class, 'show']);
     Route::post('/orders/{order}/items', [\App\Http\Controllers\Api\ApiOrderController::class, 'addItem']);
     Route::patch('/orders/{order}/items/{detail}', [\App\Http\Controllers\Api\ApiOrderController::class, 'updateItem']);

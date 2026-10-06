@@ -502,6 +502,16 @@ Resiliencia de conexión BLE: keep-alive cada 60 s (y al volver visible/online) 
 - [ ] Pruebas en dispositivos e impresoras reales (en curso: Edge + impresora BLE)
 - [x] Performance: code splitting por ruta y carga diferida del stack de impresión (chunk principal < 500 kB)
 
+### Fase 5 — Pre-cuenta desde la PWA — COMPLETADA
+
+- [x] `GET /api/orders/{order}/pre-check` con ítems, totales, propinas configuradas y textos de ticket (`ticket_pre_check_header`, `ticket_pre_check_disclaimer`, `ticket_footer_message`)
+- [x] Ticket de pre-cuenta ESC/POS (Bluetooth) y por bridge (agente .NET, `type: pre_check`)
+- [x] Asignación local "Cuenta (pre-cuenta)" por dispositivo en `/impresoras` (área reservada `0`)
+- [x] Botón **Pre-cuenta** en la comanda y registro en la auditoría (`precheck`)
+- [x] Tests backend (ítems/totales, 422 sin productos, propinas configuradas) y de encoder
+
+Decisión de QA: **el cobro se realiza en el sistema web**; la PWA solo imprime la pre-cuenta.
+
 ## 12. Riesgos y decisiones pendientes
 
 | Riesgo / decisión | Impacto | Mitigación / recomendación |
