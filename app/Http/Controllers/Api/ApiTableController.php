@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Order;
 use App\Models\Table;
 
 class ApiTableController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -23,7 +27,7 @@ class ApiTableController extends Controller
         }
         
         // Verify user has access to this branch
-        $hasAccess = $user->branches()->where('branches.id', $branchId)->exists();
+        $hasAccess = $this->userHasBranchAccess($user, $branchId);
         
         if (!$hasAccess) {
             return response()->json([
@@ -33,7 +37,8 @@ class ApiTableController extends Controller
         }
         
         // Filter tables by tenant AND branch
-        $tables = Table::where('tenant_id', $user->tenant_id)
+        $tables = Table::with('activeOrder.user')
+                      ->where('tenant_id', $user->tenant_id)
                       ->where('branch_id', $branchId)
                       ->where('is_active', true)
                       ->orderBy('name')
@@ -48,10 +53,13 @@ class ApiTableController extends Controller
                           return [
                               'id' => $table->id,
                               'name' => $table->name,
+                              'zone' => $table->zone,
                               'status' => $status,
                               'has_active_order' => $hasOrder,
                               'seats' => $table->capacity ?? 4,
-                              'active_order_id' => $activeOrder ? $activeOrder->id : null
+                              'active_order_id' => $activeOrder ? $activeOrder->id : null,
+                              'active_order_waiter_id' => $activeOrder ? $activeOrder->user_id : null,
+                              'active_order_waiter_name' => $activeOrder?->user?->name
                           ];
                       });
 
@@ -74,7 +82,7 @@ class ApiTableController extends Controller
         }
         
         // Check if user has access to this table's branch
-        $hasAccess = $user->branches()->where('branches.id', $table->branch_id)->exists();
+        $hasAccess = $this->userHasBranchAccess($user, $table->branch_id);
         if (!$hasAccess) {
             return response()->json([
                 'status' => 'error',
@@ -113,15 +121,44 @@ class ApiTableController extends Controller
                 'message' => 'No tienes acceso a esta mesa'
             ], 403);
         }
-        
-        // Check if table has active orders
-        if ($table->activeOrder) {
+
+        if (!$this->userHasBranchAccess($user, $table->branch_id)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'No se puede liberar una mesa con orden activa'
-            ], 400);
+                'message' => 'No tienes acceso a esta sucursal'
+            ], 403);
         }
-        
+
+        $openOrders = Order::where('table_id', $table->id)
+            ->whereNotIn('status', ['closed', 'canceled'])
+            ->get();
+
+        foreach ($openOrders as $openOrder) {
+            // Meseros can only release their own orders (same criterion as web)
+            if ($user->hasRole('mesero') && (int) $openOrder->user_id !== (int) $user->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Esta comanda está siendo atendida por otro mesero'
+                ], 403);
+            }
+
+            $hasActiveItems = $openOrder->details()
+                ->where('status', '!=', 'canceled')
+                ->where('is_combo_component', false)
+                ->exists();
+
+            if ($hasActiveItems) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'La comanda tiene productos activos. Cóbrala o cancélalos antes de desocupar.'
+                ], 422);
+            }
+        }
+
+        foreach ($openOrders as $openOrder) {
+            $openOrder->update(['status' => 'closed', 'closed_at' => now()]);
+        }
+
         $table->update(['status' => 'free']);
         
         return response()->json([

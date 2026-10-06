@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #e59a1a;
+  --color-primary-dark: #c98415;
+  --color-primary-light: #ffab1d;
+  --color-ink: #09090b;
+  --color-card: #18181b;
+  --font-sans: 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html,
+body {
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+}
+
+/* Apariencia de app nativa: sin barras de scroll, sin resaltado táctil */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+body {
+  margin: 0;
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+select,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+/* Evita el zoom automático de iOS al enfocar un campo */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+select option {
+  background-color: #18181b;
+  color: #f1f5f9;
+}
+
+/* Fondo cuadriculado del login (igual que layouts/auth.blade.php) */
+.bg-grid {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+.hero-mesh {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(at 50% 0%, rgba(229, 154, 26, 0.12) 0, transparent 50%);
+  pointer-events: none;
+}
+
+.form-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: rgba(229, 154, 26, 0.05);
+  box-shadow: 0 0 0 4px rgba(229, 154, 26, 0.1);
+}

@@ -16,7 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SetTimezone::class,
         ]);
-        
+
+        // Apply the "api" rate limiter to all API routes
+        $middleware->throttleApi();
+
         // Register middleware aliases
         $middleware->alias([
             'branch' => \App\Http\Middleware\EnsureBranchSelected::class,

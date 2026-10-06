@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\AuthorizesBranchAccess;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Category;
@@ -9,6 +10,8 @@ use App\Models\Product;
 
 class ApiProductController extends Controller
 {
+    use AuthorizesBranchAccess;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -24,7 +27,7 @@ class ApiProductController extends Controller
         }
         
         // Verify user has access to this branch
-        $hasAccess = $user->branches()->where('branches.id', $branchId)->exists();
+        $hasAccess = $this->userHasBranchAccess($user, $branchId);
         
         if (!$hasAccess) {
             return response()->json([
@@ -62,7 +65,9 @@ class ApiProductController extends Controller
                                        'preparation_area_id' => $product->preparation_area_id,
                                        'combo_items' => $product->comboItems->map(fn ($item) => [
                                            'product_id' => $item->component_product_id,
+                                           'name' => $item->componentProduct?->name,
                                            'quantity' => $item->quantity,
+                                           'default_flavor_name' => $item->defaultFlavor?->name,
                                        ])->values(),
                                       'flavors' => $product->flavors->map(function ($flavor) {
                                           return [

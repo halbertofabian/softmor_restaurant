@@ -1,0 +1,226 @@
+import { useToastStore } from '../../stores/toastStore'
+import { markPrinted } from '../api/orders'
+import type { PrintArea, PrintPayload } from '../api/types'
+import { logPrint } from '../db/activity'
+import type { LocalPrinter, PrintLogKind } from '../db/db'
+import { getMappings, listPrinters, updatePrinter } from '../db/printers'
+import { buildKitchenTicket, buildTestTicket, formatTicketDate } from './encoder'
+import { BridgeTransport, BluetoothTransport, pairBluetoothPrinter } from './transport'
+
+export interface AreaPrintOutcome {
+  printed: { areaId: number; areaName: string; detailIds: number[] }[]
+  missing: string[]
+  failed: { areaName: string; error: string }[]
+}
+
+interface PrintContext {
+  kind: PrintLogKind
+  orderId: number | null
+  tableName: string | null
+}
+
+export async function rePairPrinter(printer: LocalPrinter): Promise<LocalPrinter> {
+  const paired = await pairBluetoothPrinter(printer.bluetoothServices ?? [])
+
+  await updatePrinter(printer.id, {
+    bluetoothDeviceId: paired.deviceId,
+    bluetoothDeviceName: paired.deviceName,
+    gatt: paired.gatt,
+  })
+
+  return {
+    ...printer,
+    bluetoothDeviceId: paired.deviceId,
+    bluetoothDeviceName: paired.deviceName,
+    gatt: paired.gatt,
+  }
+}
+
+export async function printTestTicket(
+  printer: LocalPrinter,
+  options: { allowPairing?: boolean } = {},
+): Promise<void> {
+  if (printer.transport === 'bridge') {
+    const transport = new BridgeTransport(printer)
+
+    await transport.sendKitchen({
+      type: 'kitchen',
+      table_name: 'Prueba',
+      waiter_name: 'GestionalFood',
+      date: formatTicketDate(new Date()),
+      items: [{ quantity: 1, name: `PRUEBA · ${printer.alias}`, notes: '' }],
+    })
+
+    return
+  }
+
+  const transport = new BluetoothTransport(printer)
+
+  try {
+    await transport.connect(options)
+    await transport.writeBytes(buildTestTicket(printer))
+  } finally {
+    await transport.disconnect()
+  }
+}
+
+async function sendAreaTicket(
+  printer: LocalPrinter,
+  area: PrintArea,
+  payload: PrintPayload,
+): Promise<void> {
+  const copies = Math.max(1, printer.copies || 1)
+
+  if (printer.transport === 'bridge') {
+    const transport = new BridgeTransport(printer)
+
+    await transport.sendKitchen({
+      type: 'kitchen',
+      table_name: payload.table_name ?? '',
+      waiter_name: payload.waiter_name ?? '',
+      date: formatTicketDate(payload.generated_at),
+      items: area.items.map((item) => ({
+        quantity: item.quantity,
+        name: item.name,
+        notes: item.notes,
+      })),
+    })
+
+    return
+  }
+
+  const transport = new BluetoothTransport(printer)
+
+  try {
+    await transport.connect()
+
+    for (let copy = 0; copy < copies; copy += 1) {
+      await transport.writeBytes(buildKitchenTicket(printer, area, payload))
+    }
+  } finally {
+    await transport.disconnect()
+  }
+}
+
+export async function printKitchenPayload(
+  tenantId: string,
+  branchId: number,
+  payload: PrintPayload,
+  options: { kind?: PrintLogKind; orderId?: number | null } = {},
+): Promise<AreaPrintOutcome> {
+  const outcome: AreaPrintOutcome = { printed: [], missing: [], failed: [] }
+
+  if (payload.areas.length === 0) {
+    return outcome
+  }
+
+  const context: PrintContext = {
+    kind: options.kind ?? 'send',
+    orderId: options.orderId ?? null,
+    tableName: payload.table_name,
+  }
+
+  const [printers, mappings] = await Promise.all([
+    listPrinters(),
+    getMappings(tenantId, branchId),
+  ])
+
+  const printerById = new Map(printers.map((printer) => [printer.id, printer]))
+  const mappingByArea = new Map(mappings.map((mapping) => [mapping.areaId, mapping]))
+
+  for (const area of payload.areas) {
+    const mapping = mappingByArea.get(area.area_id)
+    const printer = mapping ? printerById.get(mapping.printerId) : undefined
+
+    if (!printer) {
+      outcome.missing.push(area.area_name)
+      continue
+    }
+
+    try {
+      await sendAreaTicket(printer, area, payload)
+      outcome.printed.push({
+        areaId: area.area_id,
+        areaName: area.area_name,
+        detailIds: area.detail_ids,
+      })
+
+      await logPrint({
+        tenantId,
+        branchId,
+        orderId: context.orderId,
+        tableName: context.tableName,
+        areaId: area.area_id,
+        areaName: area.area_name,
+        printerId: printer.id,
+        printerAlias: printer.alias,
+        kind: context.kind,
+        status: 'ok',
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error de impresión'
+
+      outcome.failed.push({ areaName: area.area_name, error: message })
+
+      await logPrint({
+        tenantId,
+        branchId,
+        orderId: context.orderId,
+        tableName: context.tableName,
+        areaId: area.area_id,
+        areaName: area.area_name,
+        printerId: printer.id,
+        printerAlias: printer.alias,
+        kind: context.kind,
+        status: 'error',
+        error: message,
+      })
+    }
+  }
+
+  return outcome
+}
+
+export async function printAndMark(
+  tenantId: string,
+  branchId: number,
+  orderId: number,
+  payload: PrintPayload,
+  kind: PrintLogKind = 'send',
+): Promise<AreaPrintOutcome> {
+  const outcome = await printKitchenPayload(tenantId, branchId, payload, { kind, orderId })
+
+  if (outcome.printed.length > 0) {
+    const detailIds = outcome.printed.flatMap((area) => area.detailIds)
+
+    try {
+      await markPrinted(orderId, detailIds)
+    } catch {
+      // El marcado de impresión no debe romper el flujo.
+    }
+  }
+
+  return outcome
+}
+
+export function reportPrintOutcome(outcome: AreaPrintOutcome): void {
+  const push = useToastStore.getState().push
+
+  if (outcome.printed.length > 0) {
+    push(`Impreso: ${outcome.printed.map((area) => area.areaName).join(', ')}.`, 'success')
+  }
+
+  if (outcome.missing.length > 0) {
+    const areas = outcome.missing.join(', ')
+    const message =
+      outcome.missing.length === 1
+        ? `La comanda fue guardada, pero ${areas} no tiene una impresora configurada en este dispositivo.`
+        : `La comanda fue guardada, pero ${areas} no tienen una impresora configurada en este dispositivo.`
+
+    push(message, 'error')
+  }
+
+  for (const failure of outcome.failed) {
+    push(`No se pudo imprimir ${failure.areaName}: ${failure.error}`, 'error')
+  }
+}
