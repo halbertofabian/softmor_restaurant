@@ -35,6 +35,7 @@ html,
 body {
   touch-action: pan-x pan-y;
   overscroll-behavior: none;
+  overflow-x: clip;
 }
 
 /* Apariencia de app nativa: sin barras de scroll, sin resaltado táctil */

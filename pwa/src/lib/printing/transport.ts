@@ -55,6 +55,10 @@ export function isWebBluetoothSupported(): boolean {
   return typeof navigator !== 'undefined' && 'bluetooth' in navigator
 }
 
+export function isGetDevicesSupported(): boolean {
+  return isWebBluetoothSupported() && 'getDevices' in navigator.bluetooth
+}
+
 function releaseConnections(): void {
   for (const connection of activeConnections.values()) {
     try {
@@ -282,6 +286,13 @@ export class BluetoothTransport implements PrinterTransport {
       }
     }
 
+    // Si Chrome solo tiene autorizado un dispositivo, es la impresora guardada
+    // aunque el id o el nombre hayan cambiado (p. ej. "dispositivo desconocido").
+    if (devices.length === 1) {
+      await this.adoptDevice(devices[0])
+      return devices[0]
+    }
+
     throw new Error(
       `La impresora "${this.printer.alias}" no está disponible. Vuelve a emparejarla.`,
     )
@@ -303,8 +314,17 @@ export class BluetoothTransport implements PrinterTransport {
     grantedDevices.set(device.id, device)
     this.printer.bluetoothDeviceId = device.id
 
+    const deviceName = device.name?.trim()
+
+    if (deviceName) {
+      this.printer.bluetoothDeviceName = deviceName
+    }
+
     try {
-      await updatePrinter(this.printer.id, { bluetoothDeviceId: device.id })
+      await updatePrinter(this.printer.id, {
+        bluetoothDeviceId: device.id,
+        ...(deviceName ? { bluetoothDeviceName: deviceName } : {}),
+      })
     } catch {
       // Si no se puede persistir, la sesión actual sigue funcionando.
     }

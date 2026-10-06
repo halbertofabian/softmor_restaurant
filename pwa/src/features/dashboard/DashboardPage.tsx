@@ -183,7 +183,7 @@ function AdminDashboard() {
 
       <MonthlySalesChart year={stats.sales_year} values={stats.sales_by_month} />
 
-      <div className="grid gap-4 @4xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 @4xl:grid-cols-2">
         <Card title="Últimos pedidos" icon={<ReceiptIcon className="h-4 w-4" />}>
           {stats.latest_orders.length === 0 ? (
             <p className="text-sm text-gray-400">Aún no hay pedidos registrados.</p>

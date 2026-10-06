@@ -109,11 +109,11 @@ export function HistoryPage() {
       )}
 
       {orders.length > 0 && (
-        <ul className="grid gap-2 @3xl:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-2 @3xl:grid-cols-2">
           {orders.map((order) => (
             <li
               key={order.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-card p-4 shadow-xl shadow-black/20"
+              className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-card p-4 shadow-xl shadow-black/20"
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">

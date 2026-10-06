@@ -43,6 +43,11 @@ export async function rePairPrinter(printer: LocalPrinter): Promise<LocalPrinter
   }
 }
 
+export async function reconnectPrinter(printer: LocalPrinter): Promise<void> {
+  const transport = new BluetoothTransport(printer)
+  await transport.connect({ allowPairing: true })
+}
+
 export async function printTestTicket(
   printer: LocalPrinter,
   options: { allowPairing?: boolean } = {},

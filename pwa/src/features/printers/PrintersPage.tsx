@@ -20,8 +20,8 @@ import {
 } from '../../lib/db/printers'
 import type { LocalPrinter, PrintLogKind } from '../../lib/db/db'
 import { formatDateTime } from '../../lib/format'
-import { printTestTicket, rePairPrinter } from '../../lib/printing/printService'
-import { isWebBluetoothSupported } from '../../lib/printing/transport'
+import { printTestTicket, rePairPrinter, reconnectPrinter } from '../../lib/printing/printService'
+import { isGetDevicesSupported, isWebBluetoothSupported } from '../../lib/printing/transport'
 import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
 import { AddPrinterSheet } from './AddPrinterSheet'
@@ -37,6 +37,8 @@ const kindLabels: Record<PrintLogKind, string> = {
   precheck: 'Pre-cuenta',
 }
 
+const CHROME_FLAG_URL = 'chrome://flags/#enable-experimental-web-platform-features'
+
 export function PrintersPage() {
   const tenantId = useAuthStore((state) => state.tenantId)
   const branchId = useAuthStore((state) => state.selectedBranchId)
@@ -45,6 +47,7 @@ export function PrintersPage() {
 
   const [addOpen, setAddOpen] = useState(false)
   const [testingId, setTestingId] = useState<string | null>(null)
+  const [reconnectingId, setReconnectingId] = useState<string | null>(null)
   const [reconnectTarget, setReconnectTarget] = useState<LocalPrinter | null>(null)
   const [repairing, setRepairing] = useState(false)
 
@@ -123,6 +126,24 @@ export function PrintersPage() {
     }
   }
 
+  async function handleReconnect(printer: LocalPrinter) {
+    setReconnectingId(printer.id)
+
+    try {
+      await reconnectPrinter(printer)
+      pushToast(`Impresora "${printer.alias}" conectada.`, 'success')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo conectar la impresora'
+      pushToast(message, 'error')
+
+      if (/no está disponible|vuelve a emparejarla|not found/i.test(message)) {
+        setReconnectTarget(printer)
+      }
+    } finally {
+      setReconnectingId(null)
+    }
+  }
+
   async function handleRePair() {
     if (!reconnectTarget) {
       return
@@ -167,6 +188,15 @@ export function PrintersPage() {
     await saveSettings({ ...current, autoPrint: next })
   }
 
+  async function handleCopyFlagUrl() {
+    try {
+      await navigator.clipboard.writeText(CHROME_FLAG_URL)
+      pushToast('Enlace copiado. Pégalo en la barra de direcciones de Chrome.', 'success')
+    } catch {
+      pushToast(`Escribe ${CHROME_FLAG_URL} en la barra de direcciones de Chrome.`, 'info')
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -196,6 +226,36 @@ export function PrintersPage() {
           Windows con el agente instalado.
         </div>
       )}
+
+      {isWebBluetoothSupported() &&
+        !isGetDevicesSupported() &&
+        printers.some((printer) => printer.transport === 'bluetooth') && (
+          <Card title="Reconexión automática" icon={<PrinterIcon className="h-4 w-4" />}>
+            <p className="text-sm text-gray-400">
+              Para que la impresora Bluetooth no se desempareje al cerrar la app, activa el modo
+              experimental de Chrome en este dispositivo:
+            </p>
+            <ol className="mt-3 list-inside list-decimal space-y-1.5 text-xs text-gray-400">
+              <li>
+                Copia el enlace del flag con el botón de abajo y pégalo en la barra de direcciones
+                de Chrome:{' '}
+                <span className="break-words font-semibold text-primary">{CHROME_FLAG_URL}</span>
+              </li>
+              <li>
+                Cámbialo a <span className="font-semibold text-white">Enabled</span>.
+              </li>
+              <li>
+                Toca <span className="font-semibold text-white">Relaunch</span> (reiniciar Chrome).
+              </li>
+              <li>Vuelve a emparejar la impresora una vez; después se reconecta sola.</li>
+            </ol>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onClick={() => void handleCopyFlagUrl()}>
+                Copiar enlace del flag
+              </Button>
+            </div>
+          </Card>
+        )}
 
       <Card title="Preferencias" icon={<PrinterIcon className="h-4 w-4" />}>
         <div className="flex items-center justify-between gap-4">
@@ -237,7 +297,7 @@ export function PrintersPage() {
         ) : (
           <ul className="divide-y divide-white/5">
             {printers.map((printer) => (
-              <li key={printer.id} className="flex items-center justify-between gap-3 py-3">
+              <li key={printer.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-white">{printer.alias}</p>
                   <p className="truncate text-[11px] text-gray-500">
@@ -246,7 +306,17 @@ export function PrintersPage() {
                   </p>
                 </div>
 
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                  {printer.transport === 'bluetooth' && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleReconnect(printer)}
+                      disabled={reconnectingId === printer.id}
+                    >
+                      {reconnectingId === printer.id ? 'Conectando…' : 'Reconectar'}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="secondary"

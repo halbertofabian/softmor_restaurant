@@ -1,12 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { OfflineBanner } from '../components/OfflineBanner'
 import { OutboxBanner } from '../components/OutboxBanner'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { HomeIcon, LogoutIcon, PrinterIcon, TablesIcon } from '../components/ui/icons'
 import { fetchMe, logout } from '../lib/api/auth'
-import { closeTopOverlay, parentPathOf } from '../lib/backNavigation'
+import { closeTopOverlay, currentAppPath, isMainView, syncAppPath } from '../lib/backNavigation'
 import { startConnectionKeepAlive } from '../lib/printing/transport'
 import { useAuthStore } from '../stores/authStore'
 
@@ -20,7 +20,6 @@ export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
-  const pathRef = useRef(location.pathname)
   const token = useAuthStore((state) => state.token)
   const user = useAuthStore((state) => state.user)
   const branches = useAuthStore((state) => state.branches)
@@ -43,26 +42,17 @@ export function AppLayout() {
   useEffect(() => startConnectionKeepAlive(), [])
 
   useEffect(() => {
-    pathRef.current = location.pathname
-  }, [location.pathname])
-
-  useEffect(() => {
     function onPopState() {
       if (closeTopOverlay()) {
+        syncAppPath()
         return
       }
 
-      const parent = parentPathOf(pathRef.current)
+      const from = currentAppPath()
+      syncAppPath()
 
-      if (parent) {
-        navigate(parent)
-        return
-      }
-
-      const index = currentHistoryIndex()
-
-      if (index > 0) {
-        window.history.go(-index)
+      if (isMainView(from)) {
+        navigate('/')
       }
     }
 

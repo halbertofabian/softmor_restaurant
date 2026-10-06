@@ -224,7 +224,7 @@ export function TablesPage() {
                   type="button"
                   disabled={table.status === 'inactive' || isOpening}
                   onClick={() => handleTableClick(table)}
-                  className={`rounded-3xl border p-4 text-left shadow-xl shadow-black/20 transition disabled:cursor-not-allowed ${cardStyles[table.status]}`}
+                  className={`min-w-0 overflow-hidden rounded-3xl border p-4 text-left shadow-xl shadow-black/20 transition disabled:cursor-not-allowed ${cardStyles[table.status]}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="truncate text-sm font-semibold text-white">{table.name}</span>
