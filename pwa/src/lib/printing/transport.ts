@@ -428,12 +428,11 @@ export function startConnectionKeepAlive(intervalMs = 60_000): () => void {
         continue
       }
 
-      activeConnections.delete(connection.deviceId)
-
       try {
         await openConnection(device, connection.gatt)
       } catch {
-        // Se reintentará en el siguiente ciclo.
+        // Se conserva la conexión para reintentar en el siguiente ciclo.
+        activeConnections.set(connection.deviceId, connection)
       }
     }
   }

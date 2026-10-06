@@ -23,6 +23,6 @@ class Table extends Model
 
     public function activeOrder()
     {
-        return $this->hasOne(Order::class)->where('status', 'open')->latest();
+        return $this->hasOne(Order::class)->whereNotIn('status', ['closed', 'canceled'])->latest();
     }
 }

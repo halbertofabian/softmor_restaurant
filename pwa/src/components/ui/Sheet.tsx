@@ -43,7 +43,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
       />
 
-      <div className="relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-white/10 bg-card p-5 shadow-2xl sm:rounded-3xl">
+      <div className="app-max-85-screen relative z-10 w-full max-w-lg overflow-y-auto rounded-t-3xl border border-white/10 bg-card p-5 shadow-2xl sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-white">{title}</h2>
           <button

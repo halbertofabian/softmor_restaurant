@@ -135,9 +135,14 @@ class PosController extends Controller
                 'closed_at' => now(),
             ]);
             
-            // 3. Free Table
+            // 3. Free Table only if no other active orders remain
             if($order->table) {
-                $order->table->update(['status' => 'free']);
+                $hasOtherActiveOrders = Order::where('table_id', $order->table_id)
+                    ->whereKeyNot($order->id)
+                    ->whereNotIn('status', ['closed', 'canceled'])
+                    ->exists();
+
+                $order->table->update(['status' => $hasOtherActiveOrders ? 'occupied' : 'free']);
             }
 
             DB::commit();

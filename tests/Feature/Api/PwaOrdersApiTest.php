@@ -492,6 +492,38 @@ class PwaOrdersApiTest extends TestCase
         $this->assertSame(15.0, (float) $response->json('pre_check.tip_suggestions.0.amount'));
     }
 
+    public function test_tables_endpoint_reports_occupied_when_active_order_exists(): void
+    {
+        [$user, $branch] = $this->createScenario('mesero');
+        $table = $this->makeTable($branch, ['status' => 'free']);
+        $order = $this->makeOrder($table, $user);
+
+        $this->getJson("/api/tables?branch_id={$branch->id}")
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'occupied')
+            ->assertJsonPath('data.0.has_active_order', true)
+            ->assertJsonPath('data.0.active_order_id', $order->id)
+            ->assertJsonPath('data.0.active_order_waiter_name', $user->name);
+
+        $this->assertDatabaseHas('tables', ['id' => $table->id, 'status' => 'occupied']);
+    }
+
+    public function test_get_or_create_reuses_active_order_with_any_status(): void
+    {
+        [$user, $branch] = $this->createScenario('mesero');
+        $table = $this->makeTable($branch, ['status' => 'occupied']);
+        $order = $this->makeOrder($table, $user, ['status' => 'sent']);
+
+        $this->postJson('/api/orders/get-or-create', [
+            'table_id' => $table->id,
+            'branch_id' => $branch->id,
+        ])
+            ->assertOk()
+            ->assertJsonPath('order.id', $order->id);
+
+        $this->assertDatabaseCount('orders', 1);
+    }
+
     private function scenarioWithRecipe(int $quantity, float $stock, float $recipeQuantity): array
     {
         [$user, $branch] = $this->createScenario('administrador');

@@ -59,7 +59,7 @@ export function LoginPage() {
   })
 
   return (
-    <div className="bg-grid relative flex min-h-screen items-center justify-center overflow-x-hidden bg-ink p-4">
+    <div className="app-min-screen bg-grid relative flex items-center justify-center overflow-x-hidden bg-ink p-4">
       <div className="hero-mesh" />
 
       <div className="relative z-10 w-full max-w-md">

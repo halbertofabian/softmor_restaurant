@@ -433,7 +433,12 @@ class OrderController extends Controller
             'closed_at' => now(),
         ]);
 
-        $order->table->update(['status' => 'free']);
+        $hasOtherActiveOrders = Order::where('table_id', $order->table_id)
+            ->whereKeyNot($order->id)
+            ->whereNotIn('status', ['closed', 'canceled'])
+            ->exists();
+
+        $order->table->update(['status' => $hasOtherActiveOrders ? 'occupied' : 'free']);
 
         return redirect()->route('tables.index')->with('success', 'Comanda cerrada y mesa liberada.');
     }

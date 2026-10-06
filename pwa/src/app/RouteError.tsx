@@ -6,7 +6,7 @@ export function RouteError() {
   const message = error instanceof Error ? error.message : 'Ocurrió un error inesperado.'
 
   return (
-    <div className="bg-grid flex min-h-screen items-center justify-center bg-ink px-4 py-10">
+    <div className="app-min-screen bg-grid flex items-center justify-center bg-ink px-4 py-10">
       <div className="w-full max-w-md">
         <Card>
           <h1 className="text-lg font-bold text-white">Algo salió mal</h1>

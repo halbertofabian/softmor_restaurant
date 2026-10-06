@@ -28,11 +28,14 @@ function applyViewportLock() {
   const root = document.documentElement
 
   if (shouldLockViewport(deviceWidth)) {
-    root.style.zoom = String(window.innerWidth / deviceWidth)
+    const zoom = window.innerWidth / deviceWidth
+    root.style.zoom = String(zoom)
+    root.style.setProperty('--vp-zoom', String(zoom))
     return
   }
 
   root.style.zoom = ''
+  root.style.setProperty('--vp-zoom', '1')
 }
 
 export function initViewportLock() {

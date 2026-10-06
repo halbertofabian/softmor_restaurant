@@ -52,7 +52,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="bg-grid relative flex min-h-screen flex-col bg-ink">
+    <div className="app-min-screen bg-grid relative flex flex-col bg-ink">
       <div className="hero-mesh" />
 
       <OfflineBanner />

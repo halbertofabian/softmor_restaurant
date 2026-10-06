@@ -150,7 +150,7 @@ class ApiOrderController extends Controller
         }
 
         $order = Order::where('table_id', $table->id)
-            ->where('status', 'open')
+            ->whereNotIn('status', ['closed', 'canceled'])
             ->with(['details' => fn ($query) => $query->where('is_combo_component', false)->where('status', '!=', 'canceled')])
             ->first();
 

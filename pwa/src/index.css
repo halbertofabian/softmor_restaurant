@@ -15,6 +15,22 @@ body,
   min-height: 100%;
 }
 
+:root {
+  --vp-zoom: 1;
+}
+
+.app-min-screen {
+  min-height: calc(100vh / var(--vp-zoom));
+}
+
+.app-min-60-screen {
+  min-height: calc(60vh / var(--vp-zoom));
+}
+
+.app-max-85-screen {
+  max-height: calc(85vh / var(--vp-zoom));
+}
+
 html,
 body {
   touch-action: pan-x pan-y;

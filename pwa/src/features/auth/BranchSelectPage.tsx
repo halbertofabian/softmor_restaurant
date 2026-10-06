@@ -28,7 +28,7 @@ export function BranchSelectPage() {
   }
 
   return (
-    <div className="bg-grid relative flex min-h-screen flex-col items-center justify-center overflow-x-hidden bg-ink px-4 py-10">
+    <div className="app-min-screen bg-grid relative flex flex-col items-center justify-center overflow-x-hidden bg-ink px-4 py-10">
       <div className="hero-mesh" />
 
       <div className="relative z-10 w-full max-w-md">

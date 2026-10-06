@@ -49,6 +49,11 @@ class ApiTableController extends Controller
                           // Use the table's actual status field (matches web behavior)
                           $status = $table->status ?? 'free';
                           $hasOrder = $activeOrder !== null;
+
+                          if ($hasOrder && $status === 'free') {
+                              $status = 'occupied';
+                              $table->update(['status' => 'occupied']);
+                          }
                           
                           return [
                               'id' => $table->id,

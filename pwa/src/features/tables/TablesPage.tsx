@@ -110,8 +110,10 @@ export function TablesPage() {
         return
       }
 
-      navigate(`/orders/${table.active_order_id}`)
-      return
+      if (!isMesero) {
+        navigate(`/orders/${table.active_order_id}`)
+        return
+      }
     }
 
     if (isMesero) {

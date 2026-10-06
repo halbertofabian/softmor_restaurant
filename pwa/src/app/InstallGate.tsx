@@ -4,7 +4,7 @@ import { CheckIcon, DownloadIcon, ShareIcon } from '../components/ui/icons'
 import { usePwaInstall } from '../lib/pwa/install'
 import { useToastStore } from '../stores/toastStore'
 
-const SKIP_KEY = 'gestionalfood.skip_install'
+const SKIP_SESSION_KEY = 'gestionalfood.skip_install_session'
 
 const features = [
   'Toma de comandas desde el celular o tablet',
@@ -17,7 +17,7 @@ export function InstallGate({ children }: { children: ReactNode }) {
   const pushToast = useToastStore((state) => state.push)
   const [skipped, setSkipped] = useState(() => {
     try {
-      return localStorage.getItem(SKIP_KEY) === '1'
+      return sessionStorage.getItem(SKIP_SESSION_KEY) === '1'
     } catch {
       return false
     }
@@ -37,7 +37,7 @@ export function InstallGate({ children }: { children: ReactNode }) {
 
   function handleSkip() {
     try {
-      localStorage.setItem(SKIP_KEY, '1')
+      sessionStorage.setItem(SKIP_SESSION_KEY, '1')
     } catch {
       // Si no se puede persistir, se omite solo en esta sesión.
     }
@@ -45,12 +45,12 @@ export function InstallGate({ children }: { children: ReactNode }) {
     setSkipped(true)
   }
 
-  if (skipped) {
+  if (installed || skipped) {
     return <>{children}</>
   }
 
   return (
-    <div className="bg-grid relative flex min-h-screen flex-col items-center justify-center overflow-x-hidden bg-ink px-5 py-10">
+    <div className="app-min-screen bg-grid relative flex flex-col items-center justify-center overflow-x-hidden bg-ink px-5 py-10">
       <div className="hero-mesh" />
 
       <div className="relative z-10 w-full max-w-md">
@@ -80,26 +80,7 @@ export function InstallGate({ children }: { children: ReactNode }) {
         </ul>
 
         <div className="mt-7 space-y-3">
-          {installed ? (
-            <>
-              <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
-                  <CheckIcon className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-emerald-300">Aplicación instalada</p>
-                  <p className="mt-1 text-xs text-emerald-200/80">
-                    Ya está instalada en este dispositivo. Ábrela desde el icono GestionalFood en
-                    tu pantalla de inicio para usarla a pantalla completa.
-                  </p>
-                </div>
-              </div>
-
-              <Button variant="secondary" className="w-full" size="lg" onClick={handleSkip}>
-                Continuar aquí
-              </Button>
-            </>
-          ) : canInstall ? (
+          {canInstall ? (
             <>
               <Button className="w-full" size="lg" onClick={handleInstall}>
                 <DownloadIcon className="h-4 w-4" />
@@ -152,15 +133,13 @@ export function InstallGate({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          {!installed && (
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="w-full py-1 text-center text-xs font-medium text-gray-500 transition hover:text-gray-300"
-            >
-              Continuar en el navegador
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleSkip}
+            className="w-full py-1 text-center text-xs font-medium text-gray-500 transition hover:text-gray-300"
+          >
+            Continuar en el navegador
+          </button>
         </div>
       </div>
     </div>
