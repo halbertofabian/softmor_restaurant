@@ -13,7 +13,7 @@ const features = [
 ]
 
 export function InstallGate({ children }: { children: ReactNode }) {
-  const { installed, canInstall, isIos, secureContext, install } = usePwaInstall()
+  const { installed, standalone, canInstall, isIos, secureContext, install } = usePwaInstall()
   const pushToast = useToastStore((state) => state.push)
   const [skipped, setSkipped] = useState(() => {
     try {
@@ -45,8 +45,45 @@ export function InstallGate({ children }: { children: ReactNode }) {
     setSkipped(true)
   }
 
-  if (installed || skipped) {
+  if (standalone || skipped) {
     return <>{children}</>
+  }
+
+  if (installed) {
+    return (
+      <div className="app-min-screen bg-grid relative flex flex-col items-center justify-center overflow-x-hidden bg-ink px-5 py-10">
+        <div className="hero-mesh" />
+
+        <div className="relative z-10 w-full max-w-md">
+          <div className="flex flex-col items-center text-center">
+            <img
+              src="/pwa/gestionalfood.png"
+              alt="GestionalFood"
+              className="h-24 w-24 rounded-3xl shadow-2xl shadow-black/40"
+            />
+            <h1 className="mt-5 text-2xl font-extrabold tracking-tight text-white">
+              GestionalFood
+            </h1>
+            <p className="mt-1 text-sm text-gray-400">
+              Comandas e impresión local por área de preparación
+            </p>
+          </div>
+
+          <div className="mt-7 flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+              <CheckIcon className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-emerald-300">Aplicación instalada</p>
+              <p className="mt-1 text-xs text-emerald-200/80">
+                Ya está instalada en este dispositivo. Ábrela desde el icono de GestionalFood en tu
+                pantalla de inicio para usarla a pantalla completa.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

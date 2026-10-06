@@ -8,6 +8,7 @@ export interface BeforeInstallPromptEvent extends Event {
 interface PwaInstallState {
   canInstall: boolean
   installed: boolean
+  standalone: boolean
 }
 
 type Listener = () => void
@@ -32,12 +33,16 @@ function detectStandalone(): boolean {
 let state: PwaInstallState = {
   canInstall: false,
   installed: detectStandalone(),
+  standalone: detectStandalone(),
 }
 
 function refreshState() {
+  const standalone = detectStandalone()
+
   state = {
     canInstall: deferredPrompt !== null,
-    installed: relatedAppInstalled || detectStandalone(),
+    installed: relatedAppInstalled || standalone,
+    standalone,
   }
   listeners.forEach((listener) => listener())
 }
