@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { OrientationGuard } from './components/OrientationGuard'
+import { UpdateBanner } from './components/UpdateBanner'
 import { Toaster } from './components/ui/Toaster'
 import { router } from './app/router'
 import { processAgentPairingFromUrl } from './lib/printing/agent'
@@ -43,6 +44,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <UpdateBanner />
       <OrientationGuard />
       <Toaster />
     </QueryClientProvider>

@@ -414,6 +414,7 @@ export function DashboardPage() {
             {branch?.name}
           </Badge>
         </div>
+        <p className="mt-3 text-[10px] text-gray-500">Versión {__APP_VERSION__}</p>
       </section>
 
       {isAdmin ? <AdminDashboard /> : showWaiterDashboard ? <WaiterDashboard /> : null}
