@@ -182,7 +182,10 @@ async function openConnection(
   throw new Error(describeConnectionError(lastError))
 }
 
-export async function pairBluetoothPrinter(extraServices: string[] = []): Promise<{
+export async function pairBluetoothPrinter(
+  extraServices: string[] = [],
+  options: { namePrefix?: string } = {},
+): Promise<{
   deviceId: string
   deviceName: string
   gatt: { service: string; characteristic: string }
@@ -199,11 +202,24 @@ export async function pairBluetoothPrinter(extraServices: string[] = []): Promis
   // para emparejar otra impresora y evita bloqueos de la pila Bluetooth.
   releaseConnections()
 
+  const storedName = options.namePrefix?.trim()
+  const namePrefix =
+    storedName && storedName.length >= 2 && !/^impresora bluetooth$/i.test(storedName)
+      ? storedName
+      : undefined
+
   try {
-    device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices,
-    })
+    // Al reconectar una impresora ya guardada se filtra por su nombre para que
+    // el selector solo muestre esos dispositivos y no todos los del entorno.
+    device = namePrefix
+      ? await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix }],
+          optionalServices,
+        })
+      : await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices,
+        })
   } catch (error) {
     throw new Error(describeBluetoothError(error))
   }
@@ -426,7 +442,9 @@ export class BluetoothTransport implements PrinterTransport {
 
       if (!device) {
         try {
-          const paired = await pairBluetoothPrinter(this.printer.bluetoothServices ?? [])
+          const paired = await pairBluetoothPrinter(this.printer.bluetoothServices ?? [], {
+            namePrefix: this.printer.bluetoothDeviceName?.trim() || undefined,
+          })
 
           this.printer.bluetoothDeviceId = paired.deviceId
           this.printer.bluetoothDeviceName = paired.deviceName

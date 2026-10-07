@@ -27,7 +27,9 @@ interface PrintContext {
 }
 
 export async function rePairPrinter(printer: LocalPrinter): Promise<LocalPrinter> {
-  const paired = await pairBluetoothPrinter(printer.bluetoothServices ?? [])
+  const paired = await pairBluetoothPrinter(printer.bluetoothServices ?? [], {
+    namePrefix: printer.bluetoothDeviceName?.trim() || undefined,
+  })
 
   await updatePrinter(printer.id, {
     bluetoothDeviceId: paired.deviceId,
