@@ -73,6 +73,22 @@ object BluetoothPrinter {
         sockets[address]?.isConnected == true || connectedGatts.contains(address)
     }
 
+    private fun briefMessage(error: Throwable): String {
+        val raw = error.message ?: "error"
+
+        return when {
+            raw.contains("BLUETOOTH_SCAN", ignoreCase = true) ||
+                raw.contains("SecurityException", ignoreCase = true) -> "sin permiso de Bluetooth"
+
+            raw.contains("read failed", ignoreCase = true) ||
+                raw.contains("socket might closed", ignoreCase = true) -> "conexión rechazada"
+
+            raw.contains("Service discovery", ignoreCase = true) -> "servicio no disponible"
+
+            else -> raw.lineSequence().firstOrNull()?.trim()?.take(80) ?: "error"
+        }
+    }
+
     fun ensureConnected(address: String): Boolean {
         synchronized(lock) {
             val target = printers.firstOrNull { it.address == address } ?: return false
@@ -93,7 +109,7 @@ object BluetoothPrinter {
                     true
                 } catch (bleError: Exception) {
                     errors[address] =
-                        "SPP: ${sppError.message ?: "error"} · BLE: ${bleError.message ?: "error"}"
+                        "SPP: ${briefMessage(sppError)} · BLE: ${briefMessage(bleError)}"
                     false
                 }
             }
@@ -126,7 +142,7 @@ object BluetoothPrinter {
                     return
                 } catch (bleError: Exception) {
                     val message =
-                        "SPP: ${sppError.message ?: "error"} · BLE: ${bleError.message ?: "error"}"
+                        "SPP: ${briefMessage(sppError)} · BLE: ${briefMessage(bleError)}"
                     errors[target.address] = message
                     throw IOException("No se pudo imprimir en \"${target.name}\": $message")
                 }
@@ -152,7 +168,12 @@ object BluetoothPrinter {
         closeSocketLocked(target.address)
 
         val adapter = requireAdapter()
-        adapter.cancelDiscovery()
+
+        try {
+            adapter.cancelDiscovery()
+        } catch (_: SecurityException) {
+            // Sin permiso de escaneo: no es indispensable para conectar.
+        }
 
         val device = adapter.getRemoteDevice(target.address)
         val created = device.createRfcommSocketToServiceRecord(SPP_UUID)

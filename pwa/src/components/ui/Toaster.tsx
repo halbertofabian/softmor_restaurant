@@ -29,7 +29,7 @@ export function Toaster() {
           ) : (
             <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
           )}
-          <span>{toast.message}</span>
+          <span className="min-w-0 break-words">{toast.message}</span>
         </button>
       ))}
     </div>

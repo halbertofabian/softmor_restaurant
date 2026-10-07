@@ -589,7 +589,10 @@ class MainActivity : Activity() {
             return
         }
 
-        val permissions = mutableListOf(Manifest.permission.BLUETOOTH_CONNECT)
+        val permissions = mutableListOf(
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_SCAN,
+        )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)

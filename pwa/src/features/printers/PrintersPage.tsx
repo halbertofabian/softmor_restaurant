@@ -96,12 +96,21 @@ export function PrintersPage() {
       void refreshAgent(link)
     }, 0)
 
-    return () => window.clearTimeout(timer)
+    const interval = window.setInterval(() => {
+      void refreshAgent(link, true)
+    }, 15_000)
+
+    return () => {
+      window.clearTimeout(timer)
+      window.clearInterval(interval)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentToken])
 
-  async function refreshAgent(link: NonNullable<typeof agentLink>) {
-    setAgentChecking(true)
+  async function refreshAgent(link: NonNullable<typeof agentLink>, silent = false) {
+    if (!silent) {
+      setAgentChecking(true)
+    }
 
     try {
       const status = await fetchAgentStatus(link)
@@ -111,7 +120,9 @@ export function PrintersPage() {
         await syncAgentPrinters(link, status.printers)
       }
     } finally {
-      setAgentChecking(false)
+      if (!silent) {
+        setAgentChecking(false)
+      }
     }
   }
 

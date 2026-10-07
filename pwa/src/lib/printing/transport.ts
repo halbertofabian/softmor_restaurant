@@ -68,6 +68,10 @@ export class BridgeTransport implements PrinterTransport {
         // Sin detalle del agente.
       }
 
+      if (message.length > 160) {
+        message = `${message.slice(0, 160)}…`
+      }
+
       throw new Error(message)
     }
   }
