@@ -103,6 +103,24 @@ export async function saveAgentLink(link: AgentLink): Promise<void> {
   await saveSettings({ ...settings, agent: link })
 }
 
+export async function clearAgentLink(): Promise<void> {
+  const settings = await getSettings()
+  const link = settings.agent
+
+  if (link) {
+    const printers = (await listPrinters()).filter((printer) => printer.agentToken === link.token)
+
+    for (const printer of printers) {
+      await deletePrinter(printer.id)
+    }
+  }
+
+  const next = { ...settings }
+  delete next.agent
+
+  await saveSettings(next)
+}
+
 export async function syncAgentPrinters(
   link: AgentLink,
   printers: AgentPrinter[],

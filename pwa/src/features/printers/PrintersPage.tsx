@@ -19,7 +19,13 @@ import {
 } from '../../lib/db/printers'
 import type { LocalPrinter, PrintLogKind } from '../../lib/db/db'
 import { formatDateTime } from '../../lib/format'
-import { agentApkUrl, fetchAgentStatus, syncAgentPrinters, type AgentStatus } from '../../lib/printing/agent'
+import {
+  agentApkUrl,
+  clearAgentLink,
+  fetchAgentStatus,
+  syncAgentPrinters,
+  type AgentStatus,
+} from '../../lib/printing/agent'
 import { printTestTicket } from '../../lib/printing/printService'
 import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -144,6 +150,16 @@ export function PrintersPage() {
     }
   }
 
+  async function handleUnlink() {
+    try {
+      await clearAgentLink()
+      setAgentStatus(null)
+      pushToast('GestionalFood Printer desvinculada.', 'info')
+    } catch {
+      pushToast('No se pudo desvincular GestionalFood Printer.', 'error')
+    }
+  }
+
   async function handleForget(printer: LocalPrinter) {
     await deletePrinter(printer.id)
     pushToast(`Impresora "${printer.alias}" olvidada en este dispositivo.`, 'success')
@@ -198,11 +214,28 @@ export function PrintersPage() {
         ) : !agentStatus ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-400">
-              GestionalFood Printer no responde. Ábrelo en este dispositivo.
+              GestionalFood Printer no responde. Ábrelo en este dispositivo o vuelve a instalarlo.
             </p>
-            <Button variant="secondary" size="sm" onClick={() => void refreshAgent(agentLink)}>
-              Reintentar
-            </Button>
+            <a
+              href={agentApkUrl()}
+              download
+              className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-black shadow-lg shadow-primary/20 transition hover:bg-primary-dark"
+            >
+              Descargar agente (APK)
+            </a>
+            <p className="text-xs text-gray-500">
+              Abre <span className="font-semibold text-white">GestionalFood Printer</span> y toca{' '}
+              <span className="font-semibold text-white">Vincular con GestionalFood</span> para
+              reconectar. Si ya no lo usarás en este dispositivo, desvincúlalo.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => void refreshAgent(agentLink)}>
+                Reintentar
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => void handleUnlink()}>
+                Desvincular
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -234,6 +267,9 @@ export function PrintersPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Button variant="secondary" size="sm" onClick={() => void refreshAgent(agentLink)}>
                 Actualizar estado
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => void handleUnlink()}>
+                Desvincular
               </Button>
               {agentStatus.version && (
                 <span className="text-[11px] text-gray-500">
