@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Button } from '../components/ui/Button'
 import { CheckIcon, DownloadIcon, ShareIcon } from '../components/ui/icons'
-import { usePwaInstall } from '../lib/pwa/install'
+import { isBraveBrowser, isInstallSupportedBrowser, usePwaInstall } from '../lib/pwa/install'
 import { useToastStore } from '../stores/toastStore'
 
 const SKIP_SESSION_KEY = 'gestionalfood.skip_install_session'
@@ -14,6 +14,7 @@ const features = [
 
 export function InstallGate({ children }: { children: ReactNode }) {
   const { installed, standalone, canInstall, isIos, secureContext, install } = usePwaInstall()
+  const [browserSupported, setBrowserSupported] = useState(() => isInstallSupportedBrowser())
   const pushToast = useToastStore((state) => state.push)
   const [skipped, setSkipped] = useState(() => {
     try {
@@ -22,6 +23,20 @@ export function InstallGate({ children }: { children: ReactNode }) {
       return false
     }
   })
+
+  useEffect(() => {
+    let cancelled = false
+
+    void isBraveBrowser().then((brave) => {
+      if (!cancelled && brave) {
+        setBrowserSupported(false)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function handleInstall() {
     const outcome = await install()
@@ -117,17 +132,7 @@ export function InstallGate({ children }: { children: ReactNode }) {
         </ul>
 
         <div className="mt-7 space-y-3">
-          {canInstall ? (
-            <>
-              <Button className="w-full" size="lg" onClick={handleInstall}>
-                <DownloadIcon className="h-4 w-4" />
-                Instalar aplicación
-              </Button>
-              <p className="text-center text-[11px] text-gray-500">
-                Se agregará el icono GestionalFood a tu pantalla de inicio.
-              </p>
-            </>
-          ) : !secureContext ? (
+          {!secureContext ? (
             <div className="rounded-2xl border border-primary/25 bg-primary/10 p-4">
               <p className="text-sm font-semibold text-primary">Necesitas HTTPS para instalar</p>
               <p className="mt-1.5 text-xs text-primary/80">
@@ -156,6 +161,27 @@ export function InstallGate({ children }: { children: ReactNode }) {
                 <li>Confirma con “Agregar”.</li>
               </ol>
             </div>
+          ) : !browserSupported ? (
+            <>
+              <Button className="w-full" size="lg" disabled>
+                <DownloadIcon className="h-4 w-4" />
+                Instalar aplicación
+              </Button>
+              <p className="text-center text-xs font-medium text-primary">
+                Para una instalación limpia (con icono y pantalla completa), abre esta página en
+                Google Chrome o Microsoft Edge.
+              </p>
+            </>
+          ) : canInstall ? (
+            <>
+              <Button className="w-full" size="lg" onClick={handleInstall}>
+                <DownloadIcon className="h-4 w-4" />
+                Instalar aplicación
+              </Button>
+              <p className="text-center text-[11px] text-gray-500">
+                Se agregará el icono GestionalFood a tu pantalla de inicio.
+              </p>
+            </>
           ) : (
             <div className="rounded-2xl border border-white/5 bg-card p-4">
               <p className="mb-2 text-sm font-semibold text-white">Para instalarla</p>

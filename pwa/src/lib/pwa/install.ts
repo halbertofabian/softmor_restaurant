@@ -78,6 +78,47 @@ export function isIosDevice(): boolean {
   )
 }
 
+export function isInstallSupportedBrowser(): boolean {
+  if (typeof navigator === 'undefined') {
+    return false
+  }
+
+  const ua = navigator.userAgent
+
+  if (/Edg\//.test(ua) || /EdgA\//.test(ua)) {
+    return true
+  }
+
+  if (/Brave/.test(ua) || /OPR\//.test(ua) || /SamsungBrowser/.test(ua) || /Vivaldi/.test(ua)) {
+    return false
+  }
+
+  // Chrome en iOS (CriOS) usa WebKit y no permite instalar PWA.
+  if (/CriOS\//.test(ua) || /FxiOS\//.test(ua) || /EdgiOS\//.test(ua)) {
+    return false
+  }
+
+  return /Chrome\//.test(ua)
+}
+
+interface BraveNavigator extends Navigator {
+  brave?: {
+    isBrave?: () => Promise<boolean>
+  }
+}
+
+export async function isBraveBrowser(): Promise<boolean> {
+  if (typeof navigator === 'undefined') {
+    return false
+  }
+
+  try {
+    return (await (navigator as BraveNavigator).brave?.isBrave?.()) === true
+  } catch {
+    return false
+  }
+}
+
 export function initPwaInstall(): void {
   if (initialized || typeof window === 'undefined') {
     return
