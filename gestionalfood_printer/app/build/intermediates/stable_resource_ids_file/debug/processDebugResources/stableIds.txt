@@ -1,0 +1,5 @@
+com.softmor.gestionalfoodprinter:drawable/ic_launcher_printer = 0x7f020002
+com.softmor.gestionalfoodprinter:drawable/ic_launcher_foreground = 0x7f020001
+com.softmor.gestionalfoodprinter:drawable/ic_launcher = 0x7f020000
+com.softmor.gestionalfoodprinter:color/primary = 0x7f010001
+com.softmor.gestionalfoodprinter:color/ic_launcher_background = 0x7f010000

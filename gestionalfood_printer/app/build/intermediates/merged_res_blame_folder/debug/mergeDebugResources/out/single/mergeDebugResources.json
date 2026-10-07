@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.softmor.gestionalfoodprinter.app-debug-4:/drawable_ic_launcher_printer.xml.flat",
+        "source": "com.softmor.gestionalfoodprinter.app-main-6:/drawable/ic_launcher_printer.xml"
+    },
+    {
+        "merged": "com.softmor.gestionalfoodprinter.app-debug-4:/drawable_ic_launcher.xml.flat",
+        "source": "com.softmor.gestionalfoodprinter.app-main-6:/drawable/ic_launcher.xml"
+    },
+    {
+        "merged": "com.softmor.gestionalfoodprinter.app-debug-4:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.softmor.gestionalfoodprinter.app-main-6:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.softmor.gestionalfoodprinter.app-debug-4:/drawable-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.softmor.gestionalfoodprinter.app-main-6:/drawable-anydpi-v26/ic_launcher.xml"
+    }
+]

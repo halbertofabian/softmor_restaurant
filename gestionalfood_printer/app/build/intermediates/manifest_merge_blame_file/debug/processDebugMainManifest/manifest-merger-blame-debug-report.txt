@@ -1,0 +1,98 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.softmor.gestionalfoodprinter"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="23"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:4:5-67
+11-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:4:22-64
+12    <uses-permission
+12-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:5:5-7:38
+13        android:name="android.permission.BLUETOOTH"
+13-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:6:9-52
+14        android:maxSdkVersion="30" />
+14-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:7:9-35
+15    <uses-permission
+15-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:8:5-10:38
+16        android:name="android.permission.BLUETOOTH_ADMIN"
+16-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:9:9-58
+17        android:maxSdkVersion="30" />
+17-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:10:9-35
+18    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+18-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:11:5-76
+18-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:11:22-73
+19    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+19-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:12:5-77
+19-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:12:22-74
+20    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+20-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:13:5-94
+20-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:13:22-91
+21    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+21-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:14:5-77
+21-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:14:22-74
+22    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+22-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:15:5-81
+22-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:15:22-78
+23
+24    <application
+24-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:17:5-45:19
+25        android:allowBackup="false"
+25-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:18:9-36
+26        android:debuggable="true"
+27        android:extractNativeLibs="false"
+28        android:icon="@drawable/ic_launcher"
+28-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:19:9-45
+29        android:label="GestionalFood Printer"
+29-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:21:9-46
+30        android:roundIcon="@drawable/ic_launcher"
+30-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:20:9-50
+31        android:theme="@android:style/Theme.Material.NoActionBar" >
+31-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:22:9-66
+32        <activity
+32-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:24:9-31:20
+33            android:name="com.softmor.gestionalfoodprinter.MainActivity"
+33-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:25:13-41
+34            android:exported="true" >
+34-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:26:13-36
+35            <intent-filter>
+35-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:27:13-30:29
+36                <action android:name="android.intent.action.MAIN" />
+36-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:28:17-69
+36-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:28:25-66
+37
+38                <category android:name="android.intent.category.LAUNCHER" />
+38-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:29:17-77
+38-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:29:27-74
+39            </intent-filter>
+40        </activity>
+41
+42        <service
+42-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:33:9-36:63
+43            android:name="com.softmor.gestionalfoodprinter.AgentService"
+43-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:34:13-41
+44            android:exported="false"
+44-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:35:13-37
+45            android:foregroundServiceType="connectedDevice" />
+45-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:36:13-60
+46
+47        <receiver
+47-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:38:9-44:20
+48            android:name="com.softmor.gestionalfoodprinter.BootReceiver"
+48-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:39:13-41
+49            android:exported="true" >
+49-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:40:13-36
+50            <intent-filter>
+50-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:41:13-43:29
+51                <action android:name="android.intent.action.BOOT_COMPLETED" />
+51-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:42:17-79
+51-->C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:42:25-76
+52            </intent-filter>
+53        </receiver>
+54    </application>
+55
+56</manifest>

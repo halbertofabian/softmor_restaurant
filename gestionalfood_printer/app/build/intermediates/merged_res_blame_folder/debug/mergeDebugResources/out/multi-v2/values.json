@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.softmor.gestionalfoodprinter.app-mergeDebugResources-2:/values/values.xml",
+            "map": [
+                {
+                    "source": "C:\\xampp_8_2\\htdocs\\gestionalfood\\gestionalfood_printer\\app\\src\\main\\res\\values\\colors.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,112",
+                        "endColumns": "56,41",
+                        "endOffsets": "107,149"
+                    }
+                }
+            ]
+        }
+    ]
+}

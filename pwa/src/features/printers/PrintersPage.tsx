@@ -231,10 +231,15 @@ export function PrintersPage() {
               </ul>
             )}
 
-            <div>
+            <div className="flex flex-wrap items-center gap-3">
               <Button variant="secondary" size="sm" onClick={() => void refreshAgent(agentLink)}>
                 Actualizar estado
               </Button>
+              {agentStatus.version && (
+                <span className="text-[11px] text-gray-500">
+                  GestionalFood Printer v{agentStatus.version}
+                </span>
+              )}
             </div>
           </div>
         )}

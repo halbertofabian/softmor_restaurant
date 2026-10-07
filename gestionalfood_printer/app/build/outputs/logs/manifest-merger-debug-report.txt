@@ -1,0 +1,109 @@
+-- Merging decision tree log ---
+manifest
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:2:1-47:12
+INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:2:1-47:12
+INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:2:1-47:12
+INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:2:1-47:12
+	package
+		INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
+	android:versionName
+		INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
+	android:versionCode
+		INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
+	xmlns:android
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:2:11-69
+uses-permission#android.permission.INTERNET
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:4:5-67
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:4:22-64
+uses-permission#android.permission.BLUETOOTH
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:5:5-7:38
+	android:maxSdkVersion
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:7:9-35
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:6:9-52
+uses-permission#android.permission.BLUETOOTH_ADMIN
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:8:5-10:38
+	android:maxSdkVersion
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:10:9-35
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:9:9-58
+uses-permission#android.permission.BLUETOOTH_CONNECT
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:11:5-76
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:11:22-73
+uses-permission#android.permission.FOREGROUND_SERVICE
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:12:5-77
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:12:22-74
+uses-permission#android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:13:5-94
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:13:22-91
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:14:5-77
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:14:22-74
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:15:5-81
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:15:22-78
+application
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:17:5-45:19
+INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:17:5-45:19
+	android:extractNativeLibs
+		INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
+	android:label
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:21:9-46
+	android:roundIcon
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:20:9-50
+	android:icon
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:19:9-45
+	android:allowBackup
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:18:9-36
+	android:theme
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:22:9-66
+activity#com.softmor.gestionalfoodprinter.MainActivity
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:24:9-31:20
+	android:exported
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:26:13-36
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:25:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:27:13-30:29
+action#android.intent.action.MAIN
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:28:17-69
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:28:25-66
+category#android.intent.category.LAUNCHER
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:29:17-77
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:29:27-74
+service#com.softmor.gestionalfoodprinter.AgentService
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:33:9-36:63
+	android:exported
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:35:13-37
+	android:foregroundServiceType
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:36:13-60
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:34:13-41
+receiver#com.softmor.gestionalfoodprinter.BootReceiver
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:38:9-44:20
+	android:exported
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:40:13-36
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:39:13-41
+intent-filter#action:name:android.intent.action.BOOT_COMPLETED
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:41:13-43:29
+action#android.intent.action.BOOT_COMPLETED
+ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:42:17-79
+	android:name
+		ADDED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml:42:25-76
+uses-sdk
+INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
+INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\xampp_8_2\htdocs\gestionalfood\gestionalfood_printer\app\src\main\AndroidManifest.xml
