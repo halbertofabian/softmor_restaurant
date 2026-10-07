@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import kotlin.concurrent.thread
 
 class AgentService : Service() {
     private var server: AgentHttpServer? = null
@@ -21,6 +22,27 @@ class AgentService : Service() {
         val http = AgentHttpServer(this)
         http.start()
         server = http
+
+        startReconnectLoop()
+    }
+
+    private fun startReconnectLoop() {
+        thread(name = "gestionalfood-printer-reconnect", isDaemon = true) {
+            while (true) {
+                try {
+                    BluetoothPrinter.configuredPrinters().forEach { printer ->
+                        BluetoothPrinter.ensureConnected(printer.address)
+                    }
+                } catch (_: Exception) {
+                }
+
+                try {
+                    Thread.sleep(20_000)
+                } catch (_: InterruptedException) {
+                    return@thread
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY

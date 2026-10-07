@@ -318,6 +318,7 @@ class MainActivity : Activity() {
         name: String,
         secondary: String,
         trailing: View,
+        error: String? = null,
     ): View {
         val row = LinearLayout(this)
         row.orientation = LinearLayout.HORIZONTAL
@@ -340,6 +341,15 @@ class MainActivity : Activity() {
             secondaryView.setTextColor(colorGray500)
             secondaryView.textSize = 11f
             texts.addView(secondaryView)
+        }
+
+        if (!error.isNullOrBlank()) {
+            val errorView = TextView(this)
+            errorView.text = error
+            errorView.setTextColor(colorDanger)
+            errorView.textSize = 10f
+            errorView.setPadding(0, dp(2), 0, 0)
+            texts.addView(errorView)
         }
 
         row.addView(
@@ -409,8 +419,11 @@ class MainActivity : Activity() {
     private fun renderLists() {
         val configured = BluetoothPrinter.configuredPrinters()
         val bonded = listBonded()
-        val signature = configured.joinToString(",") { "${it.name}@${it.address}" } +
-            "|" + bonded.joinToString(",") { it.second }
+        val signature = configured.joinToString(",") {
+            "${it.name}@${it.address}:${BluetoothPrinter.isConnected(it.address)}:${
+                BluetoothPrinter.lastError(it.address) ?: ""
+            }"
+        } + "|" + bonded.joinToString(",") { it.second }
 
         if (signature == lastSignature) {
             return
@@ -448,7 +461,12 @@ class MainActivity : Activity() {
             removeParams.leftMargin = dp(8)
             actions.addView(remove, removeParams)
 
-            val row = buildRow(printer.name, printer.address, actions)
+            val row = buildRow(
+                printer.name,
+                printer.address,
+                actions,
+                BluetoothPrinter.lastError(printer.address),
+            )
             row.setOnLongClickListener {
                 renamePrinter(printer)
                 true
