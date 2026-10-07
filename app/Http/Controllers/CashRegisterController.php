@@ -11,7 +11,12 @@ class CashRegisterController extends Controller
 {
     public function index()
     {
-        return view('cash_registers.index');
+        $activeRegister = CashRegister::where('branch_id', session('branch_id'))
+            ->where('user_id', auth()->id())
+            ->where('status', 'open')
+            ->first();
+
+        return view('cash_registers.index', compact('activeRegister'));
     }
 
     public function datatable()
@@ -99,7 +104,7 @@ class CashRegisterController extends Controller
             'opening_amount' => 'required|numeric|min:0',
         ]);
 
-        CashRegister::create([
+        $cashRegister = CashRegister::create([
             'tenant_id' => auth()->user()->tenant_id ?? 'default', // fallback if not using tenant scope properly yet
             'branch_id' => session('branch_id'),
             'user_id' => auth()->id(),
@@ -108,7 +113,7 @@ class CashRegisterController extends Controller
             'opened_at' => now(),
         ]);
 
-        return redirect()->route('orders.index')->with('success', 'Caja abierta correctamente.');
+        return redirect()->route('cash-registers.show', $cashRegister)->with('success', 'Caja abierta correctamente.');
     }
 
     public function show(CashRegister $cashRegister)

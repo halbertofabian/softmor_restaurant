@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket #{{ $order->id }}</title>
+    @php
+        $marginLeft = max(4, (float) ($settings['ticket_margin_left'] ?? 0));
+        $marginRight = max(4, (float) ($settings['ticket_margin_right'] ?? 0));
+        $marginTop = (float) ($settings['ticket_margin_top'] ?? 0);
+    @endphp
     <style>
         @page {
             margin: 0;
@@ -18,10 +23,10 @@
             font-size: {{ $settings['ticket_font_size'] ?? '12' }}px;
             line-height: 1.3;
             margin: 0;
-            padding-top: calc({{ $settings['ticket_margin_top'] ?? '0' }}mm + 2mm);
-            padding-right: {{ $settings['ticket_margin_right'] ?? '0' }}mm;
+            padding-top: calc({{ $marginTop }}mm + 2mm);
+            padding-right: {{ $marginRight }}mm;
             padding-bottom: 4mm;
-            padding-left: {{ $settings['ticket_margin_left'] ?? '0' }}mm;
+            padding-left: {{ $marginLeft }}mm;
             width: {{ $settings['ticket_printer_width'] ?? '80mm' }};
             box-sizing: border-box;
             background: #fff;
@@ -115,7 +120,7 @@
         <div class="section-title">METODOS DE PAGO</div>
         @foreach($paymentTotals as $method => $amount)
         <div class="info-row">
-            <span>{{ ucfirst($method) }}:</span>
+            <span>{{ \App\Models\Payment::methodLabel($method) }}:</span>
             <span>${{ number_format($amount, 2) }}</span>
         </div>
         @endforeach

@@ -9,10 +9,16 @@
                 <i class="ti tabler-history me-2"></i>Historial de Cortes
             </h5>
             <div class="d-flex gap-2">
-                <a href="{{ route('cash-registers.report', ['cash_register' => 'current']) }}"
-                    class="btn btn-label-secondary">
-                    <i class="ti tabler-file-report me-1"></i> Corte Actual
-                </a>
+                @if($activeRegister)
+                    <a href="{{ route('cash-registers.report', $activeRegister) }}" target="_blank"
+                        class="btn btn-label-secondary">
+                        <i class="ti tabler-file-report me-1"></i> Corte Actual
+                    </a>
+                @else
+                    <button type="button" class="btn btn-label-secondary" disabled title="No hay caja abierta">
+                        <i class="ti tabler-file-report me-1"></i> Corte Actual
+                    </button>
+                @endif
                 <a href="{{ route('cash-registers.create') }}" class="btn btn-primary">
                     <i class="ti tabler-plus me-1"></i> Abrir Turno
                 </a>

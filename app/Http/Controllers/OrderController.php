@@ -36,7 +36,7 @@ class OrderController extends Controller
                 default => '',
             };
 
-            $actions = '<a href="' . route('orders.show', $order) . '" class="btn btn-sm btn-icon btn-text-primary"><i class="ti tabler-eye"></i></a>';
+            $actions = '';
 
             if (!auth()->user()->hasRole('mesero')) {
                 $actions .= '<a href="' . route('pos.checkout', $order) . '" class="btn btn-sm btn-icon btn-text-success"><i class="ti tabler-cash"></i></a>';

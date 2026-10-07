@@ -1,6 +1,11 @@
 @extends('layouts.master')
 
 @section('content')
+<style>
+    .cash-method-card, .cash-method-card * {
+        color: #fff !important;
+    }
+</style>
 <div class="container-fluid py-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -52,7 +57,7 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6 col-lg-3">
-                            <div class="card border-0 h-100 bg-primary">
+                            <div class="card border-0 h-100 bg-primary cash-method-card">
                                 <div class="card-body text-white">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="ti tabler-cash fs-3 me-2"></i>
@@ -63,7 +68,7 @@
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
-                            <div class="card border-0 h-100 bg-danger">
+                            <div class="card border-0 h-100 bg-danger cash-method-card">
                                 <div class="card-body text-white">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="ti tabler-credit-card fs-3 me-2"></i>
@@ -74,7 +79,7 @@
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
-                            <div class="card border-0 h-100 bg-info">
+                            <div class="card border-0 h-100 bg-info cash-method-card">
                                 <div class="card-body text-white">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="ti tabler-device-mobile fs-3 me-2"></i>
@@ -85,7 +90,7 @@
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
-                            <div class="card border-0 h-100 bg-success">
+                            <div class="card border-0 h-100 bg-success cash-method-card">
                                 <div class="card-body text-white">
                                     <div class="d-flex align-items-center mb-2">
                                         <i class="ti tabler-building-bank fs-3 me-2"></i>
@@ -96,7 +101,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card border-0 mt-3 bg-dark">
+                    <div class="card border-0 mt-3 bg-dark cash-method-card">
                         <div class="card-body text-white">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 fw-bold text-uppercase">Total de Ventas</h5>

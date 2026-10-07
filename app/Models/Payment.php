@@ -10,6 +10,13 @@ class Payment extends Model
 {
     use HasFactory, BelongsToBranch;
 
+    public const METHOD_LABELS = [
+        'cash' => 'Efectivo',
+        'card' => 'Tarjeta',
+        'transfer' => 'Transferencia',
+        'mixed' => 'Mixto',
+    ];
+
     protected $fillable = [
         'tenant_id',
         'branch_id',
@@ -19,6 +26,16 @@ class Payment extends Model
         'method',
         'reference'
     ];
+
+    public static function methodLabel(?string $method): string
+    {
+        return self::METHOD_LABELS[$method] ?? ($method ? ucfirst($method) : '');
+    }
+
+    public function getMethodLabelAttribute(): string
+    {
+        return self::methodLabel($this->method);
+    }
 
     public function order()
     {
