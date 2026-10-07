@@ -1,20 +1,24 @@
 import Dexie, { type EntityTable } from 'dexie'
 
-export type PrinterTransportKind = 'bluetooth' | 'bridge'
+export type PrinterTransportKind = 'bridge'
 
 export interface LocalPrinter {
   id: string
   alias: string
   transport: PrinterTransportKind
-  bluetoothDeviceId?: string
-  bluetoothDeviceName?: string
-  bluetoothServices?: string[]
-  gatt?: { service: string; characteristic: string }
   bridgeUrl?: string
   bridgePrinterName?: string
+  agentToken?: string
   width: 58 | 80
   copies: number
   createdAt: string
+}
+
+export interface AgentLink {
+  baseUrl: string
+  token: string
+  agentId: string
+  name: string
 }
 
 export interface AreaPrinterMapping {
@@ -31,6 +35,7 @@ export interface LocalSettings {
   key: string
   autoPrint: boolean
   deviceUuid: string
+  agent?: AgentLink
 }
 
 export type PrintLogKind = 'send' | 'reprint' | 'test' | 'precheck'

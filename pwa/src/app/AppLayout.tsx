@@ -7,7 +7,6 @@ import { PullToRefresh } from '../components/PullToRefresh'
 import { HomeIcon, LogoutIcon, PrinterIcon, TablesIcon } from '../components/ui/icons'
 import { fetchMe, logout } from '../lib/api/auth'
 import { closeTopOverlay, currentAppPath, isMainView, syncAppPath } from '../lib/backNavigation'
-import { startConnectionKeepAlive } from '../lib/printing/transport'
 import { useAuthStore } from '../stores/authStore'
 
 function currentHistoryIndex(): number {
@@ -38,8 +37,6 @@ export function AppLayout() {
       applyMe(me)
     }
   }, [me, applyMe])
-
-  useEffect(() => startConnectionKeepAlive(), [])
 
   useEffect(() => {
     function onPopState() {

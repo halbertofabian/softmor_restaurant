@@ -3,14 +3,8 @@ import { markPrinted } from '../api/orders'
 import type { PreCheckPayload, PrintArea, PrintPayload } from '../api/types'
 import { logPrint } from '../db/activity'
 import type { LocalPrinter, PrintLogKind } from '../db/db'
-import { getMappings, listPrinters, updatePrinter } from '../db/printers'
-import {
-  buildKitchenTicket,
-  buildPreCheckTicket,
-  buildTestTicket,
-  formatTicketDate,
-} from './encoder'
-import { BridgeTransport, BluetoothTransport, pairBluetoothPrinter } from './transport'
+import { getMappings, listPrinters } from '../db/printers'
+import { BridgeTransport } from './transport'
 
 export const PRE_CHECK_AREA_ID = 0
 
@@ -26,120 +20,40 @@ interface PrintContext {
   tableName: string | null
 }
 
-export async function rePairPrinter(printer: LocalPrinter): Promise<LocalPrinter> {
-  const paired = await pairBluetoothPrinter(printer.bluetoothServices ?? [], {
-    namePrefix: printer.bluetoothDeviceName?.trim() || undefined,
+export async function printTestTicket(printer: LocalPrinter): Promise<void> {
+  const transport = new BridgeTransport(printer)
+
+  await transport.sendPayload({
+    type: 'kitchen',
+    area_name: 'PRUEBA',
+    table_name: 'Prueba',
+    waiter_name: 'GestionalFood',
+    date: new Date().toLocaleString('es-MX'),
+    items: [{ quantity: 1, name: `PRUEBA · ${printer.alias}`, notes: '' }],
   })
-
-  await updatePrinter(printer.id, {
-    bluetoothDeviceId: paired.deviceId,
-    bluetoothDeviceName: paired.deviceName,
-    gatt: paired.gatt,
-  })
-
-  return {
-    ...printer,
-    bluetoothDeviceId: paired.deviceId,
-    bluetoothDeviceName: paired.deviceName,
-    gatt: paired.gatt,
-  }
-}
-
-async function connectBluetooth(
-  transport: BluetoothTransport,
-  allowPairing: boolean,
-): Promise<void> {
-  const delays = [0, 1500, 3000]
-  let lastError: unknown
-
-  for (let attempt = 0; attempt < delays.length; attempt += 1) {
-    if (delays[attempt] > 0) {
-      await new Promise((resolve) => setTimeout(resolve, delays[attempt]))
-    }
-
-    try {
-      await transport.connect({ allowPairing })
-      return
-    } catch (error) {
-      const message = error instanceof Error ? error.message : ''
-
-      // Si el usuario canceló el selector, no reintentar.
-      if (/no se seleccionó|no device selected|cancel/i.test(message)) {
-        throw error
-      }
-
-      // Reintento: la impresora pudo estar despertando o reconectando.
-      lastError = error
-    }
-  }
-
-  throw lastError
-}
-
-export async function printTestTicket(
-  printer: LocalPrinter,
-  options: { allowPairing?: boolean } = {},
-): Promise<void> {
-  if (printer.transport === 'bridge') {
-    const transport = new BridgeTransport(printer)
-
-    await transport.sendPayload({
-      type: 'kitchen',
-      table_name: 'Prueba',
-      waiter_name: 'GestionalFood',
-      date: formatTicketDate(new Date()),
-      items: [{ quantity: 1, name: `PRUEBA · ${printer.alias}`, notes: '' }],
-    })
-
-    return
-  }
-
-  const transport = new BluetoothTransport(printer)
-
-  try {
-    await connectBluetooth(transport, options.allowPairing ?? false)
-    await transport.writeBytes(buildTestTicket(printer))
-  } finally {
-    await transport.disconnect()
-  }
 }
 
 async function sendAreaTicket(
   printer: LocalPrinter,
   area: PrintArea,
   payload: PrintPayload,
-  allowPairing: boolean,
 ): Promise<void> {
   const copies = Math.max(1, printer.copies || 1)
+  const transport = new BridgeTransport(printer)
 
-  if (printer.transport === 'bridge') {
-    const transport = new BridgeTransport(printer)
-
+  for (let copy = 0; copy < copies; copy += 1) {
     await transport.sendPayload({
       type: 'kitchen',
+      area_name: area.area_name,
       table_name: payload.table_name ?? '',
       waiter_name: payload.waiter_name ?? '',
-      date: formatTicketDate(payload.generated_at),
+      date: payload.generated_at,
       items: area.items.map((item) => ({
         quantity: item.quantity,
         name: item.name,
         notes: item.notes,
       })),
     })
-
-    return
-  }
-
-  const transport = new BluetoothTransport(printer)
-
-  try {
-    await connectBluetooth(transport, allowPairing)
-
-    for (let copy = 0; copy < copies; copy += 1) {
-      await transport.writeBytes(buildKitchenTicket(printer, area, payload))
-    }
-  } finally {
-    await transport.disconnect()
   }
 }
 
@@ -161,43 +75,28 @@ export async function printPreCheck(
     throw new Error('No hay una impresora configurada para la cuenta en este dispositivo.')
   }
 
+  const transport = new BridgeTransport(printer)
+
   try {
-    if (printer.transport === 'bridge') {
-      const transport = new BridgeTransport(printer)
-
-      await transport.sendPayload({
-        type: 'pre_check',
-        header: data.header,
-        pre_check_disclaimer: data.disclaimer,
-        branch_name: data.branch_name,
-        ticket_id: data.ticket_number,
-        date: formatTicketDate(data.generated_at),
-        total: data.total,
-        table_name: data.table_name ?? '',
-        waiter_name: data.waiter_name ?? '',
-        items: data.items.map((item) => ({
-          quantity: item.quantity,
-          name: item.name,
-          price: item.price,
-          notes: item.notes,
-        })),
-        tips_enabled: data.tips_enabled,
-        tip_suggestions: data.tip_suggestions,
-      })
-    } else {
-      const transport = new BluetoothTransport(printer)
-      const copies = Math.max(1, printer.copies || 1)
-
-      try {
-        await connectBluetooth(transport, true)
-
-        for (let copy = 0; copy < copies; copy += 1) {
-          await transport.writeBytes(buildPreCheckTicket(printer, data))
-        }
-      } finally {
-        await transport.disconnect()
-      }
-    }
+    await transport.sendPayload({
+      type: 'pre_check',
+      header: data.header,
+      pre_check_disclaimer: data.disclaimer,
+      branch_name: data.branch_name,
+      ticket_id: data.ticket_number,
+      date: data.generated_at,
+      total: data.total,
+      table_name: data.table_name ?? '',
+      waiter_name: data.waiter_name ?? '',
+      items: data.items.map((item) => ({
+        quantity: item.quantity,
+        name: item.name,
+        price: item.price,
+        notes: item.notes,
+      })),
+      tips_enabled: data.tips_enabled,
+      tip_suggestions: data.tip_suggestions,
+    })
 
     await logPrint({
       tenantId,
@@ -236,7 +135,7 @@ export async function printKitchenPayload(
   tenantId: string,
   branchId: number,
   payload: PrintPayload,
-  options: { kind?: PrintLogKind; orderId?: number | null; allowPairing?: boolean } = {},
+  options: { kind?: PrintLogKind; orderId?: number | null } = {},
 ): Promise<AreaPrintOutcome> {
   const outcome: AreaPrintOutcome = { printed: [], missing: [], failed: [] }
 
@@ -268,7 +167,7 @@ export async function printKitchenPayload(
     }
 
     try {
-      await sendAreaTicket(printer, area, payload, options.allowPairing ?? false)
+      await sendAreaTicket(printer, area, payload)
       outcome.printed.push({
         areaId: area.area_id,
         areaName: area.area_name,
@@ -317,13 +216,8 @@ export async function printAndMark(
   orderId: number,
   payload: PrintPayload,
   kind: PrintLogKind = 'send',
-  options: { allowPairing?: boolean } = {},
 ): Promise<AreaPrintOutcome> {
-  const outcome = await printKitchenPayload(tenantId, branchId, payload, {
-    kind,
-    orderId,
-    allowPairing: options.allowPairing,
-  })
+  const outcome = await printKitchenPayload(tenantId, branchId, payload, { kind, orderId })
 
   if (outcome.printed.length > 0) {
     const detailIds = outcome.printed.flatMap((area) => area.detailIds)

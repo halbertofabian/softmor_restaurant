@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { HistoryIcon, PrinterIcon, RefreshIcon, StoreIcon } from '../../components/ui/icons'
 import { fetchPreparationAreas, type PreparationArea } from '../../lib/api/preparation-areas'
 import { clearPrintLogs, listRecentPrintLogs } from '../../lib/db/activity'
@@ -20,15 +19,10 @@ import {
 } from '../../lib/db/printers'
 import type { LocalPrinter, PrintLogKind } from '../../lib/db/db'
 import { formatDateTime } from '../../lib/format'
-import { printTestTicket, rePairPrinter } from '../../lib/printing/printService'
-import { isGetDevicesSupported, isWebBluetoothSupported } from '../../lib/printing/transport'
+import { agentApkUrl, fetchAgentStatus, syncAgentPrinters, type AgentStatus } from '../../lib/printing/agent'
+import { printTestTicket } from '../../lib/printing/printService'
 import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
-import { AddPrinterSheet } from './AddPrinterSheet'
-
-function transportLabel(printer: LocalPrinter): string {
-  return printer.transport === 'bluetooth' ? 'Bluetooth' : 'Bridge local'
-}
 
 const kindLabels: Record<PrintLogKind, string> = {
   send: 'Comanda',
@@ -37,18 +31,15 @@ const kindLabels: Record<PrintLogKind, string> = {
   precheck: 'Pre-cuenta',
 }
 
-const CHROME_FLAG_URL = 'chrome://flags/#enable-experimental-web-platform-features'
-
 export function PrintersPage() {
   const tenantId = useAuthStore((state) => state.tenantId)
   const branchId = useAuthStore((state) => state.selectedBranchId)
   const branches = useAuthStore((state) => state.branches)
   const pushToast = useToastStore((state) => state.push)
 
-  const [addOpen, setAddOpen] = useState(false)
   const [testingId, setTestingId] = useState<string | null>(null)
-  const [reconnectTarget, setReconnectTarget] = useState<LocalPrinter | null>(null)
-  const [repairing, setRepairing] = useState(false)
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null)
+  const [agentChecking, setAgentChecking] = useState(false)
 
   const printers = useLiveQuery(() => listPrinters(), []) ?? []
   const mappings =
@@ -58,6 +49,7 @@ export function PrintersPage() {
     ) ?? []
   const settings = useLiveQuery(() => readSettings(), [])
   const logs = useLiveQuery(() => listRecentPrintLogs(8), []) ?? []
+  const agentLink = settings?.agent
 
   useEffect(() => {
     void ensureSettings()
@@ -84,6 +76,38 @@ export function PrintersPage() {
   }
 
   const areaRows = [preCheckArea, ...areas]
+  const agentToken = agentLink?.token
+
+  useEffect(() => {
+    const link = agentLink
+
+    if (!link || !agentToken) {
+      setAgentStatus(null)
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      void refreshAgent(link)
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentToken])
+
+  async function refreshAgent(link: NonNullable<typeof agentLink>) {
+    setAgentChecking(true)
+
+    try {
+      const status = await fetchAgentStatus(link)
+      setAgentStatus(status)
+
+      if (status) {
+        await syncAgentPrinters(link, status.printers)
+      }
+    } finally {
+      setAgentChecking(false)
+    }
+  }
 
   async function handleAssign(area: PreparationArea, printerId: string) {
     if (!tenantId || !branchId) {
@@ -108,53 +132,15 @@ export function PrintersPage() {
     setTestingId(printer.id)
 
     try {
-      await printTestTicket(printer, { allowPairing: true })
+      await printTestTicket(printer)
       pushToast(`Prueba enviada a ${printer.alias}.`, 'success')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No se pudo imprimir la prueba'
-      pushToast(message, 'error')
-
-      if (
-        printer.transport === 'bluetooth' &&
-        /no está disponible|vuelve a emparejarla|not found/i.test(message)
-      ) {
-        setReconnectTarget(printer)
-      }
+      pushToast(
+        error instanceof Error ? error.message : 'No se pudo imprimir la prueba',
+        'error',
+      )
     } finally {
       setTestingId(null)
-    }
-  }
-
-  async function handleRePair() {
-    if (!reconnectTarget) {
-      return
-    }
-
-    setRepairing(true)
-
-    try {
-      const previousName = reconnectTarget.bluetoothDeviceName
-      const updated = await rePairPrinter(reconnectTarget)
-      setReconnectTarget(null)
-
-      if (
-        previousName &&
-        updated.bluetoothDeviceName &&
-        previousName.trim().toLowerCase() !== updated.bluetoothDeviceName.trim().toLowerCase()
-      ) {
-        pushToast(
-          `Se emparejó "${updated.bluetoothDeviceName}" en lugar de "${previousName}".`,
-          'info',
-        )
-      } else {
-        pushToast('Impresora re-emparejada.', 'success')
-      }
-
-      await handleTest(updated)
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'No se pudo emparejar la impresora', 'error')
-    } finally {
-      setRepairing(false)
     }
   }
 
@@ -169,74 +155,90 @@ export function PrintersPage() {
     await saveSettings({ ...current, autoPrint: next })
   }
 
-  async function handleCopyFlagUrl() {
-    try {
-      await navigator.clipboard.writeText(CHROME_FLAG_URL)
-      pushToast('Enlace copiado. Pégalo en la barra de direcciones de Chrome.', 'success')
-    } catch {
-      pushToast(`Escribe ${CHROME_FLAG_URL} en la barra de direcciones de Chrome.`, 'info')
-    }
-  }
-
   return (
     <div className="space-y-4">
       <Card>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <PrinterIcon className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="text-lg font-bold text-white">Impresoras</h1>
-              <p className="flex items-center gap-1 text-xs text-gray-500">
-                <StoreIcon className="h-3 w-3" />
-                {branch?.name} · solo este dispositivo
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <PrinterIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-lg font-bold text-white">Impresoras</h1>
+            <p className="flex items-center gap-1 text-xs text-gray-500">
+              <StoreIcon className="h-3 w-3" />
+              {branch?.name} · solo este dispositivo
+            </p>
           </div>
-
-          <Button size="sm" onClick={() => setAddOpen(true)}>
-            Agregar
-          </Button>
         </div>
       </Card>
 
-      {!isWebBluetoothSupported() && printers.every((printer) => printer.transport !== 'bluetooth') && (
-        <div className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-xs text-primary">
-          Este navegador no soporta impresión Bluetooth. Puedes usar el bridge local en una PC
-          Windows con el agente instalado.
-        </div>
-      )}
-
-      {isWebBluetoothSupported() &&
-        !isGetDevicesSupported() &&
-        printers.some((printer) => printer.transport === 'bluetooth') && (
-          <Card title="Reconexión automática" icon={<PrinterIcon className="h-4 w-4" />}>
+      <Card title="GestionalFood Printer" icon={<PrinterIcon className="h-4 w-4" />}>
+        {!agentLink ? (
+          <div className="space-y-3">
             <p className="text-sm text-gray-400">
-              Para que la impresora Bluetooth no se desempareje al cerrar la app, activa el modo
-              experimental de Chrome en este dispositivo:
+              Imprime por Bluetooth sin volver a emparejar. Instala el agente en este dispositivo y
+              vincúlalo con un toque.
             </p>
-            <ol className="mt-3 list-inside list-decimal space-y-1.5 text-xs text-gray-400">
-              <li>
-                Copia el enlace del flag con el botón de abajo y pégalo en la barra de direcciones
-                de Chrome:{' '}
-                <span className="break-words font-semibold text-primary">{CHROME_FLAG_URL}</span>
-              </li>
-              <li>
-                Cámbialo a <span className="font-semibold text-white">Enabled</span>.
-              </li>
-              <li>
-                Toca <span className="font-semibold text-white">Relaunch</span> (reiniciar Chrome).
-              </li>
-              <li>Vuelve a emparejar la impresora una vez; después se reconecta sola.</li>
-            </ol>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={() => void handleCopyFlagUrl()}>
-                Copiar enlace del flag
+            <a
+              href={agentApkUrl()}
+              download
+              className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-black shadow-lg shadow-primary/20 transition hover:bg-primary-dark"
+            >
+              Descargar agente (APK)
+            </a>
+            <p className="text-xs text-gray-500">
+              Abre <span className="font-semibold text-white">GestionalFood Printer</span>, elige
+              tus impresoras y toca{' '}
+              <span className="font-semibold text-white">Vincular con GestionalFood</span>. La app
+              se configura sola.
+            </p>
+          </div>
+        ) : agentChecking ? (
+          <p className="text-sm text-gray-400">Consultando GestionalFood Printer…</p>
+        ) : !agentStatus ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-400">
+              GestionalFood Printer no responde. Ábrelo en este dispositivo.
+            </p>
+            <Button variant="secondary" size="sm" onClick={() => void refreshAgent(agentLink)}>
+              Reintentar
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {agentStatus.printers.length === 0 ? (
+              <p className="text-sm text-gray-400">
+                Aún no hay impresoras configuradas. Abre{' '}
+                <span className="font-semibold text-white">GestionalFood Printer</span> y elige las
+                impresoras emparejadas.
+              </p>
+            ) : (
+              <ul className="divide-y divide-white/5">
+                {agentStatus.printers.map((printer) => (
+                  <li
+                    key={printer.address}
+                    className="flex items-center justify-between gap-3 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white">{printer.name}</p>
+                      <p className="truncate text-[11px] text-gray-500">{printer.address}</p>
+                    </div>
+                    <Badge variant={printer.connected ? 'success' : 'muted'}>
+                      {printer.connected ? 'En línea' : 'Desconectada'}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div>
+              <Button variant="secondary" size="sm" onClick={() => void refreshAgent(agentLink)}>
+                Actualizar estado
               </Button>
             </div>
-          </Card>
+          </div>
         )}
+      </Card>
 
       <Card title="Preferencias" icon={<PrinterIcon className="h-4 w-4" />}>
         <div className="flex items-center justify-between gap-4">
@@ -272,8 +274,8 @@ export function PrintersPage() {
       >
         {printers.length === 0 ? (
           <p className="text-sm text-gray-400">
-            Aún no has agregado impresoras en este dispositivo. La configuración no se comparte con
-            otros dispositivos.
+            Aún no hay impresoras configuradas. Instala GestionalFood Printer y vincúlalo para
+            comenzar a imprimir.
           </p>
         ) : (
           <ul className="divide-y divide-white/5">
@@ -282,8 +284,7 @@ export function PrintersPage() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-white">{printer.alias}</p>
                   <p className="truncate text-[11px] text-gray-500">
-                    {transportLabel(printer)} · {printer.width}mm · {printer.copies} copia(s)
-                    {printer.bridgePrinterName ? ` · ${printer.bridgePrinterName}` : ''}
+                    GestionalFood Printer · {printer.copies} copia(s)
                   </p>
                 </div>
 
@@ -389,7 +390,7 @@ export function PrintersPage() {
                     <option value="">Sin impresora en este dispositivo</option>
                     {printers.map((printer) => (
                       <option key={printer.id} value={printer.id}>
-                        {printer.alias} ({transportLabel(printer)})
+                        {printer.alias}
                       </option>
                     ))}
                   </select>
@@ -439,24 +440,6 @@ export function PrintersPage() {
           </ul>
         )}
       </Card>
-
-      {addOpen && (
-        <AddPrinterSheet
-          printers={printers}
-          onClose={() => setAddOpen(false)}
-          onSaved={() => undefined}
-        />
-      )}
-
-      <ConfirmDialog
-        open={reconnectTarget !== null}
-        title="Volver a emparejar"
-        message={`La impresora "${reconnectTarget?.alias ?? ''}" no está disponible en este dispositivo. Selecciónala de nuevo en el cuadro de Bluetooth para renovar el permiso.`}
-        confirmLabel="Emparejar"
-        loading={repairing}
-        onCancel={() => setReconnectTarget(null)}
-        onConfirm={handleRePair}
-      />
     </div>
   )
 }
