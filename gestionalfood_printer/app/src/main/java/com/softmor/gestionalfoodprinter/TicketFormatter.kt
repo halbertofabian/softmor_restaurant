@@ -3,7 +3,7 @@ package com.softmor.gestionalfoodprinter
 import org.json.JSONArray
 import org.json.JSONObject
 import java.nio.charset.Charset
-import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -12,6 +12,29 @@ object TicketFormatter {
         Charset.forName("Cp858")
     } catch (_: Exception) {
         Charset.forName("ISO-8859-1")
+    }
+
+    private val monthNames = arrayOf(
+        "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
+    )
+
+    private fun formatDate(date: Date): String {
+        val calendar = Calendar.getInstance().apply { time = date }
+        val day = String.format(Locale.US, "%02d", calendar.get(Calendar.DAY_OF_MONTH))
+        val month = monthNames[calendar.get(Calendar.MONTH)]
+        val year = calendar.get(Calendar.YEAR)
+
+        return "$day/$month/$year ${formatTime(date)}"
+    }
+
+    private fun formatTime(date: Date): String {
+        val calendar = Calendar.getInstance().apply { time = date }
+        val hour = calendar.get(Calendar.HOUR).let { if (it == 0) 12 else it }
+        val minutes = String.format(Locale.US, "%02d", calendar.get(Calendar.MINUTE))
+        val meridiem = if (calendar.get(Calendar.AM_PM) == Calendar.PM) "PM" else "AM"
+
+        return "${String.format(Locale.US, "%02d", hour)}:$minutes $meridiem"
     }
 
     fun buildBytes(payload: JSONObject): ByteArray {
@@ -63,7 +86,7 @@ object TicketFormatter {
                 sb.appendLine()
             }
 
-            sb.appendLine("--- ${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())} ---")
+            sb.appendLine("--- ${formatTime(Date())} ---")
             sb.appendLine("Mesero: ${payload.optString("waiter_name", "N/A")}")
             sb.appendLine()
             sb.appendLine()
@@ -73,7 +96,7 @@ object TicketFormatter {
             sb.appendLine(
                 payload.optString(
                     "date",
-                    SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.getDefault()).format(Date())
+                    formatDate(Date())
                 )
             )
             sb.appendLine("Ticket #: ${payload.optString("ticket_id", "N/A")}")

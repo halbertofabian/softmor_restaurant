@@ -8,7 +8,7 @@ import java.util.UUID
 data class SavedPrinter(val name: String, val address: String)
 
 object AgentConfig {
-    const val VERSION = "1.3.0"
+    const val VERSION = "1.4.0"
     const val PWA_URL = "https://gestionalfood.com/pwa/"
     const val DEFAULT_PORT = 8123
     const val MAX_PORT_ATTEMPTS = 6

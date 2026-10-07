@@ -24,8 +24,9 @@ describe('formatDateTime', () => {
     expect(formatDateTime('nope')).toBe('—')
   })
 
-  it('formatea una fecha ISO', () => {
-    const formatted = formatDateTime('2026-10-05T14:30:00-05:00')
-    expect(formatted).toMatch(/\d{2}\/\d{2},?\s+\d{2}:\d{2}/)
+  it('formatea con mes en español y hora de 12 horas', () => {
+    expect(formatDateTime(new Date(2026, 9, 7, 16, 21))).toBe('07/Oct/2026 04:21 PM')
+    expect(formatDateTime(new Date(2026, 9, 7, 0, 5))).toBe('07/Oct/2026 12:05 AM')
+    expect(formatDateTime(new Date(2026, 9, 7, 12, 0))).toBe('07/Oct/2026 12:00 PM')
   })
 })

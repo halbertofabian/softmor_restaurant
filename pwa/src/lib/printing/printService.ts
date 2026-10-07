@@ -4,6 +4,7 @@ import type { PreCheckPayload, PrintArea, PrintPayload } from '../api/types'
 import { logPrint } from '../db/activity'
 import type { LocalPrinter, PrintLogKind } from '../db/db'
 import { getMappings, listPrinters } from '../db/printers'
+import { formatDateTime } from '../format'
 import { BridgeTransport } from './transport'
 
 export const PRE_CHECK_AREA_ID = 0
@@ -28,7 +29,7 @@ export async function printTestTicket(printer: LocalPrinter): Promise<void> {
     area_name: 'PRUEBA',
     table_name: 'Prueba',
     waiter_name: 'GestionalFood',
-    date: new Date().toLocaleString('es-MX'),
+    date: formatDateTime(new Date()),
     items: [{ quantity: 1, name: `PRUEBA · ${printer.alias}`, notes: '' }],
   })
 }
@@ -47,7 +48,7 @@ async function sendAreaTicket(
       area_name: area.area_name,
       table_name: payload.table_name ?? '',
       waiter_name: payload.waiter_name ?? '',
-      date: payload.generated_at,
+      date: formatDateTime(payload.generated_at),
       items: area.items.map((item) => ({
         quantity: item.quantity,
         name: item.name,
@@ -84,7 +85,7 @@ export async function printPreCheck(
       pre_check_disclaimer: data.disclaimer,
       branch_name: data.branch_name,
       ticket_id: data.ticket_number,
-      date: data.generated_at,
+      date: formatDateTime(data.generated_at),
       total: data.total,
       table_name: data.table_name ?? '',
       waiter_name: data.waiter_name ?? '',

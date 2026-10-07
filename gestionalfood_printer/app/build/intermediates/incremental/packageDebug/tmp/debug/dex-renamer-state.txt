@@ -1,4 +1,4 @@
-#Wed Oct 07 16:01:51 CST 2026
+#Wed Oct 07 16:24:37 CST 2026
 base.0=C\:\\xampp_8_2\\htdocs\\gestionalfood\\gestionalfood_printer\\app\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
 base.1=C\:\\xampp_8_2\\htdocs\\gestionalfood\\gestionalfood_printer\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex
 base.2=C\:\\xampp_8_2\\htdocs\\gestionalfood\\gestionalfood_printer\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\15\\classes.dex

@@ -1,3 +1,18 @@
+const MONTHS_ES = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+]
+
 export function formatMoney(
   value: number | string | null | undefined,
   decimals = 2,
@@ -11,21 +26,27 @@ export function formatMoney(
   })}`
 }
 
-export function formatDateTime(value: string | null | undefined): string {
+export function formatDateTime(value: string | Date | null | undefined): string {
   if (!value) {
     return '—'
   }
 
-  const date = new Date(value)
+  const date = typeof value === 'string' ? new Date(value) : value
 
   if (Number.isNaN(date.getTime())) {
     return '—'
   }
 
-  return date.toLocaleString('es-MX', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = MONTHS_ES[date.getMonth()]
+  const year = date.getFullYear()
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const meridiem = date.getHours() >= 12 ? 'PM' : 'AM'
+
+  let hours = date.getHours() % 12
+  if (hours === 0) {
+    hours = 12
+  }
+
+  return `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes} ${meridiem}`
 }
