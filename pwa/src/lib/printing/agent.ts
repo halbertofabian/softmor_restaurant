@@ -142,7 +142,7 @@ export async function syncAgentPrinters(
     if (existing) {
       await updatePrinter(existing.id, {
         alias: target.name,
-        bridgeUrl: `${link.baseUrl}/api/printer/raw`,
+        bridgeUrl: link.baseUrl,
       })
 
       result.push(existing)
@@ -152,7 +152,7 @@ export async function syncAgentPrinters(
     const created = await savePrinter({
       alias: target.name,
       transport: 'bridge',
-      bridgeUrl: `${link.baseUrl}/api/printer/raw`,
+      bridgeUrl: link.baseUrl,
       bridgePrinterName: target.name,
       agentToken: link.token,
       width: 58,
